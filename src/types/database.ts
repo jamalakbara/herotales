@@ -141,6 +141,32 @@ export interface Database {
           created_at?: string;
         };
       };
+      story_audio: {
+        Row: {
+          id: string;
+          story_id: string;
+          chapter_index: number;
+          audio_url: string;
+          duration_seconds: number | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          story_id: string;
+          chapter_index: number;
+          audio_url: string;
+          duration_seconds?: number | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          story_id?: string;
+          chapter_index?: number;
+          audio_url?: string;
+          duration_seconds?: number | null;
+          created_at?: string;
+        };
+      };
     };
   };
 }
@@ -158,6 +184,10 @@ export type StoryImage = Database["public"]["Tables"]["story_images"]["Row"];
 export type StoryImageInsert = Database["public"]["Tables"]["story_images"]["Insert"];
 export type StoryImageUpdate = Database["public"]["Tables"]["story_images"]["Update"];
 
+export type StoryAudio = Database["public"]["Tables"]["story_audio"]["Row"];
+export type StoryAudioInsert = Database["public"]["Tables"]["story_audio"]["Insert"];
+export type StoryAudioUpdate = Database["public"]["Tables"]["story_audio"]["Update"];
+
 // Extended types with relationships
 export interface StoryWithImages extends Story {
   images: StoryImage[];
@@ -170,4 +200,8 @@ export interface StoryWithChild extends Story {
 export interface ChildWithStories extends Child {
   stories: Story[];
   story_count?: number;
+}
+
+export interface StoryWithAudio extends Story {
+  audio: StoryAudio[];
 }

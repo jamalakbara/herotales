@@ -68,16 +68,73 @@ MAIN CHARACTER (must be IDENTICAL in every scene):
 
 /**
  * Sanitize the prompt to avoid content policy violations
+ * DALL-E 3 is very sensitive - we need aggressive sanitization
  */
 function sanitizePrompt(prompt: string): string {
-  let safe = prompt
-    .replace(/\b(skin|flesh|body|naked|bare)\b/gi, '')
-    .replace(/\b(fight|battle|attack|hurt|pain|blood|wound|kill|death|die|dead)\b/gi, 'challenge')
-    .replace(/\b(scary|terrifying|horror|monster)\b/gi, 'magical creature')
-    .replace(/\b(gun|weapon|knife|sword)\b/gi, 'wand')
+  // List of words/patterns that trigger DALL-E's safety system
+  const unsafePatterns = [
+    // Physical descriptions that may be flagged
+    /\b(skin|flesh|body|naked|bare|undress)/gi,
+    // Violence-related
+    /\b(fight|battle|attack|hurt|pain|blood|wound|kill|death|die|dead|war|violence|violent|angry|anger|rage|destroy|destruction|defeat)/gi,
+    // Scary content
+    /\b(scary|terrifying|horror|monster|demon|devil|evil|wicked|dark|darkness|nightmare|fear|afraid|terrified|creepy|spooky|haunted)/gi,
+    // Weapons
+    /\b(gun|weapon|knife|sword|axe|bow|arrow|spear|dagger)/gi,
+    // Potentially problematic terms
+    /\b(fire|flame|burn|burning|explosion|explode|smoke)/gi,
+    /\b(chase|chasing|run away|escape|hiding|hide)/gi,
+    /\b(storm|thunder|lightning|dangerous|danger)/gi,
+    /\b(steal|thief|criminal|villain|enemy)/gi,
+    /\b(sad|cry|crying|tears|lonely|alone)/gi,
+    /\b(giant|huge|enormous|massive|tiny|small child)/gi,
+    // Real people indicators
+    /\b(photo|realistic|real|photograph|photorealistic)/gi,
+  ];
+
+  let safe = prompt;
+
+  // Remove all unsafe patterns
+  for (const pattern of unsafePatterns) {
+    safe = safe.replace(pattern, '');
+  }
+
+  // Replace with neutral, positive alternatives
+  safe = safe
+    .replace(/\s+/g, ' ') // Normalize whitespace
     .trim();
 
+  // If the prompt got too short after sanitization, use a generic safe prompt
+  if (safe.length < 20) {
+    return 'A cheerful illustrated scene from a children\'s storybook with bright colors and friendly atmosphere';
+  }
+
   return safe;
+}
+
+/**
+ * Create a completely safe, children's book appropriate prompt
+ */
+function createSafeIllustrationPrompt(
+  sceneDescription: string,
+  childName: string,
+  gender: "boy" | "girl",
+  chapterIndex: number
+): string {
+  const safeScene = sanitizePrompt(sceneDescription);
+
+  const genderTerms = gender === "girl"
+    ? { pronoun: "she", adjective: "her", outfit: "purple dress and yellow cardigan", hair: "brown pigtails" }
+    : { pronoun: "he", adjective: "his", outfit: "red hoodie and blue jeans", hair: "short brown hair" };
+
+  // Create a very safe, generic children's book prompt
+  return `Children's storybook illustration in watercolor style.
+
+A happy ${gender === "girl" ? "girl" : "boy"} character with a round face, big friendly eyes, rosy cheeks, and ${genderTerms.hair}, wearing ${genderTerms.outfit}.
+
+Scene: ${safeScene}
+
+Style: Soft, dreamy Pixar-Ghibli hybrid art style. Warm, inviting colors. Friendly and magical atmosphere. Simple cartoon character design. No text or words in the image. Suitable for young children ages 3-8.`;
 }
 
 export async function generateChapterImage({
@@ -87,29 +144,16 @@ export async function generateChapterImage({
   chapterIndex = 1,
   gender = "boy",
 }: GenerateImageParams): Promise<GeneratedImage> {
-  const safePrompt = sanitizePrompt(prompt);
-  const characterTemplate = createConsistentCharacterTemplate(childName, gender);
-
-  const genderReminder = gender === "girl"
-    ? "purple dress, yellow cardigan, brown pigtails with pink ribbons"
-    : "red hoodie, blue jeans, short brown messy hair";
-
-  const fullPrompt = `${STYLE_GUIDE}
-
-${characterTemplate}
-
-SCENE FOR CHAPTER ${chapterIndex}:
-${safePrompt}
-
-REMEMBER: The main character ${childName} must look EXACTLY the same as described above - ${genderReminder}, round face with rosy cheeks. This is essential for story continuity.`;
+  // Use the safe prompt generator that avoids content policy issues
+  const safePrompt = createSafeIllustrationPrompt(prompt, childName, gender, chapterIndex);
 
   const response = await getOpenAIClient().images.generate({
     model: "dall-e-3",
-    prompt: fullPrompt,
+    prompt: safePrompt,
     n: 1,
     size: "1024x1024",
     quality: "standard",
-    style: "vivid",
+    style: "natural", // Changed from "vivid" to "natural" for softer, safer images
   });
 
   if (!response.data || response.data.length === 0) {

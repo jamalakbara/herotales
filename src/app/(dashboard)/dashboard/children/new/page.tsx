@@ -39,14 +39,14 @@ const childSchema = z.object({
     .min(1, "Please enter a nickname")
     .max(50, "Nickname is too long"),
   gender: z.enum(["boy", "girl"]),
-  age_group: z.coerce
-    .number()
-    .min(2, "Must be at least 2 years old")
-    .max(12, "Must be 12 or younger"),
+  age_group: z.preprocess(
+    (val) => (typeof val === "string" ? parseInt(val, 10) : val),
+    z.number().min(2, "Must be at least 2 years old").max(12, "Must be 12 or younger")
+  ),
   character_description: z.string().optional(),
 });
 
-type ChildFormData = z.infer<typeof childSchema>;
+type ChildFormData = z.output<typeof childSchema>;
 
 export default function NewChildPage() {
   const router = useRouter();
@@ -55,7 +55,7 @@ export default function NewChildPage() {
   const supabase = createClient();
 
   const form = useForm<ChildFormData>({
-    resolver: zodResolver(childSchema),
+    resolver: zodResolver(childSchema) as never,
     defaultValues: {
       nickname: "",
       gender: "boy",
@@ -172,8 +172,8 @@ export default function NewChildPage() {
                             type="button"
                             onClick={() => field.onChange("boy")}
                             className={`flex-1 h-12 rounded-xl border-2 transition-all flex items-center justify-center gap-2 font-medium ${field.value === "boy"
-                                ? "border-periwinkle bg-periwinkle/10 text-periwinkle"
-                                : "border-muted bg-white/50 text-muted-foreground hover:border-periwinkle/50"
+                              ? "border-periwinkle bg-periwinkle/10 text-periwinkle"
+                              : "border-muted bg-white/50 text-muted-foreground hover:border-periwinkle/50"
                               }`}
                           >
                             👦 Boy
@@ -182,8 +182,8 @@ export default function NewChildPage() {
                             type="button"
                             onClick={() => field.onChange("girl")}
                             className={`flex-1 h-12 rounded-xl border-2 transition-all flex items-center justify-center gap-2 font-medium ${field.value === "girl"
-                                ? "border-coral bg-coral/10 text-coral"
-                                : "border-muted bg-white/50 text-muted-foreground hover:border-coral/50"
+                              ? "border-coral bg-coral/10 text-coral"
+                              : "border-muted bg-white/50 text-muted-foreground hover:border-coral/50"
                               }`}
                           >
                             👧 Girl

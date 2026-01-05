@@ -3,13 +3,14 @@
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, X, Home } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Home, Volume2 } from "lucide-react";
 import confetti from "canvas-confetti";
 
 import { Button } from "@/components/ui/button";
 import { StoryPage } from "./story-page";
 import { ParentalGate } from "./parental-gate";
 import { CompletionCelebration } from "./completion-celebration";
+import { AudioPlayer } from "./audio-player";
 import type { StoryContent, ThemeType } from "@/types/database";
 
 interface StoryReaderProps {
@@ -34,6 +35,7 @@ export function StoryReader({
   const [showGate, setShowGate] = useState(false);
   const [showCompletion, setShowCompletion] = useState(false);
   const [direction, setDirection] = useState(0);
+  const [showAudioPlayer, setShowAudioPlayer] = useState(false);
 
   const totalPages = content.chapters.length + 1; // Cover + 5 chapters
 
@@ -147,11 +149,23 @@ export function StoryReader({
             ))}
           </div>
 
-          <div className="w-10" /> {/* Spacer for alignment */}
+          {/* Read to Me Toggle */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowAudioPlayer(!showAudioPlayer)}
+            className={`rounded-full backdrop-blur-sm shadow-md transition-colors ${showAudioPlayer
+              ? "bg-periwinkle text-white hover:bg-periwinkle/90"
+              : "bg-white/80 hover:bg-white"
+              }`}
+            title="Read to Me"
+          >
+            <Volume2 className="h-5 w-5" />
+          </Button>
         </div>
 
         {/* Content Area - Scrollable */}
-        <div className="flex-1 overflow-y-auto p-4 pt-20 pb-24">
+        <div className={`flex-1 overflow-y-auto p-4 pt-20 ${showAudioPlayer ? "pb-48" : "pb-24"}`}>
           <div className="min-h-full flex items-start justify-center">
             <AnimatePresence mode="wait" custom={direction}>
               <motion.div
@@ -186,6 +200,17 @@ export function StoryReader({
             </AnimatePresence>
           </div>
         </div>
+
+        {/* Audio Player - shown when enabled */}
+        {showAudioPlayer && currentPage > 0 && (
+          <div className="absolute bottom-24 left-4 right-4 z-10 max-w-2xl mx-auto">
+            <AudioPlayer
+              storyId={storyId}
+              chapterIndex={currentPage - 1}
+              isVisible={showAudioPlayer}
+            />
+          </div>
+        )}
 
         {/* Navigation Controls */}
         <div className="absolute bottom-0 left-0 right-0 p-6 flex items-center justify-center gap-4">
