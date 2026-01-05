@@ -1,26 +1,299 @@
-@import "tailwindcss";
+/* Google Fonts - Lexend & Quicksand */
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&family=Quicksand:wght@300;400;500;600;700&display=swap');
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* 
+  HeroTales Design System
+  Based on DESIGN_CONCEPT.MD - "The Digital Pop-Up Book"
+  
+  Color Palette:
+  - Periwinkle Blue (#6A89CC) - Trust and calm
+  - Soft Sage (#A1BE95) - Growth and values  
+  - Coral (#F98866) - Magic moments
+  - Cream (#FFF2D7) - Paper texture background
+*/
 
 @theme inline {
+  /* Custom Fonts */
+  --font-heading: 'Lexend', var(--font-geist-sans);
+  --font-body: 'Quicksand', var(--font-geist-sans);
+  --font-sans: var(--font-body);
+  --font-mono: var(--font-geist-mono);
+
+  /* Core Colors */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+
+  /* HeroTales Brand Colors */
+  --color-periwinkle: #6A89CC;
+  --color-periwinkle-light: #8BA3D9;
+  --color-periwinkle-dark: #4A6DB3;
+  --color-sage: #A1BE95;
+  --color-sage-light: #B8CFAE;
+  --color-sage-dark: #7FA070;
+  --color-coral: #F98866;
+  --color-coral-light: #FAAB94;
+  --color-cream: #FFF2D7;
+  --color-cream-dark: #F5E4C3;
+
+  /* Semantic Colors */
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Large Radius for "Bubbly" Feel */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 8px);
+  --radius-2xl: calc(var(--radius) + 16px);
+  --radius-3xl: calc(var(--radius) + 24px);
+  --radius-4xl: calc(var(--radius) + 32px);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  /* Large base radius for rounded, bubbly components */
+  --radius: 1rem;
+
+  /* Light Mode - Soft, Warm Theme */
+  --background: #FFFBF5;
+  --foreground: #2D3748;
+  --card: rgba(255, 255, 255, 0.8);
+  --card-foreground: #2D3748;
+  --popover: rgba(255, 255, 255, 0.95);
+  --popover-foreground: #2D3748;
+
+  /* Primary = Periwinkle Blue */
+  --primary: #6A89CC;
+  --primary-foreground: #FFFFFF;
+
+  /* Secondary = Soft Sage */
+  --secondary: #A1BE95;
+  --secondary-foreground: #1A202C;
+
+  /* Accent = Coral */
+  --accent: #F98866;
+  --accent-foreground: #FFFFFF;
+
+  --muted: #F7F3ED;
+  --muted-foreground: #718096;
+  --destructive: #E53E3E;
+  --border: rgba(106, 137, 204, 0.2);
+  --input: rgba(106, 137, 204, 0.15);
+  --ring: #6A89CC;
+}
+
+.dark {
+  /* Dark Mode - Cozy Night Theme */
+  --background: #1A1D29;
+  --foreground: #F7FAFC;
+  --card: rgba(45, 55, 72, 0.8);
+  --card-foreground: #F7FAFC;
+  --popover: rgba(45, 55, 72, 0.95);
+  --popover-foreground: #F7FAFC;
+
+  --primary: #8BA3D9;
+  --primary-foreground: #1A202C;
+  --secondary: #B8CFAE;
+  --secondary-foreground: #1A202C;
+  --accent: #FAAB94;
+  --accent-foreground: #1A202C;
+
+  --muted: #2D3748;
+  --muted-foreground: #A0AEC0;
+  --destructive: #FC8181;
+  --border: rgba(139, 163, 217, 0.2);
+  --input: rgba(139, 163, 217, 0.15);
+  --ring: #8BA3D9;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-body);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-heading);
+    @apply font-semibold tracking-tight;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* 
+  Custom Component Classes
+  Using regular CSS classes instead of @apply in @layer components
+  for Tailwind v4 compatibility
+*/
+
+/* Glassmorphism for Parent Mode Dashboard */
+.glass {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow:
+    0 8px 32px rgba(106, 137, 204, 0.1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.dark .glass {
+  background: rgba(26, 29, 41, 0.6);
+}
+
+.glass-card {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow:
+    0 8px 32px rgba(106, 137, 204, 0.1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+}
+
+.dark .glass-card {
+  background: rgba(26, 29, 41, 0.6);
+}
+
+/* Large Touch Targets for Kids */
+.touch-target {
+  min-height: 60px;
+  min-width: 60px;
+  border-radius: 1rem;
+  touch-action: manipulation;
+}
+
+/* Magic Button - For "Generate Story" or CTA */
+.btn-magic {
+  background-color: #F98866;
+  color: white;
+  font-weight: 600;
+  padding: 1rem 2rem;
+  border-radius: 1rem;
+  transform: translateY(0);
+  transition: all 0.3s ease-out;
+  box-shadow: 0 4px 14px rgba(249, 136, 102, 0.3);
+}
+
+.btn-magic:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(249, 136, 102, 0.4);
+}
+
+.btn-magic:active {
+  transform: scale(0.95);
+}
+
+/* Paper Texture Background for Reader Mode */
+.paper-bg {
+  background-color: #FFF2D7;
+  background-image:
+    radial-gradient(circle at 20% 50%, rgba(161, 190, 149, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(106, 137, 204, 0.05) 0%, transparent 50%);
+}
+
+/* Story Card Animation */
+.story-card {
+  border-radius: 1.5rem;
+  overflow: hidden;
+  transition: all 0.5s ease;
+}
+
+.story-card:hover {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-8px);
+}
+
+/* Page Flip Shadow */
+.page-shadow {
+  box-shadow:
+    -4px 0 15px rgba(0, 0, 0, 0.1),
+    4px 0 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Soft Gradient Backgrounds */
+.gradient-soft {
+  background: linear-gradient(135deg,
+      #FFF2D7 0%,
+      #FFF8EE 50%,
+      #F5E4C3 100%);
+}
+
+.gradient-periwinkle {
+  background: linear-gradient(135deg,
+      #8BA3D9 0%,
+      #6A89CC 100%);
+}
+
+.gradient-sage {
+  background: linear-gradient(135deg,
+      #B8CFAE 0%,
+      #A1BE95 100%);
+}
+
+/* Text Gradients */
+.text-gradient {
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  background-image: linear-gradient(135deg, #6A89CC 0%, #F98866 100%);
+}
+
+/* Haptic-ready button feedback */
+.haptic {
+  transition: transform 0.15s ease;
+}
+
+.haptic:active {
+  transform: scale(0.95);
+}
+
+/* Sparkle Animation for Rewards */
+@keyframes sparkle {
+
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0) rotate(0deg);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1) rotate(180deg);
+  }
+}
+
+.sparkle {
+  animation: sparkle 1.5s ease-in-out infinite;
 }
