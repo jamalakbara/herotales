@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Loader2, Trash2, AlertTriangle, Shield, Crown, CreditCard } from "lucide-react";
+import { Loader2, Trash2, AlertTriangle, Shield, Crown, CreditCard, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 import { createClient } from "@/lib/supabase/client";
@@ -22,6 +22,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useSubscription } from "@/hooks/use-subscription";
 import { SubscriptionManageModal } from "@/components/dashboard/subscription-modal";
+
+// Check if subscriptions are enabled (client-side)
+const isSubscriptionEnabled = process.env.NEXT_PUBLIC_APP_ENV === 'development' ||
+  process.env.NEXT_PUBLIC_ENABLE_SUBSCRIPTIONS === 'true';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -127,13 +131,22 @@ export default function SettingsPage() {
                     <CreditCard className="h-4 w-4 mr-2" />
                     Manage
                   </Button>
-                ) : (
+                ) : isSubscriptionEnabled ? (
                   <Button
                     onClick={openCheckout}
                     className="rounded-xl btn-magic"
                   >
                     <Crown className="h-4 w-4 mr-2" />
                     Upgrade
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    disabled
+                    className="rounded-xl opacity-70"
+                  >
+                    <Clock className="h-4 w-4 mr-2" />
+                    Coming Soon
                   </Button>
                 )}
               </div>
