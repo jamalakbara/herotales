@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, X, Home, Volume2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Home, Volume2, Printer } from "lucide-react";
 import confetti from "canvas-confetti";
 
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,8 @@ import { StoryPage } from "./story-page";
 import { ParentalGate } from "./parental-gate";
 import { CompletionCelebration } from "./completion-celebration";
 import { AudioPlayer } from "./audio-player";
+import { PrintModal } from "./print-modal";
+import { triggerHaptic } from "@/lib/haptics";
 import type { StoryContent, ThemeType } from "@/types/database";
 
 interface StoryReaderProps {
@@ -36,6 +38,7 @@ export function StoryReader({
   const [showCompletion, setShowCompletion] = useState(false);
   const [direction, setDirection] = useState(0);
   const [showAudioPlayer, setShowAudioPlayer] = useState(false);
+  const [showPrintModal, setShowPrintModal] = useState(false);
 
   const totalPages = content.chapters.length + 1; // Cover + 5 chapters
 
@@ -67,6 +70,7 @@ export function StoryReader({
   }, []);
 
   const goToNextPage = () => {
+    triggerHaptic("light");
     if (currentPage < totalPages - 1) {
       setDirection(1);
       setCurrentPage((p) => p + 1);
@@ -78,6 +82,7 @@ export function StoryReader({
   };
 
   const goToPrevPage = () => {
+    triggerHaptic("light");
     if (currentPage > 0) {
       setDirection(-1);
       setCurrentPage((p) => p - 1);
@@ -149,19 +154,36 @@ export function StoryReader({
             ))}
           </div>
 
-          {/* Read to Me Toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowAudioPlayer(!showAudioPlayer)}
-            className={`rounded-full backdrop-blur-sm shadow-md transition-colors ${showAudioPlayer
-              ? "bg-periwinkle text-white hover:bg-periwinkle/90"
-              : "bg-white/80 hover:bg-white"
-              }`}
-            title="Read to Me"
-          >
-            <Volume2 className="h-5 w-5" />
-          </Button>
+          {/* Right side action buttons */}
+          <div className="flex items-center gap-2">
+            {/* Read to Me Toggle */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowAudioPlayer(!showAudioPlayer)}
+              className={`rounded-full backdrop-blur-sm shadow-md transition-colors ${showAudioPlayer
+                ? "bg-periwinkle text-white hover:bg-periwinkle/90"
+                : "bg-white/80 hover:bg-white"
+                }`}
+              title="Read to Me"
+            >
+              <Volume2 className="h-5 w-5" />
+            </Button>
+
+            {/* Print Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                triggerHaptic("light");
+                setShowPrintModal(true);
+              }}
+              className="rounded-full bg-white/80 backdrop-blur-sm hover:bg-white shadow-md"
+              title="Print Story"
+            >
+              <Printer className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
 
         {/* Content Area - Scrollable */}
@@ -256,6 +278,14 @@ export function StoryReader({
           onClose={handleCompletionClose}
         />
       )}
+
+      {/* Print Modal */}
+      <PrintModal
+        isOpen={showPrintModal}
+        onClose={() => setShowPrintModal(false)}
+        storyId={storyId}
+        storyTitle={title}
+      />
     </>
   );
 }

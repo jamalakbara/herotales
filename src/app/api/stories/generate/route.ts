@@ -39,6 +39,43 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check subscription and usage limits
+    const FREE_TIER_LIMIT = 3;
+    const currentMonth = new Date().toISOString().slice(0, 7); // '2026-01'
+
+    // Get profile for subscription status
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("subscription_status")
+      .eq("id", user.id)
+      .single();
+
+    const isSubscribed = profile?.subscription_status === "active" ||
+      profile?.subscription_status === "trialing";
+
+    // Get current usage
+    const { data: usage } = await supabase
+      .from("usage_stats")
+      .select("story_count")
+      .eq("user_id", user.id)
+      .eq("month_year", currentMonth)
+      .single();
+
+    const currentUsage = usage?.story_count || 0;
+
+    // Check if user can generate
+    if (!isSubscribed && currentUsage >= FREE_TIER_LIMIT) {
+      return NextResponse.json(
+        {
+          error: "Monthly story limit reached",
+          code: "LIMIT_EXCEEDED",
+          usage: currentUsage,
+          limit: FREE_TIER_LIMIT
+        },
+        { status: 402 }
+      );
+    }
+
     // Fetch child data (with parent verification via RLS)
     const { data: child, error: childError } = await supabase
       .from("children")
@@ -123,6 +160,25 @@ export async function POST(request: NextRequest) {
 
       if (updateError) {
         throw new Error("Failed to update story");
+      }
+
+      // Increment usage count
+      const { data: existingUsage } = await supabase
+        .from("usage_stats")
+        .select("id, story_count")
+        .eq("user_id", user.id)
+        .eq("month_year", currentMonth)
+        .single();
+
+      if (existingUsage) {
+        await supabase
+          .from("usage_stats")
+          .update({ story_count: existingUsage.story_count + 1, updated_at: new Date().toISOString() })
+          .eq("id", existingUsage.id);
+      } else {
+        await supabase
+          .from("usage_stats")
+          .insert({ user_id: user.id, month_year: currentMonth, story_count: 1 });
       }
 
       return NextResponse.json({

@@ -48,7 +48,7 @@ export default function DashboardLayout({
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-cream via-background to-periwinkle/10">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border/50 backdrop-blur-xl bg-background/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

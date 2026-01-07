@@ -205,3 +205,23 @@ export interface ChildWithStories extends Child {
 export interface StoryWithAudio extends Story {
   audio: StoryAudio[];
 }
+
+// Profile types for subscription management
+export interface Profile {
+  id: string;
+  stripe_customer_id: string | null;
+  subscription_status: string;
+  subscription_id: string | null;
+  subscription_end_date: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UsageStats {
+  id: string;
+  user_id: string;
+  month_year: string;
+  story_count: number;
+  created_at: string;
+  updated_at: string;
+}
