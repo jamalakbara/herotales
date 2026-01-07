@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createSnapTransaction } from "@/lib/midtrans/server";
+import { isSubscriptionEnabled } from "@/lib/env";
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if subscriptions are enabled
+    if (!isSubscriptionEnabled()) {
+      return NextResponse.json(
+        { error: "Subscriptions are not available at this time" },
+        { status: 503 }
+      );
+    }
+
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 

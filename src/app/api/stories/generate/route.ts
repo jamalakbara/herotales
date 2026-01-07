@@ -4,6 +4,7 @@ import { generateStoryText } from "@/lib/openai/story-generator";
 import { generateAllChapterImages } from "@/lib/openai/image-generator";
 import { persistAllImages } from "@/lib/supabase/storage";
 import { ThemeType } from "@/types/database";
+import { checkStoryRateLimit, formatRateLimitError } from "@/lib/rate-limit";
 
 export const maxDuration = 300; // 5 minutes for story generation
 
@@ -46,12 +47,17 @@ export async function POST(request: NextRequest) {
     // Get profile for subscription status
     const { data: profile } = await supabase
       .from("profiles")
-      .select("subscription_status")
+      .select("subscription_status, subscription_end_date")
       .eq("id", user.id)
       .single();
 
-    const isSubscribed = profile?.subscription_status === "active" ||
-      profile?.subscription_status === "trialing";
+    // Check if subscription is valid (active, trialing, or cancelled but not expired)
+    const status = profile?.subscription_status || "free";
+    const endDate = profile?.subscription_end_date;
+    const isEndDateValid = endDate ? new Date(endDate) > new Date() : false;
+    const isActive = status === "active" || status === "trialing";
+    const isCancelledButValid = status === "cancelled" && isEndDateValid;
+    const isPro = isActive || isCancelledButValid;
 
     // Get current usage
     const { data: usage } = await supabase
@@ -63,8 +69,8 @@ export async function POST(request: NextRequest) {
 
     const currentUsage = usage?.story_count || 0;
 
-    // Check if user can generate
-    if (!isSubscribed && currentUsage >= FREE_TIER_LIMIT) {
+    // Check monthly limit for free users
+    if (!isPro && currentUsage >= FREE_TIER_LIMIT) {
       return NextResponse.json(
         {
           error: "Monthly story limit reached",
@@ -73,6 +79,25 @@ export async function POST(request: NextRequest) {
           limit: FREE_TIER_LIMIT
         },
         { status: 402 }
+      );
+    }
+
+    // Check rate limits (only in production)
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0] ||
+      request.headers.get("x-real-ip") ||
+      "unknown";
+
+    const rateLimitResult = await checkStoryRateLimit(user.id, ip, isPro);
+
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        formatRateLimitError(rateLimitResult),
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(rateLimitResult.retryAfter || 3600),
+          }
+        }
       );
     }
 
