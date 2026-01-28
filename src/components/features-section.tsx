@@ -48,10 +48,9 @@ export default function FeaturesSection() {
         We need enough scroll space. 
         For 3 cards, let's say we want each to take up roughly a screen height of scrolling.
       */}
-      <div className="h-[200vh] relative">
+      <div className="h-[500vh] relative">
         <div className="sticky top-0 h-screen flex items-center justify-center overflow-hidden">
 
-          {/* Section Header - Fades out as cards pile up */}
           {/* Section Header - Transitioning into depth */}
           <motion.div
             style={{
@@ -88,15 +87,21 @@ export default function FeaturesSection() {
           {/* Cards Container */}
           <div className="w-full max-w-5xl px-4 md:px-8 relative h-[60vh] md:h-[500px] flex flex-col items-center justify-center">
             {features.map((feature, index) => {
-              // Calculate range for each card
-              // 0 to 1 total progress.
-              // range step = 1 / features.length
-              const rangeStep = 1 / features.length;
+              // ANIMATION TIMING FIX:
+              // The next section ("How It Works") overlaps by sliding up -100vh.
+              // To prevent it from covering cards before they finish, we must finish ALL card animations
+              // well before the end of this section's scroll.
+
+              // Total Height: 500vh
+              // Overlap Start (Visual): ~400vh mark
+              // Safe Zone: Finish by 0.75 (375vh)
+
+              const ANIMATION_END_POINT = 0.75;
+              const rangeStep = ANIMATION_END_POINT / features.length;
               const start = index * rangeStep;
               const end = start + rangeStep;
 
               // targetScale: Previous cards scale down slightly as new ones come in
-              // We create a generic range for overall stacking effect
               const targetScale = 1 - (features.length - 1 - index) * 0.05;
 
               return (
