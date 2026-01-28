@@ -144,7 +144,7 @@ export default function Footer() {
           </div>
 
           <div className="flex items-center gap-1 hidden md:flex">
-            Made with <Heart className="w-3 h-3 text-red-400 fill-red-400 animate-pulse" /> in San Francisco
+            Made with <Heart className="w-3 h-3 text-red-400 fill-red-400 animate-pulse" /> in Bandung, Indonesia
           </div>
         </div>
 
