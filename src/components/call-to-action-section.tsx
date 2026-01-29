@@ -10,7 +10,7 @@ export default function CallToActionSection() {
   return (
     <section className="pt-32 pb-64 px-4 relative overflow-hidden min-h-[70vh] flex items-center justify-center">
       {/* Dynamic Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#FFFBF5] to-white -z-20"></div>
+      <div className="absolute inset-0 bg-gradient-to-b from-[#F9886610] via-[#FFF2D7] to-white -z-20"></div>
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-periwinkle/20 via-transparent to-transparent -z-10 blur-3xl opacity-60"></div>
 
       {/* Floating Particles */}
@@ -43,7 +43,7 @@ export default function CallToActionSection() {
           <div className="flex flex-col items-center justify-center">
             <MagneticButton>
               <Link href="/signup">
-                <Button className="h-20 px-12 text-2xl rounded-full bg-slate-900 hover:bg-slate-800 text-white shadow-[0_20px_50px_rgba(0,0,0,0.2)] transition-all hover:shadow-[0_20px_50px_rgba(106,137,204,0.4)] border-2 border-white/10 group relative overflow-hidden">
+                <Button className="h-20 px-12 text-2xl rounded-full bg-gradient-to-r from-[#F98866] to-[#FAAB94] hover:shadow-[0_20px_50px_rgba(249,136,102,0.4)] text-white shadow-[0_20px_50px_rgba(0,0,0,0.1)] transition-all border-2 border-white/20 group relative overflow-hidden">
                   <span className="relative z-10 flex items-center gap-3">
                     Get Started Free
                     <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
@@ -101,15 +101,27 @@ function MagneticButton({ children }: { children: React.ReactNode }) {
 }
 
 function ParticleField() {
-  // Generate random particles
-  const particles = Array.from({ length: 20 }).map((_, i) => ({
-    id: i,
-    x: Math.random() * 100,
-    y: Math.random() * 100,
-    size: Math.random() * 4 + 1,
-    duration: Math.random() * 10 + 10,
-    delay: Math.random() * 5
-  }));
+  const [particles, setParticles] = useState<Array<{
+    id: number;
+    x: number;
+    y: number;
+    size: number;
+    duration: number;
+    delay: number;
+  }>>([]);
+
+  useEffect(() => {
+    // Generate random particles only on the client
+    const newParticles = Array.from({ length: 20 }).map((_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      size: Math.random() * 4 + 1,
+      duration: Math.random() * 10 + 10,
+      delay: Math.random() * 5
+    }));
+    setParticles(newParticles);
+  }, []);
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">

@@ -42,7 +42,7 @@ export default function FeaturesSection() {
   });
 
   return (
-    <section ref={containerRef} className="relative bg-white/30">
+    <section ref={containerRef} className="relative bg-gradient-to-b from-[#F7F3ED] to-[#FFF2D7]">
       {/* 
         Container Height: 
         We need enough scroll space. 
@@ -64,9 +64,9 @@ export default function FeaturesSection() {
             {/* Decorative background glow for header */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] bg-gradient-to-r from-blue-100/30 to-purple-100/30 blur-3xl rounded-full"></div>
 
-            <div className="relative inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-white/60 backdrop-blur-xl border border-white/60 shadow-lg shadow-purple-900/5 mb-8 transform transition-transform duration-300">
-              <Sparkles className="h-4 w-4 text-accent" />
-              <span className="font-heading text-sm font-semibold tracking-wide text-slate-700">The Magic Inside</span>
+            <div className="relative inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-white/60 backdrop-blur-xl border border-[#6A89CC]/30 shadow-lg shadow-purple-900/5 mb-8 transform transition-transform duration-300">
+              <Sparkles className="h-4 w-4 text-[#6A89CC]" />
+              <span className="font-heading text-sm font-semibold tracking-wide text-[#4A6DB3]">The Magic Inside</span>
             </div>
 
             <h2 className="text-5xl md:text-7xl font-bold font-heading mb-6 tracking-tight text-slate-900 drop-shadow-sm">

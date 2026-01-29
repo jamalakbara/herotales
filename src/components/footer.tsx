@@ -32,20 +32,36 @@ export default function Footer() {
         {/* Stars */}
         <motion.div style={{ y: yStars }} className="absolute inset-0 opacity-80">
           {/* Generating static stars for performance */}
-          {[...Array(30)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute bg-white rounded-full animate-pulse"
-              style={{
-                top: `${Math.random() * 60}%`,
-                left: `${Math.random() * 95 + 2.5}%`,
-                width: Math.random() * 2 + 1 + "px",
-                height: Math.random() * 2 + 1 + "px",
-                animationDuration: `${Math.random() * 3 + 2}s`,
-                opacity: Math.random() * 0.7 + 0.3
-              }}
-            />
-          ))}
+          {[...Array(30)].map((_, i) => {
+            // Robust deterministic random values based on index
+            // Using a simple Linear Congruential Generator (LCG) concept for stability across environments
+            // Math.sin can vary between Node and Browser versions.
+            const random = (seed: number) => {
+              // Mix the seed and index
+              let t = (seed * 15485863) ^ (i * 2038074743);
+              // Basic integer hashing tweaks
+              t = t ^ (t >>> 13);
+              t = Math.imul(t, 0x5bd1e995);
+              t = t ^ (t >>> 15);
+              // Normalize to 0-1
+              return ((t >>> 0) % 1000) / 1000;
+            };
+
+            return (
+              <div
+                key={i}
+                className="absolute bg-white rounded-full animate-pulse"
+                style={{
+                  top: `${(random(1) * 60).toFixed(3)}%`,
+                  left: `${(random(2) * 95 + 2.5).toFixed(3)}%`,
+                  width: (random(3) * 2 + 1).toFixed(2) + "px",
+                  height: (random(4) * 2 + 1).toFixed(2) + "px",
+                  animationDuration: `${(random(5) * 3 + 2).toFixed(2)}s`,
+                  opacity: (random(6) * 0.7 + 0.3).toFixed(2)
+                }}
+              />
+            );
+          })}
         </motion.div>
       </div>
 
@@ -72,7 +88,7 @@ export default function Footer() {
         style={{ y: yHillsBack }}
         className="absolute bottom-20 left-0 w-[140%] h-[400px] bg-[#1E293B] rounded-t-[100%] -translate-x-[20%] z-10"
       >
-        <div className="absolute inset-0 opacity-10 mix-blend-overlay bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
+        {/* <div className="absolute inset-0 opacity-10 mix-blend-overlay bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div> */}
       </motion.div>
 
       {/* Front Hill */}
@@ -80,7 +96,7 @@ export default function Footer() {
         style={{ y: yHillsFront }}
         className="absolute -bottom-10 right-0 w-[140%] h-[250px] bg-[#334155] rounded-t-[100%] translate-x-[10%] z-10 shadow-[-10px_-10px_40px_rgba(0,0,0,0.3)]"
       >
-        <div className="absolute inset-0 opacity-10 mix-blend-overlay bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
+        {/* <div className="absolute inset-0 opacity-10 mix-blend-overlay bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div> */}
       </motion.div>
 
 

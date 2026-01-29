@@ -17,11 +17,13 @@ export default function LandingPage() {
         <HeroScrollAnimation />
 
         {/* Overlay Content - Positioned absolutely over the sticky canvas area */}
-        <div className="absolute top-0 left-0 w-full h-screen flex flex-col items-center justify-center text-center pointer-events-none z-10 p-4">
+        <div className="absolute top-0 left-0 w-full h-screen flex flex-col items-center justify-center text-center pointer-events-none z-10 p-4 pb-24">
           <HeroOverlay />
 
-          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce text-white/50">
-            <span className="text-xs uppercase tracking-widest mb-2 block">Scroll to Explore</span>
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-60">
+            <div className="w-[26px] h-[42px] rounded-full border-2 border-white flex justify-center p-2 box-border">
+              <div className="w-1 h-2 bg-white rounded-full animate-bounce" />
+            </div>
           </div>
         </div>
       </section>

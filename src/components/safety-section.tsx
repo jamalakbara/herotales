@@ -45,7 +45,7 @@ export default function SafetySection() {
   return (
     <section
       ref={containerRef}
-      className="relative z-10 -mt-32 pt-48 pb-24 px-4"
+      className="relative z-10 -mt-32 pt-48 pb-24 px-4 bg-gradient-to-b from-[#FFFBF5] to-[#EBF0FA]"
     >
       <motion.div
         style={{ y: parallaxY, opacity: parallaxOpacity }}

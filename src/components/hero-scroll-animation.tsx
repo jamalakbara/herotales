@@ -96,7 +96,7 @@ export default function HeroScrollAnimation() {
 
   return (
     <div ref={containerRef} className="h-[400vh] relative">
-      <div className="sticky top-0 h-screen w-full overflow-hidden bg-black">
+      <div className="sticky top-0 h-screen w-full overflow-hidden bg-[#FFF2D7]">
         <canvas
           ref={canvasRef}
           className="absolute inset-0 w-full h-full object-cover"
@@ -104,9 +104,9 @@ export default function HeroScrollAnimation() {
 
         {/* Loading Indicator */}
         {!loaded && (
-          <div className="absolute inset-0 flex items-center justify-center text-white bg-black z-10">
+          <div className="absolute inset-0 flex items-center justify-center text-periwinkle-dark bg-[#FFF2D7] z-10">
             <div className="flex flex-col items-center gap-4">
-              <div className="w-8 h-8 border-4 border-t-transparent border-white rounded-full animate-spin"></div>
+              <div className="w-8 h-8 border-4 border-t-transparent border-periwinkle rounded-full animate-spin"></div>
               <p className="font-mono text-sm opacity-70">Loading Experience...</p>
             </div>
           </div>
