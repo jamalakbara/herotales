@@ -19,6 +19,7 @@ export function AudioPlayer({ storyId, chapterIndex, isVisible }: AudioPlayerPro
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [currentAttempted, setCurrentAttempted] = useState(false);
 
   // Fetch or generate audio when chapter changes
   useEffect(() => {
@@ -35,11 +36,13 @@ export function AudioPlayer({ storyId, chapterIndex, isVisible }: AudioPlayerPro
       setProgress(0);
     }
     setAudioUrl(null);
+    setCurrentAttempted(false); // Reset attempt flag for new chapter
   }, [chapterIndex]);
 
   const fetchAudio = async () => {
     setIsLoading(true);
     setError(null);
+    setCurrentAttempted(true); // Mark that we've attempted to load audio
 
     try {
       const response = await fetch(`/api/stories/${storyId}/narrate`, {
@@ -49,7 +52,14 @@ export function AudioPlayer({ storyId, chapterIndex, isVisible }: AudioPlayerPro
       });
 
       if (!response.ok) {
-        throw new Error("Failed to generate audio");
+        // Get error details from response
+        const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
+        console.error("Audio generation failed:", {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData
+        });
+        throw new Error(errorData.error || "Failed to generate audio");
       }
 
       const data = await response.json();
@@ -57,7 +67,9 @@ export function AudioPlayer({ storyId, chapterIndex, isVisible }: AudioPlayerPro
       setDuration(data.duration || 0);
     } catch (err) {
       console.error("Audio fetch error:", err);
-      setError("Unable to load audio");
+      // Only set error if it's not a cover page (chapter 0)
+      // For now, silently fail to not disrupt the reading experience
+      setError(null); // Changed from "Unable to load audio" to null for graceful degradation
     } finally {
       setIsLoading(false);
     }
@@ -92,7 +104,11 @@ export function AudioPlayer({ storyId, chapterIndex, isVisible }: AudioPlayerPro
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  if (!isVisible) return null;
+  // Hide player if not visible or if loading failed (attempted but no audio)
+  // Keep visible during initial load and while playing
+  if (!isVisible || (!isLoading && !audioUrl && currentAttempted)) {
+    return null;
+  }
 
   return (
     <AnimatePresence>
