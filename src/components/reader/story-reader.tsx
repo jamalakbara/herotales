@@ -217,7 +217,7 @@ export function StoryReader({
           <div className="pointer-events-auto">
             <AudioPlayer
               storyId={storyId}
-              chapterIndex={currentPage}
+              chapterIndex={currentPage - 1}
               isVisible={!isCover}
             />
           </div>
@@ -241,10 +241,10 @@ export function StoryReader({
                 <motion.div
                   key={i}
                   className={`w-2 h-2 rounded-full transition-all duration-300 ${i === currentPage
-                      ? "bg-periwinkle w-6"
-                      : i < currentPage
-                        ? "bg-periwinkle/40"
-                        : "bg-neutral-300"
+                    ? "bg-periwinkle w-6"
+                    : i < currentPage
+                      ? "bg-periwinkle/40"
+                      : "bg-neutral-300"
                     }`}
                   whileHover={{ scale: 1.2 }}
                 />

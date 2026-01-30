@@ -16,12 +16,11 @@ export default async function StoriesPage() {
     redirect("/login");
   }
 
-  // Fetch all stories with child info
+  // Fetch all stories with child info (including generating ones)
   const { data: stories } = await supabase
     .from("stories")
     .select("*, children!inner(nickname, parent_id)")
     .eq("children.parent_id", user.id)
-    .eq("is_published", true)
     .order("created_at", { ascending: false });
 
   return <StoriesClientView stories={stories || []} />;

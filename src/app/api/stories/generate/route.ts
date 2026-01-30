@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { generateStoryText } from "@/lib/openai/story-generator";
-import { generateAllChapterImages } from "@/lib/openai/image-generator";
-import { persistAllImages } from "@/lib/supabase/storage";
 import { ThemeType } from "@/types/database";
 import { checkStoryRateLimit, formatRateLimitError } from "@/lib/rate-limit";
+import { inngest } from "@/inngest/client";
 
-export const maxDuration = 300; // 5 minutes for story generation
+// Reduced max duration since we're just triggering a job now
+export const maxDuration = 30;
 
 interface GenerateRequestBody {
   childId: string;
@@ -42,7 +41,7 @@ export async function POST(request: NextRequest) {
 
     // Check subscription and usage limits
     const FREE_TIER_LIMIT = 3;
-    const currentMonth = new Date().toISOString().slice(0, 7); // '2026-01'
+    const currentMonth = new Date().toISOString().slice(0, 7);
 
     // Get profile for subscription status
     const { data: profile } = await supabase
@@ -51,7 +50,7 @@ export async function POST(request: NextRequest) {
       .eq("id", user.id)
       .single();
 
-    // Check if subscription is valid (active, trialing, or cancelled but not expired)
+    // Check if subscription is valid
     const status = profile?.subscription_status || "free";
     const endDate = profile?.subscription_end_date;
     const isEndDateValid = endDate ? new Date(endDate) > new Date() : false;
@@ -82,7 +81,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check rate limits (only in production)
+    // Check rate limits
     const ip = request.headers.get("x-forwarded-for")?.split(",")[0] ||
       request.headers.get("x-real-ip") ||
       "unknown";
@@ -101,7 +100,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Fetch child data (with parent verification via RLS)
+    // Verify child exists and user has access (via RLS)
     const { data: child, error: childError } = await supabase
       .from("children")
       .select("*")
@@ -115,7 +114,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create story record (placeholder)
+    // Create story record with pending status
     const { data: story, error: storyError } = await supabase
       .from("stories")
       .insert({
@@ -123,6 +122,8 @@ export async function POST(request: NextRequest) {
         theme,
         title: "Generating...",
         is_published: false,
+        generation_status: "pending",
+        progress: 0,
       })
       .select()
       .single();
@@ -134,91 +135,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Trigger background job via Inngest
     try {
-      // Step 1: Generate story text with GPT-4o-mini
-      const storyContent = await generateStoryText({
-        childName: child.nickname,
-        childAge: child.age_group,
-        characterDescription: child.character_description || "",
-        theme: theme as ThemeType,
+      await inngest.send({
+        name: "story.generation.requested",
+        data: {
+          storyId: story.id,
+          childId,
+          theme,
+          userId: user.id,
+        },
       });
 
-      // Step 2: Generate images for each chapter with DALL-E 3
-      const generatedImages = await generateAllChapterImages(
-        storyContent.chapters.map((ch) => ({ imagePrompt: ch.imagePrompt || "" })),
-        child.nickname,
-        child.character_description || "",
-        child.gender || "boy",
-        child.age_group
-      );
-
-      // Step 3: Persist images to Supabase Storage
-      const persistedImageUrls = await persistAllImages(
-        generatedImages,
-        story.id
-      );
-
-      // Step 4: Save story images to database
-      const imageInserts = persistedImageUrls.map((url, index) => ({
-        story_id: story.id,
-        chapter_index: index + 1,
-        image_url: url,
-        openai_gen_id: null, // Could store gen_id for tracking
-      }));
-
-      const { error: imagesError } = await supabase
-        .from("story_images")
-        .insert(imageInserts);
-
-      if (imagesError) {
-        console.error("Error saving images:", imagesError);
-      }
-
-      // Step 5: Update story with full content
-      const { error: updateError } = await supabase
-        .from("stories")
-        .update({
-          title: storyContent.title,
-          full_story_json: storyContent,
-          is_published: true,
-        })
-        .eq("id", story.id);
-
-      if (updateError) {
-        throw new Error("Failed to update story");
-      }
-
-      // Increment usage count
-      const { data: existingUsage } = await supabase
-        .from("usage_stats")
-        .select("id, story_count")
-        .eq("user_id", user.id)
-        .eq("month_year", currentMonth)
-        .single();
-
-      if (existingUsage) {
-        await supabase
-          .from("usage_stats")
-          .update({ story_count: existingUsage.story_count + 1, updated_at: new Date().toISOString() })
-          .eq("id", existingUsage.id);
-      } else {
-        await supabase
-          .from("usage_stats")
-          .insert({ user_id: user.id, month_year: currentMonth, story_count: 1 });
-      }
-
+      // Return immediately with story ID
       return NextResponse.json({
         success: true,
         storyId: story.id,
-        title: storyContent.title,
+        status: "pending",
       });
-    } catch (generationError) {
-      // Clean up failed story
+    } catch (inngestError) {
+      // Clean up story if job trigger fails
       await supabase.from("stories").delete().eq("id", story.id);
 
-      console.error("Story generation error:", generationError);
+      console.error("Failed to trigger background job:", inngestError);
       return NextResponse.json(
-        { error: "Failed to generate story. Please try again." },
+        { error: "Failed to start story generation. Please try again." },
         { status: 500 }
       );
     }

@@ -105,7 +105,7 @@ export default function NewStoryPage() {
     }
 
     setIsLoading(true);
-    setGenerationStep("Crafting your magical tale...");
+    setGenerationStep("Starting generation...");
 
     try {
       const response = await fetch("/api/stories/generate", {
@@ -128,8 +128,9 @@ export default function NewStoryPage() {
         return;
       }
 
-      toast.success("Story created successfully! ✨");
-      router.push(`/reader/${data.storyId}`);
+      // Redirect to progress page instead of waiting
+      toast.success("Story generation started! ✨");
+      router.push(`/dashboard/stories/generating/${data.storyId}`);
     } catch {
       toast.error("Something went wrong. Please try again.");
     } finally {
@@ -226,8 +227,8 @@ export default function NewStoryPage() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 className={`relative p-6 rounded-2xl border-2 transition-all text-left group ${selectedChild === child.id
-                    ? "border-periwinkle bg-periwinkle/10 shadow-lg shadow-periwinkle/10"
-                    : "border-white/50 bg-white/40 hover:border-periwinkle/30 hover:bg-white/60"
+                  ? "border-periwinkle bg-periwinkle/10 shadow-lg shadow-periwinkle/10"
+                  : "border-white/50 bg-white/40 hover:border-periwinkle/30 hover:bg-white/60"
                   }`}
               >
                 <div className="flex items-center gap-4">
@@ -273,8 +274,8 @@ export default function NewStoryPage() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 className={`relative p-6 rounded-2xl border-2 transition-all text-left group overflow-hidden ${isSelected
-                    ? `${colors.border} ${colors.bg} shadow-lg ${colors.glow}`
-                    : "border-white/50 bg-white/40 hover:border-white/70 hover:bg-white/60"
+                  ? `${colors.border} ${colors.bg} shadow-lg ${colors.glow}`
+                  : "border-white/50 bg-white/40 hover:border-white/70 hover:bg-white/60"
                   }`}
               >
                 {/* Background glow on hover */}
