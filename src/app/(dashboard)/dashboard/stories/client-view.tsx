@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Plus, BookOpen, Sparkles, ChevronRight, Library } from "lucide-react";
+import { Plus, BookOpen, Sparkles, ChevronRight, Library, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TiltCard } from "@/components/ui/tilt-card";
 import { THEME_ICONS, ThemeType } from "@/types/database";
@@ -108,12 +108,12 @@ export default function StoriesClientView({ stories }: StoriesClientViewProps) {
         </div>
 
         <Link href="/dashboard/stories/new">
-          <Button className="btn-magic h-14 pl-8 pr-16 text-lg rounded-2xl relative overflow-hidden group shadow-lg shadow-primary/20">
+          <Button className="btn-magic h-16 pl-8 pr-20 text-lg rounded-2xl relative overflow-hidden group">
             <span className="relative z-10 flex items-center gap-2">
-              <Plus className="h-5 w-5" /> New Story
+              Create Magic <Wand2 className="h-5 w-5" />
             </span>
-            <span className="absolute right-0 top-0 h-full w-12 bg-white/20 -skew-x-12 translate-x-14 group-hover:translate-x-0 transition-transform duration-500 ease-out flex items-center justify-center">
-              <ChevronRight className="h-5 w-5" />
+            <span className="absolute right-0 top-0 h-full w-14 bg-white/20 -skew-x-12 translate-x-16 group-hover:translate-x-0 transition-transform duration-500 ease-out flex items-center justify-center">
+              <ChevronRight className="h-6 w-6" />
             </span>
           </Button>
         </Link>

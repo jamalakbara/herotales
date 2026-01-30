@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Plus, Users, Sparkles, Smile, Crown } from "lucide-react";
+import { Plus, Users, Sparkles, Smile, Crown, Wand2, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TiltCard } from "@/components/ui/tilt-card";
 
@@ -64,9 +64,13 @@ export default function ChildrenClientView({ childrenData }: ChildrenClientViewP
           </p>
         </div>
         <Link href="/dashboard/children/new">
-          <Button className="btn-magic h-14 px-8 text-lg rounded-2xl shadow-lg shadow-primary/20 hover:shadow-primary/40">
-            <Plus className="h-5 w-5 mr-2" />
-            Add Another Hero
+          <Button className="btn-magic h-16 pl-8 pr-20 text-lg rounded-2xl relative overflow-hidden group">
+            <span className="relative z-10 flex items-center gap-2">
+              Add Another Hero <Wand2 className="h-5 w-5" />
+            </span>
+            <span className="absolute right-0 top-0 h-full w-14 bg-white/20 -skew-x-12 translate-x-16 group-hover:translate-x-0 transition-transform duration-500 ease-out flex items-center justify-center">
+              <ChevronRight className="h-6 w-6" />
+            </span>
           </Button>
         </Link>
       </motion.div>

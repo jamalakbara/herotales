@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   ArrowLeft,
   Sparkles,
@@ -14,12 +14,13 @@ import {
   Clock,
   Mountain,
   Gem,
+  Wand2,
+  ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -29,7 +30,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { StoryLoading } from "@/components/shared/story-loading";
-import { ThemeType, THEME_LABELS, Child } from "@/types/database";
+import { ThemeType, Child } from "@/types/database";
 
 const themeCards: Array<{
   value: ThemeType;
@@ -37,6 +38,7 @@ const themeCards: Array<{
   description: string;
   icon: typeof Shield;
   color: string;
+  bgGlow: string;
 }> = [
     {
       value: "bravery",
@@ -44,6 +46,7 @@ const themeCards: Array<{
       description: "Overcoming fear and facing challenges",
       icon: Shield,
       color: "from-amber-400 to-orange-500",
+      bgGlow: "bg-amber-500/20",
     },
     {
       value: "honesty",
@@ -51,6 +54,7 @@ const themeCards: Array<{
       description: "Telling the truth and being accountable",
       icon: Gem,
       color: "from-blue-400 to-indigo-500",
+      bgGlow: "bg-blue-500/20",
     },
     {
       value: "patience",
@@ -58,6 +62,7 @@ const themeCards: Array<{
       description: "Waiting and understanding growth takes time",
       icon: Clock,
       color: "from-green-400 to-emerald-500",
+      bgGlow: "bg-green-500/20",
     },
     {
       value: "kindness",
@@ -65,6 +70,7 @@ const themeCards: Array<{
       description: "Empathy and helping others",
       icon: Heart,
       color: "from-pink-400 to-rose-500",
+      bgGlow: "bg-pink-500/20",
     },
     {
       value: "persistence",
@@ -72,8 +78,34 @@ const themeCards: Array<{
       description: "Not giving up when things get hard",
       icon: Mountain,
       color: "from-purple-400 to-violet-500",
+      bgGlow: "bg-purple-500/20",
     },
   ];
+
+const container = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.08,
+      delayChildren: 0.1,
+    },
+  },
+};
+
+const item = {
+  hidden: { opacity: 0, y: 30, filter: "blur(4px)" },
+  show: {
+    opacity: 1,
+    y: 0,
+    filter: "blur(0px)",
+    transition: {
+      type: "spring" as const,
+      stiffness: 80,
+      damping: 15
+    }
+  },
+};
 
 function NewStoryForm() {
   const router = useRouter();
@@ -158,163 +190,251 @@ function NewStoryForm() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <motion.div
+      variants={container}
+      initial="hidden"
+      animate="show"
+      className="relative min-h-[80vh] flex flex-col justify-center max-w-4xl mx-auto py-8"
+    >
+      {/* Background Ambience */}
+      <div className="absolute top-[-10%] left-[-20%] w-[50%] h-[50%] bg-periwinkle/15 rounded-full blur-[120px] -z-10 animate-pulse" />
+      <div className="absolute top-[30%] right-[-15%] w-[40%] h-[40%] bg-coral/15 rounded-full blur-[100px] -z-10 animate-pulse delay-700" />
+      <div className="absolute bottom-[-5%] left-[30%] w-[35%] h-[35%] bg-sage/10 rounded-full blur-[90px] -z-10 animate-pulse delay-300" />
+
       {/* Back Link */}
-      <Link
-        href="/dashboard"
-        className="inline-flex items-center text-muted-foreground hover:text-foreground mb-6 transition-colors"
-      >
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Back to dashboard
-      </Link>
+      <motion.div variants={item}>
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-all group"
+        >
+          <span className="h-8 w-8 rounded-full bg-white/60 backdrop-blur-sm border border-white/40 flex items-center justify-center group-hover:-translate-x-1 transition-transform">
+            <ArrowLeft className="h-4 w-4" />
+          </span>
+          <span className="text-sm font-medium">Back to dashboard</span>
+        </Link>
+      </motion.div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl gradient-periwinkle mb-4">
-            <Sparkles className="h-8 w-8 text-white" />
+      {/* Header Section */}
+      <motion.div variants={item} className="mb-10">
+        <motion.div
+          initial={{ width: 0, opacity: 0 }}
+          animate={{ width: "auto", opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/40 border border-white/40 backdrop-blur-xl text-sm font-medium text-muted-foreground mb-5 shadow-sm"
+        >
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-periwinkle opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-periwinkle"></span>
+          </span>
+          <span>Story Workshop Active</span>
+        </motion.div>
+
+        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground leading-[1.1] mb-4">
+          Craft a <br />
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-periwinkle via-coral to-periwinkle bg-[length:200%_auto] animate-gradient">
+            Magical Tale
+          </span>
+        </h1>
+        <p className="text-lg text-muted-foreground max-w-lg">
+          Select your hero and choose a timeless lesson. Watch as AI weaves them into an unforgettable adventure.
+        </p>
+      </motion.div>
+
+      {/* No children state */}
+      {!isLoading && children.length === 0 && (
+        <motion.div
+          variants={item}
+          className="glass-card p-12 border-white/50 bg-gradient-to-br from-white/80 to-white/40 rounded-3xl text-center relative overflow-hidden"
+        >
+          <div className="absolute right-[-30px] top-[-30px] opacity-5 pointer-events-none">
+            <BookOpen size={180} strokeWidth={1} />
           </div>
-          <h1 className="text-3xl font-bold">Create a New Story</h1>
-          <p className="text-muted-foreground mt-2">
-            Choose a hero and a lesson for today&apos;s adventure
-          </p>
-        </div>
-
-        {/* No children state */}
-        {!isLoading && children.length === 0 && (
-          <Card className="glass-card border-0 text-center py-12">
-            <CardContent>
-              <BookOpen className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">No heroes yet</h3>
-              <p className="text-muted-foreground mb-4">
-                Add a child profile before creating a story
-              </p>
-              <Link href="/dashboard/children/new">
-                <Button className="btn-magic">Add Your First Hero</Button>
-              </Link>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Story Configuration */}
-        {children.length > 0 && (
-          <div className="space-y-8">
-            {/* Step 1: Select Child */}
-            <div className="space-y-3">
-              <Label className="text-lg font-semibold flex items-center gap-2">
-                <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-primary text-white text-sm font-bold">
-                  1
-                </span>
-                Choose Your Hero
-              </Label>
-              <Select
-                value={selectedChildId}
-                onValueChange={setSelectedChildId}
-              >
-                <SelectTrigger className="h-14 rounded-xl bg-white/50 text-lg">
-                  <SelectValue placeholder="Select a child" />
-                </SelectTrigger>
-                <SelectContent>
-                  {children.map((child) => (
-                    <SelectItem key={child.id} value={child.id}>
-                      <span className="flex items-center gap-2">
-                        <span className="text-xl">
-                          {child.nickname.charAt(0).toUpperCase()}
-                        </span>
-                        <span>
-                          {child.nickname} ({child.age_group} years old)
-                        </span>
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="relative z-10">
+            <div className="h-20 w-20 rounded-3xl bg-muted/20 flex items-center justify-center mx-auto mb-6">
+              <BookOpen className="h-10 w-10 text-muted-foreground/50" />
             </div>
+            <h3 className="text-2xl font-bold mb-2">No Heroes Yet</h3>
+            <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
+              Every story needs a hero. Create a child profile to begin your journey.
+            </p>
+            <Link href="/dashboard/children/new">
+              <Button className="btn-magic h-14 px-8 rounded-2xl text-lg">
+                <Sparkles className="h-5 w-5 mr-2" />
+                Add Your First Hero
+              </Button>
+            </Link>
+          </div>
+        </motion.div>
+      )}
 
-            {/* Step 2: Select Theme */}
-            <div className="space-y-3">
-              <Label className="text-lg font-semibold flex items-center gap-2">
-                <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-primary text-white text-sm font-bold">
-                  2
-                </span>
-                Choose Today&apos;s Lesson
-              </Label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {themeCards.map((theme) => (
-                  <motion.button
-                    key={theme.value}
-                    type="button"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => setSelectedTheme(theme.value)}
-                    className={`
-                      p-4 rounded-2xl text-left transition-all border-2
-                      ${selectedTheme === theme.value
-                        ? "border-primary bg-primary/10 shadow-lg"
-                        : "border-transparent bg-white/50 hover:bg-white/80"
-                      }
-                    `}
-                  >
+      {/* Story Configuration */}
+      {children.length > 0 && (
+        <div className="space-y-10">
+          {/* Step 1: Select Child */}
+          <motion.div variants={item} className="space-y-4">
+            <Label className="text-lg font-semibold flex items-center gap-3">
+              <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-br from-periwinkle to-periwinkle/80 text-white text-sm font-bold shadow-lg shadow-periwinkle/20">
+                1
+              </span>
+              <span>Choose Your Hero</span>
+            </Label>
+            <Select
+              value={selectedChildId}
+              onValueChange={setSelectedChildId}
+            >
+              <SelectTrigger className="h-16 rounded-2xl bg-white/60 border-white/60 backdrop-blur-sm text-lg focus:border-periwinkle/50 focus:ring-periwinkle/20">
+                <SelectValue placeholder="Select a hero for this story" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                {children.map((child) => (
+                  <SelectItem key={child.id} value={child.id} className="py-3">
+                    <span className="flex items-center gap-3">
+                      <span className="h-8 w-8 rounded-full bg-gradient-to-br from-periwinkle/20 to-coral/20 flex items-center justify-center text-sm font-bold">
+                        {child.nickname.charAt(0).toUpperCase()}
+                      </span>
+                      <span className="font-medium">
+                        {child.nickname}
+                      </span>
+                      <span className="text-muted-foreground">
+                        • {child.age_group} years old
+                      </span>
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </motion.div>
+
+          {/* Step 2: Select Theme */}
+          <motion.div variants={item} className="space-y-4">
+            <Label className="text-lg font-semibold flex items-center gap-3">
+              <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-br from-coral to-coral/80 text-white text-sm font-bold shadow-lg shadow-coral/20">
+                2
+              </span>
+              <span>Choose Today&apos;s Lesson</span>
+            </Label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {themeCards.map((theme, index) => (
+                <motion.button
+                  key={theme.value}
+                  type="button"
+                  variants={item}
+                  whileHover={{ scale: 1.03, y: -4 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setSelectedTheme(theme.value)}
+                  className={`
+                    relative p-6 rounded-3xl text-left transition-all border-2 overflow-hidden group
+                    ${selectedTheme === theme.value
+                      ? "border-foreground/20 bg-white/80 shadow-2xl"
+                      : "border-white/40 bg-white/40 hover:bg-white/60 hover:border-white/60"
+                    }
+                  `}
+                >
+                  {/* Glow effect on selection */}
+                  {selectedTheme === theme.value && (
+                    <div className={`absolute inset-0 ${theme.bgGlow} blur-xl opacity-50`} />
+                  )}
+
+                  <div className="relative z-10">
                     <div
                       className={`
-                      inline-flex items-center justify-center w-12 h-12 rounded-xl mb-3
-                      bg-gradient-to-br ${theme.color}
-                    `}
+                        inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4
+                        bg-gradient-to-br ${theme.color}
+                        shadow-lg transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-300
+                      `}
+                      style={{
+                        boxShadow: selectedTheme === theme.value
+                          ? `0 10px 40px -10px rgba(0,0,0,0.3)`
+                          : undefined
+                      }}
                     >
-                      <theme.icon className="h-6 w-6 text-white" />
+                      <theme.icon className="h-7 w-7 text-white" />
                     </div>
-                    <h3 className="font-bold text-lg">{theme.label}</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <h3 className="font-bold text-xl mb-1">{theme.label}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
                       {theme.description}
                     </p>
-                  </motion.button>
-                ))}
-              </div>
-            </div>
+                  </div>
 
-            {/* Generate Button */}
+                  {/* Selection indicator */}
+                  {selectedTheme === theme.value && (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="absolute top-4 right-4 h-6 w-6 rounded-full bg-foreground text-white flex items-center justify-center"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </motion.div>
+                  )}
+                </motion.button>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Generate Button */}
+          <motion.div
+            variants={item}
+            className="pt-6"
+          >
+            <Button
+              onClick={handleGenerate}
+              disabled={!selectedChildId || !selectedTheme || isGenerating}
+              className={`
+                w-full h-20 rounded-3xl text-xl font-bold relative overflow-hidden group
+                ${selectedChildId && selectedTheme
+                  ? "btn-magic"
+                  : "bg-muted text-muted-foreground cursor-not-allowed"
+                }
+              `}
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="h-7 w-7 animate-spin mr-3" />
+                  Weaving Magic...
+                </>
+              ) : (
+                <>
+                  <span className="relative z-10 flex items-center gap-3">
+                    <Wand2 className="h-6 w-6" />
+                    Generate Story
+                  </span>
+                  <span className="absolute right-0 top-0 h-full w-20 bg-white/20 -skew-x-12 translate-x-24 group-hover:translate-x-0 transition-transform duration-500 ease-out flex items-center justify-center">
+                    <ChevronRight className="h-8 w-8" />
+                  </span>
+                  <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                </>
+              )}
+            </Button>
+
+            {/* Helper text */}
             <motion.div
               initial={{ opacity: 0 }}
-              animate={{ opacity: selectedChildId && selectedTheme ? 1 : 0.5 }}
-              className="pt-4"
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+              className="flex items-center justify-center gap-2 mt-4 text-sm text-muted-foreground"
             >
-              <Button
-                onClick={handleGenerate}
-                disabled={!selectedChildId || !selectedTheme || isGenerating}
-                className="w-full h-16 rounded-2xl btn-magic text-xl font-bold"
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="h-6 w-6 animate-spin mr-3" />
-                    Creating Magic...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-6 w-6 mr-3" />
-                    Generate Story
-                  </>
-                )}
-              </Button>
-              <p className="text-center text-sm text-muted-foreground mt-3">
-                ⏱️ Story generation takes about 2-3 minutes
-              </p>
+              <span className="h-6 w-6 rounded-full bg-white/60 backdrop-blur-sm flex items-center justify-center text-xs">⏱️</span>
+              <span>Story generation takes about 2-3 minutes</span>
             </motion.div>
-          </div>
-        )}
-      </motion.div>
-    </div>
+          </motion.div>
+        </div>
+      )}
+    </motion.div>
   );
 }
 
 export default function NewStoryPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-[50vh] flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-[80vh] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-12 w-12 rounded-2xl bg-periwinkle/20 flex items-center justify-center">
+            <Loader2 className="h-6 w-6 animate-spin text-periwinkle" />
+          </div>
+          <p className="text-sm text-muted-foreground">Loading story workshop...</p>
+        </div>
       </div>
     }>
       <NewStoryForm />

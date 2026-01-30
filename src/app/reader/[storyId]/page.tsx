@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
-import { StoryReader } from "@/components/reader/story-reader";
+import { StoryReader } from "@/components/reader";
 import type { StoryContent } from "@/types/database";
 
 // Prevent static pre-rendering since we need auth
