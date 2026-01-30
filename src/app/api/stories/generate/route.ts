@@ -148,7 +148,8 @@ export async function POST(request: NextRequest) {
         storyContent.chapters.map((ch) => ({ imagePrompt: ch.imagePrompt || "" })),
         child.nickname,
         child.character_description || "",
-        child.gender || "boy"
+        child.gender || "boy",
+        child.age_group
       );
 
       // Step 3: Persist images to Supabase Storage
