@@ -12,6 +12,7 @@ interface GenerateImageParams {
   characterDescription: string;
   chapterIndex?: number;
   gender?: "boy" | "girl";
+  age?: number;
 }
 
 interface GeneratedImage {
@@ -19,50 +20,92 @@ interface GeneratedImage {
   revisedPrompt: string;
 }
 
-// Consistent style guide for all story images - emphasizes character consistency
+// Whimsical storybook art style - warm, nostalgic, high-end children's literature
 const STYLE_GUIDE = `
-CRITICAL CONSISTENCY REQUIREMENTS:
-- This is part of a children's storybook series with the SAME main character across all images
-- The main character MUST look IDENTICAL in every image (same outfit, same hair, same features)
-- Use a SIMPLE, ICONIC cartoon design that's easy to replicate consistently
+ARTISTIC STYLE (Whimsical Storybook):
+Blend digital painting with traditional textures. Warm, nostalgic atmosphere reminiscent of modern high-end children's literature.
 
-Art Style:
-- Studio Ghibli meets Pixar aesthetic
-- Soft, dreamy watercolor background with crisp cartoon character in foreground
-- Muted, harmonious color palette (avoid neon or garish colors)
-- Round, friendly character proportions
+TEXTURE AND MEDIA:
+- Grainy, stippled texture throughout (especially sky and foliage)
+- Tactile, paper-like quality that softens digital edges
+- Visible brushstrokes mimicking gouache or colored pencils
 
-Technical Requirements:
-- Do NOT include any text, words, or letters in the image
-- Character should be clearly visible and centered
+COLOR PALETTE:
+- Muted, earthy color story
+- Dominated by sage greens, dusty ochres, and soft blues
+- Desaturated, warm tones for cozy, gentle mood
+- NOT high-energy cartoon colors
+
+LINEWORK:
+- NO harsh black outlines
+- Line-less painting or very soft colored line art
+- Forms defined by color and value shifts, not outlines
+- Seamless, painterly look
+
+ENVIRONMENT AND LIGHTING:
+- Softly focused, atmospheric backgrounds
+- Trees as large textured masses (not individual leaves)
+- Light and shadow to imply volume
+- Diffused lighting with soft glow
+- Airy and bright scene atmosphere
+
+TECHNICAL REQUIREMENTS:
+- Do NOT include any text, words, or letters
+- Character clearly visible and centered
 - Warm, inviting lighting throughout
 `;
 
-// Create a VERY specific character template for consistency based on gender
-function createConsistentCharacterTemplate(name: string, gender: "boy" | "girl" = "boy"): string {
-  if (gender === "girl") {
-    return `
-MAIN CHARACTER (must be IDENTICAL in every scene):
+// Create character template using actual user-configured appearance
+function createConsistentCharacterTemplate(
+  name: string,
+  gender: "boy" | "girl" = "boy",
+  age: number = 5,
+  userDescription: string = ""
+): string {
+  // Age-appropriate proportions
+  const ageAppearance = age <= 4
+    ? "toddler proportions with very round face and chubby cheeks"
+    : age <= 7
+      ? "young child proportions with round face and soft features"
+      : "older child with slightly more defined features but still youthful";
+
+  // Parse user description or use defaults
+  const hasUserDesc = userDescription && userDescription.length > 10;
+
+  // Base character design following storybook style
+  const baseDesign = `
+CHARACTER DESIGN (MUST be IDENTICAL in every scene):
 - Name: ${name}
-- A young girl with a ROUND FACE, BIG SPARKLY EYES, and ROSY CHEEKS
-- LONG BROWN HAIR in two pigtails with pink ribbons
-- Wearing a PURPLE DRESS with a YELLOW CARDIGAN (SAME OUTFIT ALWAYS)
-- Small, friendly smile
-- Simple cartoon style with clean lines
-- Approximately 5-6 years old appearance
+- ${age} years old ${gender === "girl" ? "girl" : "boy"}
+- ${ageAppearance}
+
+STORYBOOK CHARACTER STYLE:
+- Stylized, simplified proportions with large head
+- Minimal facial features: simple dots for eyes, thin line for mouth
+- Rosy, textured cheeks
+- Organic, rounded forms - NO sharp angles
+`;
+
+  if (hasUserDesc) {
+    // Use user's configured appearance from CharacterBuilder
+    return `${baseDesign}
+APPEARANCE (configured by parent):
+${userDescription}
 `;
   }
 
-  // Default boy template
-  return `
-MAIN CHARACTER (must be IDENTICAL in every scene):
-- Name: ${name}
-- A young boy with a ROUND FACE, BIG SPARKLY EYES, and ROSY CHEEKS
-- SHORT BROWN HAIR in a simple messy style
-- Wearing a BRIGHT RED HOODIE and BLUE JEANS (SAME OUTFIT ALWAYS)
-- Small, friendly smile
-- Simple cartoon style with clean lines
-- Approximately 5-6 years old appearance
+  // Default appearance based on gender if no user description
+  const defaultAppearance = gender === "girl"
+    ? `- Soft wavy hair with warm brown tones
+- Wearing a cozy sage green dress with cream cardigan
+- Gentle, kind expression`
+    : `- Tousled hair with warm brown tones  
+- Wearing a soft ochre sweater with comfortable pants
+- Curious, friendly expression`;
+
+  return `${baseDesign}
+APPEARANCE:
+${defaultAppearance}
 `;
 }
 
@@ -114,27 +157,43 @@ function sanitizePrompt(prompt: string): string {
 
 /**
  * Create a completely safe, children's book appropriate prompt
+ * Using whimsical storybook art style with user's character configuration
  */
 function createSafeIllustrationPrompt(
   sceneDescription: string,
   childName: string,
   gender: "boy" | "girl",
-  chapterIndex: number
+  chapterIndex: number,
+  age: number = 5,
+  characterDescription: string = ""
 ): string {
   const safeScene = sanitizePrompt(sceneDescription);
 
-  const genderTerms = gender === "girl"
-    ? { pronoun: "she", adjective: "her", outfit: "purple dress and yellow cardigan", hair: "brown pigtails" }
-    : { pronoun: "he", adjective: "his", outfit: "red hoodie and blue jeans", hair: "short brown hair" };
+  // Get the character template with user's configured appearance
+  const characterTemplate = createConsistentCharacterTemplate(
+    childName,
+    gender,
+    age,
+    characterDescription
+  );
 
-  // Create a very safe, generic children's book prompt
-  return `Children's storybook illustration in watercolor style.
+  // Create storybook-style prompt with exact style requirements
+  return `Whimsical children's storybook illustration.
 
-A happy ${gender === "girl" ? "girl" : "boy"} character with a round face, big friendly eyes, rosy cheeks, and ${genderTerms.hair}, wearing ${genderTerms.outfit}.
+${STYLE_GUIDE}
 
-Scene: ${safeScene}
+${characterTemplate}
 
-Style: Soft, dreamy Pixar-Ghibli hybrid art style. Warm, inviting colors. Friendly and magical atmosphere. Simple cartoon character design. No text or words in the image. Suitable for young children ages 3-8.`;
+SCENE (Chapter ${chapterIndex}):
+${safeScene}
+
+CRITICAL REMINDERS:
+- This is Chapter ${chapterIndex} of an ongoing story series
+- Character must look EXACTLY the same as in all other chapters
+- Use the exact appearance details specified above
+- Maintain consistent clothing, hair, and features throughout
+- No text or words in the image
+- Suitable for young children ages 3-8`;
 }
 
 export async function generateChapterImage({
@@ -143,9 +202,17 @@ export async function generateChapterImage({
   characterDescription,
   chapterIndex = 1,
   gender = "boy",
+  age = 5,
 }: GenerateImageParams): Promise<GeneratedImage> {
-  // Use the safe prompt generator that avoids content policy issues
-  const safePrompt = createSafeIllustrationPrompt(prompt, childName, gender, chapterIndex);
+  // Use the safe prompt generator with storybook style and character details
+  const safePrompt = createSafeIllustrationPrompt(
+    prompt,
+    childName,
+    gender,
+    chapterIndex,
+    age,
+    characterDescription
+  );
 
   const response = await getOpenAIClient().images.generate({
     model: "dall-e-3",
@@ -153,7 +220,7 @@ export async function generateChapterImage({
     n: 1,
     size: "1024x1024",
     quality: "standard",
-    style: "natural", // Changed from "vivid" to "natural" for softer, safer images
+    style: "vivid", // Natural style for softer, storybook-like images
   });
 
   if (!response.data || response.data.length === 0) {
@@ -180,7 +247,8 @@ export async function generateAllChapterImages(
   chapters: Array<{ imagePrompt: string }>,
   childName: string,
   characterDescription: string,
-  gender: "boy" | "girl" = "boy"
+  gender: "boy" | "girl" = "boy",
+  age: number = 5
 ): Promise<GeneratedImage[]> {
   const images: GeneratedImage[] = [];
 
@@ -192,6 +260,7 @@ export async function generateAllChapterImages(
         characterDescription,
         chapterIndex: i + 1,
         gender,
+        age,
       });
       images.push(image);
     } catch (error) {
@@ -209,3 +278,4 @@ export async function generateAllChapterImages(
 
   return images;
 }
+

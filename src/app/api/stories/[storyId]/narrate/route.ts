@@ -14,11 +14,16 @@ export async function POST(
 ) {
   const { storyId } = await params;
 
+  console.log("[Narrate API] Starting narration request for story:", storyId);
+
   try {
     const body = await request.json();
     const { chapterIndex } = body;
 
+    console.log("[Narrate API] Chapter index:", chapterIndex);
+
     if (typeof chapterIndex !== "number" || chapterIndex < 0) {
+      console.error("[Narrate API] Invalid chapter index:", chapterIndex);
       return NextResponse.json(
         { error: "Valid chapterIndex is required" },
         { status: 400 }
@@ -26,6 +31,7 @@ export async function POST(
     }
 
     // Check if audio already exists
+    console.log("[Narrate API] Checking for existing audio...");
     const { data: existingAudio } = await supabaseAdmin
       .from("story_audio")
       .select("*")
@@ -34,6 +40,7 @@ export async function POST(
       .single();
 
     if (existingAudio) {
+      console.log("[Narrate API] Found cached audio:", existingAudio.audio_url);
       return NextResponse.json({
         audioUrl: existingAudio.audio_url,
         duration: existingAudio.duration_seconds,
@@ -41,7 +48,10 @@ export async function POST(
       });
     }
 
+    console.log("[Narrate API] No cached audio found, generating new...");
+
     // Get story data
+    console.log("[Narrate API] Fetching story data...");
     const { data: story, error: storyError } = await supabaseAdmin
       .from("stories")
       .select("full_story_json")
@@ -49,6 +59,7 @@ export async function POST(
       .single();
 
     if (storyError || !story) {
+      console.error("[Narrate API] Story not found:", storyError);
       return NextResponse.json(
         { error: "Story not found" },
         { status: 404 }
@@ -64,18 +75,22 @@ export async function POST(
     }
 
     const chapter = storyContent.chapters[chapterIndex];
+    console.log("[Narrate API] Found chapter:", chapter.title);
 
     // Generate audio narration
+    console.log("[Narrate API] Generating audio with ElevenLabs...");
     const { audioBuffer, contentType } = await generateChapterNarration(
       chapter.title,
       chapter.content
     );
+    console.log("[Narrate API] Audio generated, buffer size:", audioBuffer.length);
 
     // Estimate duration
     const duration = estimateAudioDuration(`${chapter.title}. ${chapter.content}`);
 
     // Upload to Supabase Storage
     const filename = `${storyId}/chapter-${chapterIndex}.mp3`;
+    console.log("[Narrate API] Uploading to storage:", filename);
     const { error: uploadError } = await supabaseAdmin.storage
       .from("story-audio")
       .upload(filename, audioBuffer, {
@@ -84,12 +99,14 @@ export async function POST(
       });
 
     if (uploadError) {
-      console.error("Audio upload error:", uploadError);
+      console.error("[Narrate API] Audio upload error:", uploadError);
       return NextResponse.json(
         { error: "Failed to save audio" },
         { status: 500 }
       );
     }
+
+    console.log("[Narrate API] Upload successful");
 
     // Get public URL
     const { data: { publicUrl } } = supabaseAdmin.storage
@@ -97,6 +114,7 @@ export async function POST(
       .getPublicUrl(filename);
 
     // Save to database
+    console.log("[Narrate API] Saving to database...");
     await supabaseAdmin.from("story_audio").insert({
       story_id: storyId,
       chapter_index: chapterIndex,
@@ -104,6 +122,7 @@ export async function POST(
       duration_seconds: duration,
     });
 
+    console.log("[Narrate API] Success! Returning audio URL:", publicUrl);
     return NextResponse.json({
       audioUrl: publicUrl,
       duration,

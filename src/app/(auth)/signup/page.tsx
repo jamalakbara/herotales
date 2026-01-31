@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { Loader2, Mail, Lock, User, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
@@ -95,9 +96,14 @@ export default function SignupPage() {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
-            className="inline-flex items-center justify-center w-16 h-16 rounded-2xl gradient-periwinkle mb-4"
+            className="inline-flex items-center justify-center w-24 h-24 relative mb-4"
           >
-            <span className="text-3xl">✨</span>
+            <Image
+              src="/herotales-logo.png"
+              alt="HeroTales Logo"
+              fill
+              className="object-contain"
+            />
           </motion.div>
           <h1 className="text-3xl font-bold text-foreground">
             Join HeroTales

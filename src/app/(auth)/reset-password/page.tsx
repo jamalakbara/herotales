@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -39,22 +39,34 @@ export default function ResetPasswordPage() {
     },
   });
 
+  // Debug: Log Supabase configuration on mount
+  useEffect(() => {
+    console.log("Supabase client initialized");
+    console.log("Current origin:", window.location.origin);
+  }, []);
+
   const onSubmit = async (data: ResetFormData) => {
     setIsLoading(true);
 
     try {
+      // Log configuration for debugging
+      console.log("Attempting password reset for:", data.email);
+      console.log("Redirect URL:", `${window.location.origin}/auth/callback?next=/update-password`);
+
       const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
         redirectTo: `${window.location.origin}/auth/callback?next=/update-password`,
       });
 
       if (error) {
+        console.error("Supabase error:", error);
         toast.error(error.message);
         return;
       }
 
       setIsSuccess(true);
-    } catch {
-      toast.error("Something went wrong. Please try again.");
+    } catch (err) {
+      console.error("Password reset error:", err);
+      toast.error(`Something went wrong: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setIsLoading(false);
     }

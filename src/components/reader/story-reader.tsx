@@ -1,19 +1,20 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, X, Home, Volume2, Printer } from "lucide-react";
-import confetti from "canvas-confetti";
-
+import { ChevronLeft, ChevronRight, X, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { StoryPage } from "./story-page";
-import { ParentalGate } from "./parental-gate";
-import { CompletionCelebration } from "./completion-celebration";
-import { AudioPlayer } from "./audio-player";
-import { PrintModal } from "./print-modal";
-import { triggerHaptic } from "@/lib/haptics";
-import type { StoryContent, ThemeType } from "@/types/database";
+import { BookContainer } from "@/components/reader/book-container";
+import { BookSpread } from "@/components/reader/book-spread";
+import { BookPage } from "@/components/reader/book-page";
+import { BookCover } from "@/components/reader/book-cover";
+import { CompletionCelebration } from "@/components/reader/completion-celebration";
+import { AudioPlayer } from "@/components/reader/audio-player";
+import { MagneticContainer } from "@/components/reader/magnetic-container";
+import { PremiumProgressDots } from "@/components/reader/premium-progress-dots";
+import { StoryContent, ThemeType } from "@/types/database";
+import { floatingVariants, buttonVariants, floatingControlVariants, staggerContainerVariants } from "@/lib/animation-variants";
 
 interface StoryReaderProps {
   storyId: string;
@@ -33,259 +34,318 @@ export function StoryReader({
   theme,
 }: StoryReaderProps) {
   const router = useRouter();
-  const [currentPage, setCurrentPage] = useState(0); // 0 = cover, 1-5 = chapters
-  const [showGate, setShowGate] = useState(false);
-  const [showCompletion, setShowCompletion] = useState(false);
-  const [direction, setDirection] = useState(0);
-  const [showAudioPlayer, setShowAudioPlayer] = useState(false);
-  const [showPrintModal, setShowPrintModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0); // 0 = Cover, 1+ = Chapters
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [isFlipping, setIsFlipping] = useState(false);
+  const [flipDirection, setFlipDirection] = useState<"forward" | "backward">("forward");
 
-  const totalPages = content.chapters.length + 1; // Cover + 5 chapters
+  const totalPages = content?.chapters?.length || 0;
+  const progress = totalPages > 0 ? (currentPage / totalPages) * 100 : 0;
 
-  const triggerConfetti = useCallback(() => {
-    const duration = 3000;
-    const end = Date.now() + duration;
+  const handleNext = useCallback(() => {
+    if (isFlipping) return;
 
-    const frame = () => {
-      confetti({
-        particleCount: 3,
-        angle: 60,
-        spread: 55,
-        origin: { x: 0, y: 0.8 },
-        colors: ["#6A89CC", "#A1BE95", "#F98866", "#FFF2D7"],
-      });
-      confetti({
-        particleCount: 3,
-        angle: 120,
-        spread: 55,
-        origin: { x: 1, y: 0.8 },
-        colors: ["#6A89CC", "#A1BE95", "#F98866", "#FFF2D7"],
-      });
+    if (currentPage < totalPages) {
+      setFlipDirection("forward");
+      setIsFlipping(true);
+      setTimeout(() => {
+        setCurrentPage((prev) => prev + 1);
+        setIsFlipping(false);
+      }, 300);
+    } else {
+      setShowCelebration(true);
+    }
+  }, [currentPage, totalPages, isFlipping]);
 
-      if (Date.now() < end) {
-        requestAnimationFrame(frame);
+  const handlePrev = useCallback(() => {
+    if (isFlipping) return;
+
+    if (currentPage > 0) {
+      setFlipDirection("backward");
+      setIsFlipping(true);
+      setTimeout(() => {
+        setCurrentPage((prev) => prev - 1);
+        setIsFlipping(false);
+      }, 300);
+    }
+  }, [currentPage, isFlipping]);
+
+  const handleClose = () => {
+    router.push("/dashboard/stories");
+  };
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight" || e.key === " ") {
+        e.preventDefault();
+        handleNext();
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        handlePrev();
+      } else if (e.key === "Escape") {
+        handleClose();
       }
     };
-    frame();
-  }, []);
 
-  const goToNextPage = () => {
-    triggerHaptic("light");
-    if (currentPage < totalPages - 1) {
-      setDirection(1);
-      setCurrentPage((p) => p + 1);
-    } else if (currentPage === totalPages - 1) {
-      // Story complete!
-      setShowCompletion(true);
-      triggerConfetti();
-    }
-  };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleNext, handlePrev]);
 
-  const goToPrevPage = () => {
-    triggerHaptic("light");
-    if (currentPage > 0) {
-      setDirection(-1);
-      setCurrentPage((p) => p - 1);
-    }
-  };
+  if (showCelebration) {
+    return (
+      <CompletionCelebration
+        childName={childName}
+        theme={theme}
+        moral={content.moral}
+        onClose={handleClose}
+      />
+    );
+  }
 
-  const handleExitRequest = () => {
-    setShowGate(true);
-  };
-
-  const handleGateSuccess = () => {
-    setShowGate(false);
-    router.push("/dashboard");
-  };
-
-  const handleGateCancel = () => {
-    setShowGate(false);
-  };
-
-  const handleCompletionClose = () => {
-    setShowCompletion(false);
-    router.push("/dashboard");
-  };
-
-  // Page variants for flip animation
-  const pageVariants = {
-    enter: (direction: number) => ({
-      x: direction > 0 ? "100%" : "-100%",
-      opacity: 0,
-      rotateY: direction > 0 ? -15 : 15,
-    }),
-    center: {
-      x: 0,
-      opacity: 1,
-      rotateY: 0,
-    },
-    exit: (direction: number) => ({
-      x: direction > 0 ? "-100%" : "100%",
-      opacity: 0,
-      rotateY: direction > 0 ? 15 : -15,
-    }),
-  };
+  const isCover = currentPage === 0;
+  const currentChapter = !isCover && content.chapters ? content.chapters[currentPage - 1] : null;
+  const currentImage = images.get(currentPage) ?? null;
+  const coverImage = images.get(0) ?? null;
 
   return (
-    <>
-      {/* Main Reader */}
-      <div className="fixed inset-0 paper-bg flex flex-col">
-        {/* Minimal Header - Fades on scroll */}
-        <div className="absolute top-0 left-0 right-0 z-10 p-4 flex items-center justify-between">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleExitRequest}
-            className="rounded-full bg-white/80 backdrop-blur-sm hover:bg-white shadow-md"
+    <BookContainer theme={theme}>
+      {/* Header Controls */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+        className="w-full flex justify-between items-center mb-6 px-2"
+      >
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleClose}
+          className="text-muted-foreground hover:text-foreground hover:bg-white/50 rounded-full gap-2 backdrop-blur-sm bg-white/30"
+        >
+          <Home className="h-4 w-4" />
+          <span className="hidden sm:inline">Dashboard</span>
+        </Button>
+
+        <motion.div
+          key={currentPage}
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-sm font-medium text-muted-foreground bg-white/60 backdrop-blur-sm px-4 py-2 rounded-full border border-white/40 shadow-sm"
+        >
+          {isCover ? (
+            <span className="flex items-center gap-2">
+              ✨ Cover
+            </span>
+          ) : (
+            <span>
+              Page <span className="font-bold text-periwinkle">{currentPage}</span> of {totalPages}
+            </span>
+          )}
+        </motion.div>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleClose}
+          className="text-muted-foreground hover:text-foreground hover:bg-white/50 rounded-full backdrop-blur-sm bg-white/30"
+        >
+          <X className="h-5 w-5" />
+        </Button>
+      </motion.div>
+
+      {/* Main Book Content */}
+      <AnimatePresence mode="wait">
+        {isCover ? (
+          <motion.div
+            key="cover"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, x: -100 }}
+            transition={{ duration: 0.4 }}
+            onClick={handleNext}
+            className="cursor-pointer"
           >
-            <X className="h-5 w-5" />
-          </Button>
-
-          {/* Page indicator */}
-          <div className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/80 backdrop-blur-sm shadow-md">
-            {Array.from({ length: totalPages }).map((_, i) => (
-              <div
-                key={i}
-                className={`
-                  w-2 h-2 rounded-full transition-all duration-300
-                  ${i === currentPage ? "w-6 bg-primary" : "bg-primary/30"}
-                `}
-              />
-            ))}
-          </div>
-
-          {/* Right side action buttons */}
-          <div className="flex items-center gap-2">
-            {/* Read to Me Toggle */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowAudioPlayer(!showAudioPlayer)}
-              className={`rounded-full backdrop-blur-sm shadow-md transition-colors ${showAudioPlayer
-                ? "bg-periwinkle text-white hover:bg-periwinkle/90"
-                : "bg-white/80 hover:bg-white"
-                }`}
-              title="Read to Me"
-            >
-              <Volume2 className="h-5 w-5" />
-            </Button>
-
-            {/* Print Button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => {
-                triggerHaptic("light");
-                setShowPrintModal(true);
-              }}
-              className="rounded-full bg-white/80 backdrop-blur-sm hover:bg-white shadow-md"
-              title="Print Story"
-            >
-              <Printer className="h-5 w-5" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Content Area - Scrollable */}
-        <div className={`flex-1 overflow-y-auto p-4 pt-20 ${showAudioPlayer ? "pb-48" : "pb-24"}`}>
-          <div className="min-h-full flex items-start justify-center">
-            <AnimatePresence mode="wait" custom={direction}>
-              <motion.div
-                key={currentPage}
-                custom={direction}
-                variants={pageVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{
-                  x: { type: "spring", stiffness: 300, damping: 30 },
-                  opacity: { duration: 0.2 },
-                  rotateY: { duration: 0.4 },
-                }}
-                className="w-full max-w-2xl"
-              >
-                <StoryPage
-                  pageNumber={currentPage}
-                  title={currentPage === 0 ? title : content.chapters[currentPage - 1]?.title}
-                  content={
-                    currentPage === 0 ? null : content.chapters[currentPage - 1]?.content
-                  }
-                  imageUrl={images.get(currentPage) || null}
-                  childName={childName}
-                  theme={theme}
-                  isCover={currentPage === 0}
-                  moral={
-                    currentPage === totalPages - 1 ? content.moral : undefined
-                  }
+            <BookCover
+              title={title}
+              childName={childName}
+              theme={theme}
+              imageUrl={coverImage}
+            />
+          </motion.div>
+        ) : (
+          <motion.div
+            key={`spread-${currentPage}`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <BookSpread
+              isFlipping={isFlipping}
+              flipDirection={flipDirection}
+              showRibbon={true}
+              ribbonProgress={progress}
+              leftPage={
+                <BookPage
+                  type="illustration"
+                  imageUrl={currentImage}
+                  chapterTitle={currentChapter?.title}
                 />
-              </motion.div>
-            </AnimatePresence>
-          </div>
-        </div>
+              }
+              rightPage={
+                <BookPage
+                  type="text"
+                  chapterNumber={currentPage}
+                  chapterTitle={currentChapter?.title}
+                  content={currentChapter?.content}
+                  moral={currentPage === totalPages ? content.moral : undefined}
+                  showDropCap={true}
+                />
+              }
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-        {/* Audio Player - shown when enabled */}
-        {showAudioPlayer && currentPage > 0 && (
-          <div className="absolute bottom-24 left-4 right-4 z-10 max-w-2xl mx-auto">
+      {/* Navigation Controls */}
+      <motion.div
+        variants={floatingControlVariants}
+        initial="hidden"
+        animate="visible"
+        custom={0.6}
+        className="fixed bottom-6 left-0 right-0 px-4 z-20 flex justify-center pointer-events-none"
+      >
+        <motion.div
+          variants={floatingVariants}
+          animate="float"
+          className="w-full max-w-6xl flex items-end justify-between pointer-events-none"
+        >
+          {/* Audio Player (Left side) */}
+          <div className="pointer-events-auto">
             <AudioPlayer
               storyId={storyId}
               chapterIndex={currentPage - 1}
-              isVisible={showAudioPlayer}
+              isVisible={!isCover}
             />
           </div>
-        )}
 
-        {/* Navigation Controls */}
-        <div className="absolute bottom-0 left-0 right-0 p-6 flex items-center justify-center gap-4">
-          <Button
-            variant="ghost"
-            size="lg"
-            onClick={goToPrevPage}
-            disabled={currentPage === 0}
-            className="touch-target rounded-full bg-white/80 backdrop-blur-sm shadow-lg hover:bg-white disabled:opacity-30"
-          >
-            <ChevronLeft className="h-6 w-6" />
-          </Button>
+          {/* Navigation Buttons (Center) */}
+          <MagneticContainer strength="medium" distance={150}>
+            <motion.div
+              className="pointer-events-auto glass-premium flex items-center gap-3 p-2 rounded-full shadow-2xl relative overflow-hidden"
+              variants={staggerContainerVariants}
+              initial="hidden"
+              animate="visible"
+            >
+              {/* Gradient border effect */}
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-periwinkle/20 via-coral/20 to-periwinkle/20 animate-pulse" />
 
-          <Button
-            size="lg"
-            onClick={goToNextPage}
-            className="touch-target rounded-full btn-magic px-8 shadow-lg"
-          >
-            {currentPage === totalPages - 1 ? (
-              <>
-                Finish! 🎉
-              </>
-            ) : (
-              <>
-                Next
-                <ChevronRight className="h-5 w-5 ml-1" />
-              </>
-            )}
-          </Button>
-        </div>
-      </div>
-      {/* Parental Gate Modal */}
-      {showGate && (
-        <ParentalGate onSuccess={handleGateSuccess} onCancel={handleGateCancel} />
-      )}
+              <div className="relative z-10 flex items-center gap-3">
+                {/* Previous Button */}
+                <motion.div
+                  variants={buttonVariants}
+                  initial="idle"
+                  whileHover="hover"
+                  whileTap="tap"
+                >
+                  <Button
+                    onClick={handlePrev}
+                    disabled={currentPage === 0 || isFlipping}
+                    variant="ghost"
+                    size="icon"
+                    className="h-12 w-12 rounded-full hover:bg-cream-dark disabled:opacity-30 transition-all duration-200 group relative"
+                  >
+                    <ChevronLeft className="h-6 w-6" />
+                    {/* Directional motion hint */}
+                    {currentPage > 0 && !isFlipping && (
+                      <motion.div
+                        className="absolute left-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100"
+                        animate={{
+                          x: [-2, -6, -2],
+                        }}
+                        transition={{
+                          duration: 1.5,
+                          repeat: Infinity,
+                          ease: "easeInOut",
+                        }}
+                      >
+                        <div className="w-1 h-1 rounded-full bg-periwinkle" />
+                      </motion.div>
+                    )}
+                  </Button>
+                </motion.div>
 
-      {/* Completion Celebration */}
-      {showCompletion && (
-        <CompletionCelebration
-          childName={childName}
-          theme={theme}
-          moral={content.moral}
-          onClose={handleCompletionClose}
-        />
-      )}
+                {/* Progress Dots */}
+                <PremiumProgressDots
+                  total={totalPages + 1}
+                  current={currentPage}
+                  className="px-2"
+                />
 
-      {/* Print Modal */}
-      <PrintModal
-        isOpen={showPrintModal}
-        onClose={() => setShowPrintModal(false)}
-        storyId={storyId}
-        storyTitle={title}
-      />
-    </>
+                {/* Next Button */}
+                <motion.div
+                  variants={buttonVariants}
+                  initial="idle"
+                  whileHover="hover"
+                  whileTap="tap"
+                >
+                  <Button
+                    onClick={handleNext}
+                    disabled={isFlipping}
+                    className="h-12 w-12 rounded-full btn-magic shadow-lg overflow-hidden relative group"
+                    size="icon"
+                  >
+                    <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                    {currentPage === totalPages ? (
+                      <motion.span
+                        animate={{ scale: [1, 1.2, 1] }}
+                        transition={{ duration: 1, repeat: Infinity }}
+                        className="text-xl relative z-10"
+                      >
+                        🏆
+                      </motion.span>
+                    ) : (
+                      <>
+                        <ChevronRight className="h-6 w-6 relative z-10" />
+                        {/* Directional motion hint */}
+                        {!isFlipping && (
+                          <motion.div
+                            className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100"
+                            animate={{
+                              x: [2, 6, 2],
+                            }}
+                            transition={{
+                              duration: 1.5,
+                              repeat: Infinity,
+                              ease: "easeInOut",
+                            }}
+                          >
+                            <div className="w-1 h-1 rounded-full bg-white" />
+                          </motion.div>
+                        )}
+                      </>
+                    )}
+                  </Button>
+                </motion.div>
+              </div>
+            </motion.div>
+          </MagneticContainer>
+
+          {/* Right Spacer */}
+          <div className="w-[200px] hidden sm:block" />
+        </motion.div>
+      </motion.div>
+
+      {/* Keyboard hint */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 2 }}
+        className="fixed bottom-20 left-1/2 -translate-x-1/2 text-xs text-muted-foreground/50 hidden lg:block"
+      >
+        Use ← → arrow keys to navigate
+      </motion.div>
+    </BookContainer>
   );
 }
