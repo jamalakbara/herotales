@@ -56,6 +56,7 @@ export default function HowItWorksSection() {
 
   return (
     <section
+      id="how-it-works"
       ref={containerRef}
       className="relative z-20 -mt-[100vh] pt-40 pb-32 px-4 bg-gradient-to-b from-[#F7F3ED] to-[#E8F5E9] rounded-t-[4rem] md:rounded-t-[6rem] rounded-b-[4rem] md:rounded-b-[6rem] shadow-[0_-20px_60px_rgba(0,0,0,0.08)] overflow-hidden"
     >

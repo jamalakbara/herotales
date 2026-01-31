@@ -30,8 +30,8 @@ export const generateStory = inngest.createFunction(
     const { storyId, childId, theme, userId } = event.data;
     const supabase = getSupabaseAdmin();
 
-    // Step 1: Fetch child data and update status to "generating_text"
-    const { child, childData } = await step.run("fetch-child-data", async () => {
+    // Step 1: Fetch child data and existing story titles, update status to "generating_text"
+    const { child, childData, existingTitles } = await step.run("fetch-child-data", async () => {
       const { data, error } = await supabase
         .from("children")
         .select("*")
@@ -41,6 +41,16 @@ export const generateStory = inngest.createFunction(
       if (error || !data) {
         throw new Error(`Child not found: ${childId}`);
       }
+
+      // Fetch existing story titles for this child to avoid duplicates
+      const { data: existingStories } = await supabase
+        .from("stories")
+        .select("title")
+        .eq("child_id", childId)
+        .neq("id", storyId) // Exclude the current story being generated
+        .not("title", "is", null);
+
+      const titles = existingStories?.map(s => s.title).filter(t => t && t !== "Generating...") || [];
 
       // Update story status
       await supabase
@@ -52,42 +62,78 @@ export const generateStory = inngest.createFunction(
         })
         .eq("id", storyId);
 
-      return { child: data, childData: data };
+      return { child: data, childData: data, existingTitles: titles };
     });
 
-    // Step 2: Generate story text with GPT-4o-mini
+    // Step 2: Generate story text with GPT-4o-mini (with retry for uniqueness)
     const storyContent = await step.run("generate-story-text", async () => {
-      try {
-        const content = await generateStoryText({
-          childName: childData.nickname,
-          childAge: childData.age_group,
-          characterDescription: childData.character_description || "",
-          theme: theme as ThemeType,
-        });
+      const MAX_RETRIES = 3;
+      let attempt = 0;
+      let lastError: Error | null = null;
 
-        // Update progress
-        await supabase
-          .from("stories")
-          .update({
-            generation_status: "generating_text",
-            progress: 25,
-            title: content.title,
-          })
-          .eq("id", storyId);
+      while (attempt < MAX_RETRIES) {
+        try {
+          const content = await generateStoryText({
+            childName: childData.nickname,
+            childAge: childData.age_group,
+            characterDescription: childData.character_description || "",
+            theme: theme as ThemeType,
+            existingTitles,
+          });
 
-        return content;
-      } catch (error) {
-        // Log error and fail
-        await supabase
-          .from("stories")
-          .update({
-            generation_status: "failed",
-            error_message: `Failed to generate story text: ${error instanceof Error ? error.message : "Unknown error"}`,
-            generation_completed_at: new Date().toISOString(),
-          })
-          .eq("id", storyId);
-        throw error;
+          // Check if the generated title is unique (case-insensitive)
+          const titleExists = existingTitles.some(
+            existingTitle => existingTitle.toLowerCase() === content.title.toLowerCase()
+          );
+
+          if (titleExists) {
+            attempt++;
+            if (attempt < MAX_RETRIES) {
+              console.log(`Duplicate title detected: "${content.title}". Retrying... (${attempt}/${MAX_RETRIES})`);
+              continue;
+            } else {
+              throw new Error(`Generated duplicate title after ${MAX_RETRIES} attempts: "${content.title}"`);
+            }
+          }
+
+          // Update progress
+          await supabase
+            .from("stories")
+            .update({
+              generation_status: "generating_text",
+              progress: 25,
+              title: content.title,
+            })
+            .eq("id", storyId);
+
+          return content;
+        } catch (error) {
+          lastError = error instanceof Error ? error : new Error(String(error));
+
+          // If it's a validation error (duplicate chapters), retry
+          if (lastError.message.includes("Duplicate chapter titles")) {
+            attempt++;
+            if (attempt < MAX_RETRIES) {
+              console.log(`Duplicate chapter titles detected. Retrying... (${attempt}/${MAX_RETRIES})`);
+              continue;
+            }
+          }
+
+          // If we've exhausted retries or it's a different error, fail
+          await supabase
+            .from("stories")
+            .update({
+              generation_status: "failed",
+              error_message: `Failed to generate story text: ${lastError.message}`,
+              generation_completed_at: new Date().toISOString(),
+            })
+            .eq("id", storyId);
+          throw lastError;
+        }
       }
+
+      // This should never be reached, but TypeScript needs it
+      throw lastError || new Error("Failed to generate unique story");
     });
 
     // Step 3: Generate images for each chapter

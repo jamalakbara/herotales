@@ -3,7 +3,8 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
 import Link from "next/link";
-import { Twitter, Instagram, Linkedin, Moon, Heart } from "lucide-react";
+import Image from "next/image";
+import { Twitter, Instagram, Linkedin, Heart } from "lucide-react";
 
 export default function Footer() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -108,8 +109,14 @@ export default function Footer() {
           {/* Brand */}
           <div className="md:col-span-5 flex flex-col items-center md:items-start gap-6">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center shadow-[0_0_20px_rgba(99,102,241,0.3)] backdrop-blur-md">
-                <Moon className="h-6 w-6 text-indigo-200 fill-indigo-200" />
+              <div className="w-12 h-12 relative flex items-center justify-center">
+                <Image
+                  src="/herotales-logo.png"
+                  alt="HeroTales Logo"
+                  width={48}
+                  height={48}
+                  className="object-contain"
+                />
               </div>
               <span className="font-heading font-bold text-3xl text-white tracking-wide">
                 HeroTales

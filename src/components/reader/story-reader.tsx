@@ -11,7 +11,10 @@ import { BookPage } from "@/components/reader/book-page";
 import { BookCover } from "@/components/reader/book-cover";
 import { CompletionCelebration } from "@/components/reader/completion-celebration";
 import { AudioPlayer } from "@/components/reader/audio-player";
+import { MagneticContainer } from "@/components/reader/magnetic-container";
+import { PremiumProgressDots } from "@/components/reader/premium-progress-dots";
 import { StoryContent, ThemeType } from "@/types/database";
+import { floatingVariants, buttonVariants, floatingControlVariants, staggerContainerVariants } from "@/lib/animation-variants";
 
 interface StoryReaderProps {
   storyId: string;
@@ -207,12 +210,17 @@ export function StoryReader({
 
       {/* Navigation Controls */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
+        variants={floatingControlVariants}
+        initial="hidden"
+        animate="visible"
+        custom={0.6}
         className="fixed bottom-6 left-0 right-0 px-4 z-20 flex justify-center pointer-events-none"
       >
-        <div className="w-full max-w-6xl flex items-end justify-between pointer-events-none">
+        <motion.div
+          variants={floatingVariants}
+          animate="float"
+          className="w-full max-w-6xl flex items-end justify-between pointer-events-none"
+        >
           {/* Audio Player (Left side) */}
           <div className="pointer-events-auto">
             <AudioPlayer
@@ -223,59 +231,110 @@ export function StoryReader({
           </div>
 
           {/* Navigation Buttons (Center) */}
-          <div className="pointer-events-auto flex items-center gap-3 bg-white/80 backdrop-blur-lg p-2 rounded-full shadow-xl border border-white/50 absolute left-1/2 -translate-x-1/2">
-            {/* Previous Button */}
-            <Button
-              onClick={handlePrev}
-              disabled={currentPage === 0 || isFlipping}
-              variant="ghost"
-              size="icon"
-              className="h-12 w-12 rounded-full hover:bg-cream-dark disabled:opacity-30 transition-all duration-200"
+          <MagneticContainer strength="medium" distance={150}>
+            <motion.div
+              className="pointer-events-auto glass-premium flex items-center gap-3 p-2 rounded-full shadow-2xl relative overflow-hidden"
+              variants={staggerContainerVariants}
+              initial="hidden"
+              animate="visible"
             >
-              <ChevronLeft className="h-6 w-6" />
-            </Button>
+              {/* Gradient border effect */}
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-periwinkle/20 via-coral/20 to-periwinkle/20 animate-pulse" />
 
-            {/* Progress indicator */}
-            <div className="hidden sm:flex items-center gap-1.5 px-2">
-              {Array.from({ length: totalPages + 1 }).map((_, i) => (
+              <div className="relative z-10 flex items-center gap-3">
+                {/* Previous Button */}
                 <motion.div
-                  key={i}
-                  className={`w-2 h-2 rounded-full transition-all duration-300 ${i === currentPage
-                    ? "bg-periwinkle w-6"
-                    : i < currentPage
-                      ? "bg-periwinkle/40"
-                      : "bg-neutral-300"
-                    }`}
-                  whileHover={{ scale: 1.2 }}
-                />
-              ))}
-            </div>
-
-            {/* Next Button */}
-            <Button
-              onClick={handleNext}
-              disabled={isFlipping}
-              className="h-12 w-12 rounded-full btn-magic shadow-lg overflow-hidden relative group"
-              size="icon"
-            >
-              <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-              {currentPage === totalPages ? (
-                <motion.span
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ duration: 1, repeat: Infinity }}
-                  className="text-xl relative z-10"
+                  variants={buttonVariants}
+                  initial="idle"
+                  whileHover="hover"
+                  whileTap="tap"
                 >
-                  🏆
-                </motion.span>
-              ) : (
-                <ChevronRight className="h-6 w-6 relative z-10" />
-              )}
-            </Button>
-          </div>
+                  <Button
+                    onClick={handlePrev}
+                    disabled={currentPage === 0 || isFlipping}
+                    variant="ghost"
+                    size="icon"
+                    className="h-12 w-12 rounded-full hover:bg-cream-dark disabled:opacity-30 transition-all duration-200 group relative"
+                  >
+                    <ChevronLeft className="h-6 w-6" />
+                    {/* Directional motion hint */}
+                    {currentPage > 0 && !isFlipping && (
+                      <motion.div
+                        className="absolute left-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100"
+                        animate={{
+                          x: [-2, -6, -2],
+                        }}
+                        transition={{
+                          duration: 1.5,
+                          repeat: Infinity,
+                          ease: "easeInOut",
+                        }}
+                      >
+                        <div className="w-1 h-1 rounded-full bg-periwinkle" />
+                      </motion.div>
+                    )}
+                  </Button>
+                </motion.div>
+
+                {/* Progress Dots */}
+                <PremiumProgressDots
+                  total={totalPages + 1}
+                  current={currentPage}
+                  className="px-2"
+                />
+
+                {/* Next Button */}
+                <motion.div
+                  variants={buttonVariants}
+                  initial="idle"
+                  whileHover="hover"
+                  whileTap="tap"
+                >
+                  <Button
+                    onClick={handleNext}
+                    disabled={isFlipping}
+                    className="h-12 w-12 rounded-full btn-magic shadow-lg overflow-hidden relative group"
+                    size="icon"
+                  >
+                    <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                    {currentPage === totalPages ? (
+                      <motion.span
+                        animate={{ scale: [1, 1.2, 1] }}
+                        transition={{ duration: 1, repeat: Infinity }}
+                        className="text-xl relative z-10"
+                      >
+                        🏆
+                      </motion.span>
+                    ) : (
+                      <>
+                        <ChevronRight className="h-6 w-6 relative z-10" />
+                        {/* Directional motion hint */}
+                        {!isFlipping && (
+                          <motion.div
+                            className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100"
+                            animate={{
+                              x: [2, 6, 2],
+                            }}
+                            transition={{
+                              duration: 1.5,
+                              repeat: Infinity,
+                              ease: "easeInOut",
+                            }}
+                          >
+                            <div className="w-1 h-1 rounded-full bg-white" />
+                          </motion.div>
+                        )}
+                      </>
+                    )}
+                  </Button>
+                </motion.div>
+              </div>
+            </motion.div>
+          </MagneticContainer>
 
           {/* Right Spacer */}
           <div className="w-[200px] hidden sm:block" />
-        </div>
+        </motion.div>
       </motion.div>
 
       {/* Keyboard hint */}

@@ -12,6 +12,7 @@ import {
   Plus,
   Sparkles,
 } from "lucide-react";
+import Image from "next/image";
 import { toast } from "sonner";
 
 import { createClient } from "@/lib/supabase/client";
@@ -55,8 +56,14 @@ export default function DashboardLayout({
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link href="/dashboard" className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-xl gradient-periwinkle flex items-center justify-center">
-                <Sparkles className="h-5 w-5 text-white" />
+              <div className="w-10 h-10 relative flex items-center justify-center">
+                <Image
+                  src="/herotales-logo.png"
+                  alt="HeroTales Logo"
+                  width={40}
+                  height={40}
+                  className="object-contain"
+                />
               </div>
               <span className="font-heading font-bold text-xl hidden sm:block">
                 HeroTales

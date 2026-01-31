@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, useScroll, useMotionValueEvent } from "framer-motion";
@@ -53,8 +54,14 @@ export default function Navbar() {
       `}>
         {/* Brand */}
         <Link href="/" className="flex items-center gap-2 group mr-8">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-periwinkle to-periwinkle-light flex items-center justify-center transform transition-transform group-hover:rotate-12 group-hover:scale-105 shadow-sm">
-            <Sparkles className="h-4 w-4 text-white" />
+          <div className="w-9 h-9 relative flex items-center justify-center transform transition-transform group-hover:rotate-12 group-hover:scale-105">
+            <Image
+              src="/herotales-logo.png"
+              alt="HeroTales Logo"
+              width={36}
+              height={36}
+              className="object-contain"
+            />
           </div>
           <span className="font-heading font-bold text-lg tracking-tight text-slate-800 group-hover:text-primary transition-colors">
             HeroTales
@@ -69,8 +76,8 @@ export default function Navbar() {
           <Link href="#how-it-works" className="text-sm font-medium text-slate-600 hover:text-primary transition-colors">
             How it works
           </Link>
-          <Link href="#pricing" className="text-sm font-medium text-slate-600 hover:text-primary transition-colors">
-            Pricing
+          <Link href="#safety" className="text-sm font-medium text-slate-600 hover:text-primary transition-colors">
+            Safety
           </Link>
         </nav>
 

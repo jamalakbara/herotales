@@ -42,7 +42,7 @@ export default function FeaturesSection() {
   });
 
   return (
-    <section ref={containerRef} className="relative bg-gradient-to-b from-[#F7F3ED] to-[#FFF2D7]">
+    <section id="features" ref={containerRef} className="relative bg-gradient-to-b from-[#F7F3ED] to-[#FFF2D7]">
       {/* 
         Container Height: 
         We need enough scroll space. 

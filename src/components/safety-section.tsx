@@ -44,6 +44,7 @@ export default function SafetySection() {
 
   return (
     <section
+      id="safety"
       ref={containerRef}
       className="relative z-10 -mt-32 pt-48 pb-24 px-4 bg-gradient-to-b from-[#FFFBF5] to-[#EBF0FA]"
     >

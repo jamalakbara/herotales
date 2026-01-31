@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ThemeType } from "@/types/database";
 import { checkStoryRateLimit, formatRateLimitError } from "@/lib/rate-limit";
 import { inngest } from "@/inngest/client";
+import { isDevelopment } from "@/lib/env";
 
 // Reduced max duration since we're just triggering a job now
 export const maxDuration = 30;
@@ -68,8 +69,8 @@ export async function POST(request: NextRequest) {
 
     const currentUsage = usage?.story_count || 0;
 
-    // Check monthly limit for free users
-    if (!isPro && currentUsage >= FREE_TIER_LIMIT) {
+    // Check monthly limit for free users (skip in development)
+    if (!isDevelopment() && !isPro && currentUsage >= FREE_TIER_LIMIT) {
       return NextResponse.json(
         {
           error: "Monthly story limit reached",

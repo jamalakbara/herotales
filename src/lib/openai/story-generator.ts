@@ -35,6 +35,7 @@ interface GenerateStoryParams {
   childAge: number;
   characterDescription: string;
   theme: ThemeType;
+  existingTitles?: string[];
 }
 
 export async function generateStoryText({
@@ -42,6 +43,7 @@ export async function generateStoryText({
   childAge,
   characterDescription,
   theme,
+  existingTitles = [],
 }: GenerateStoryParams): Promise<StoryContent> {
   const systemPrompt = `You are a world-class children's story author who creates magical, personalized bedtime stories. 
 Your stories are:
@@ -55,10 +57,15 @@ The main character is ${childName}, who looks like: ${characterDescription || "a
 
 Always structure the story with exactly 5 chapters. Each chapter should be 2-3 paragraphs long.`;
 
+  const existingTitlesText = existingTitles.length > 0
+    ? `\n\nEXISTING STORY TITLES TO AVOID:\n${existingTitles.map((t, i) => `${i + 1}. "${t}"`).join('\n')}\n\nThe new story MUST have a completely different and unique title from all the above.`
+    : '';
+
   const userPrompt = `Create a personalized bedtime story for ${childName} (age ${childAge}).
 
 Theme: ${theme.toUpperCase()}
 ${THEME_PROMPTS[theme]}
+${existingTitlesText}
 
 Requirements:
 1. ${childName} is the main character and hero
@@ -66,6 +73,8 @@ Requirements:
 3. Create vivid, imaginative settings
 4. Each chapter should end with a small cliffhanger or transition (except the last)
 5. The final chapter should have a clear, satisfying conclusion with the moral lesson
+6. The story title MUST be creative, unique, and different from any existing stories
+7. ALL chapter titles within the story MUST be unique and different from each other
 
 Return the story in the following JSON format:
 {
@@ -95,7 +104,7 @@ IMPORTANT for imagePrompt:
       { role: "user", content: userPrompt },
     ],
     response_format: { type: "json_object" },
-    temperature: 0.8,
+    temperature: 0.9,
     max_tokens: 4000,
   });
 
@@ -109,6 +118,13 @@ IMPORTANT for imagePrompt:
   // Validate structure
   if (!storyData.title || !storyData.chapters || storyData.chapters.length !== 5) {
     throw new Error("Invalid story structure generated");
+  }
+
+  // Validate chapter title uniqueness
+  const chapterTitles = storyData.chapters.map(ch => ch.title);
+  const uniqueChapterTitles = new Set(chapterTitles);
+  if (chapterTitles.length !== uniqueChapterTitles.size) {
+    throw new Error("Duplicate chapter titles detected in generated story");
   }
 
   return storyData;
