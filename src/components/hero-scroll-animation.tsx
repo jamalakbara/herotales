@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useScroll, useTransform, motion } from "framer-motion";
+import { CLOUDINARY_FRAME_URLS, FRAME_COUNT } from "@/lib/cloudinary-frames";
 
 export default function HeroScrollAnimation() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -9,8 +10,8 @@ export default function HeroScrollAnimation() {
   const [images, setImages] = useState<HTMLImageElement[]>([]);
   const [loaded, setLoaded] = useState(false);
 
-  // Total frames based on the file list (00001.jpg to 00192.jpg)
-  const frameCount = 192;
+  // Total frames derived from the Cloudinary URL config
+  const frameCount = FRAME_COUNT;
 
   // Track scroll progress relative to the container
   const { scrollYProgress } = useScroll({
@@ -23,20 +24,17 @@ export default function HeroScrollAnimation() {
 
   useEffect(() => {
     const loadImages = async () => {
-      const loadedImages: HTMLImageElement[] = [];
-
-      for (let i = 1; i <= frameCount; i++) {
-        const img = new Image();
-        // Construct filename with 5-digit padding: 00001.jpg
-        const filename = i.toString().padStart(5, "0") + ".jpg";
-        img.src = `/herosection/${filename}`;
-        await new Promise((resolve) => {
-          img.onload = resolve;
-          // Continue even if error to avoid breaking everything
-          img.onerror = resolve;
-        });
-        loadedImages.push(img);
-      }
+      const loadedImages = await Promise.all(
+        CLOUDINARY_FRAME_URLS.map((url) => {
+          return new Promise<HTMLImageElement>((resolve) => {
+            const img = new Image();
+            img.src = url;
+            img.onload = () => resolve(img);
+            // Resolve even on error so one bad frame doesn't block the rest
+            img.onerror = () => resolve(img);
+          });
+        })
+      );
 
       setImages(loadedImages);
       setLoaded(true);
