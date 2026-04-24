@@ -1,81 +1,45 @@
-import type { Metadata, Viewport } from "next";
-import { Lexend, Quicksand } from "next/font/google";
-import { Toaster } from "@/components/ui/sonner";
+import type { Metadata } from "next";
+import { Young_Serif, Caprasimo, Nunito } from "next/font/google";
 import "./globals.css";
 
-const lexend = Lexend({
-  variable: "--font-heading",
+const youngSerif = Young_Serif({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: "400",
+  variable: "--font-young-serif",
+  display: "swap",
 });
 
-const quicksand = Quicksand({
-  variable: "--font-body",
+const caprasimo = Caprasimo({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: "400",
+  variable: "--font-caprasimo",
+  display: "swap",
+});
+
+const nunito = Nunito({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-nunito",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: {
-    default: "HeroTales AI - Personalized Stories for Your Child",
-    template: "%s | HeroTales AI",
-  },
+  title: "TellTales — Bedtime stories where your child is the hero",
   description:
-    "Create magical bedtime stories where your child is the hero. AI-powered personalized storytelling that teaches values like bravery, kindness, and honesty.",
-  keywords: [
-    "children stories",
-    "personalized stories",
-    "AI stories",
-    "bedtime stories",
-    "kids stories",
-    "educational stories",
-  ],
-  authors: [{ name: "HeroTales AI" }],
-  creator: "HeroTales AI",
-  openGraph: {
-    type: "website",
-    locale: "en_US",
-    url: "https://herotales.ai",
-    siteName: "HeroTales AI",
-    title: "HeroTales AI - Personalized Stories for Your Child",
-    description:
-      "Create magical bedtime stories where your child is the hero. AI-powered personalized storytelling that teaches values.",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "HeroTales AI - Personalized Stories for Your Child",
-    description:
-      "Create magical bedtime stories where your child is the hero.",
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
-};
-
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 1,
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#FFFBF5" },
-    { media: "(prefers-color-scheme: dark)", color: "#1A1D29" },
-  ],
+    "TellTales spins a fresh 5-chapter adventure around your child — their name, their face, their bravery — and narrates it in a warm voice that makes bedtime feel like magic.",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${lexend.variable} ${quicksand.variable} antialiased min-h-screen`}
-      >
-        {children}
-        <Toaster position="top-center" richColors />
-      </body>
+    <html
+      lang="en"
+      className={`${youngSerif.variable} ${caprasimo.variable} ${nunito.variable}`}
+    >
+      <body>{children}</body>
     </html>
   );
 }

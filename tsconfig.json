@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "ES2017",
+    "target": "ES2022",
     "lib": [
       "dom",
       "dom.iterable",
@@ -24,26 +24,16 @@
     ],
     "paths": {
       "@/*": [
-        "./src/*",
-        "./src/hooks/*",
-        "./src/lib/*"
-      ],
-      "@/hooks/*": [
-        "./src/hooks/*",
-        "./src/lib/*"
-      ],
-      "@/lib/*": [
-        "./src/lib/*"
+        "./src/*"
       ]
     }
   },
   "include": [
     "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
     ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts",
-    "**/*.mts"
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    ".next/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"
