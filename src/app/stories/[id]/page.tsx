@@ -1,8 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type Chapter = {
   label: string;
@@ -12,70 +13,23 @@ type Chapter = {
   paras: string[];
 };
 
-const CHAPTERS: Chapter[] = [
-  {
-    label: "Chapter 1 — Before the woods",
-    title: "The night lantern",
-    caption: "[ ILLUSTRATION · CH.1 · GRANDMOTHER'S HANDS AROUND THE LANTERN ]",
-    chip: "Chapter 1",
-    paras: [
-      "On the evening Maya turned five-and-a-half, her grandmother put a small brass lantern into her hands and said, \"This is for the nights that feel a little too big.\"",
-      "The lantern was heavy in the way that important things are heavy. Maya turned it over once, twice. Inside, a flame the size of a walnut wobbled gently, as if it was also a little bit nervous.",
-      "\"Will it always stay lit?\" Maya whispered.",
-      "\"Only if you keep walking,\" her grandmother said. And then she kissed the top of her head and opened the garden gate.",
-    ],
-  },
-  {
-    label: "Chapter 2 — The little light",
-    title: "Into the Whispering Woods",
-    caption: "[ ILLUSTRATION · CH.2 · MAYA AT THE WOODS' EDGE ]",
-    chip: "Chapter 2",
-    paras: [
-      "The path through the Whispering Woods was darker than <strong>Maya</strong> expected. But in her small hand, the lantern her grandmother had given her glowed a steady, stubborn gold — the kind of gold that doesn't shout, only says <em>I am here, I am here, I am here</em>.",
-      "Maya took one step. Then another. Somewhere, very far away, an owl said hello to the moon. The stuffed fox in her backpack — his name was Pip — peeked out to see what was happening.",
-      "\"You carry a warm little sun,\" Pip seemed to say. And Maya, for the first time all evening, smiled a small private smile. Being scared and being brave, she was discovering, could happen at the very same time.",
-    ],
-  },
-  {
-    label: "Chapter 3 — A whisper in the dark",
-    title: "Something in the ferns",
-    caption: "[ ILLUSTRATION · CH.3 · FERNS RUSTLING, EYES IN THE DARK ]",
-    chip: "Chapter 3",
-    paras: [
-      "Something rustled beyond the ferns. Maya froze. Pip froze. Even the lantern seemed to hold its little breath.",
-      "But Maya remembered what her grandmother had said: <em>Only if you keep walking</em>. So she held the lantern a little higher — not because she wasn't scared, but because sometimes holding your light higher is the same as being brave.",
-      "Two eyes blinked in the dark. They were not scary eyes, it turned out. They were <strong>kind eyes</strong>.",
-    ],
-  },
-  {
-    label: "Chapter 4 — The owl with kind eyes",
-    title: "A friend in the canopy",
-    caption: "[ ILLUSTRATION · CH.4 · OWL PERCHED ABOVE MAYA ]",
-    chip: "Chapter 4",
-    paras: [
-      "The owl tilted his head. \"You carry a warm little sun,\" he said softly, almost the same as Pip had. \"Where are you going with it?\"",
-      "\"Home,\" said Maya. And then, because being honest and being brave are first cousins, she added: \"But I don't quite know the way.\"",
-      "The owl smiled the slow smile of someone who has been lost many times. \"Then follow the brightest star,\" he said. \"It will walk you there.\"",
-    ],
-  },
-  {
-    label: "Chapter 5 — Home by lantern light",
-    title: "The porch light waiting",
-    caption: "[ ILLUSTRATION · CH.5 · MAYA AT THE GARDEN GATE, GRANDMOTHER SMILING ]",
-    chip: "Chapter 5",
-    paras: [
-      "When Maya stepped out of the woods, the garden gate was open, and a porch light was burning — a bigger, older cousin of the little lantern in her hand.",
-      "Her grandmother was already standing there, the way grandmothers always somehow are. \"Well?\" she said. \"Was the night a little too big?\"",
-      "\"It was,\" said Maya, climbing into her arms. \"But I kept walking.\"",
-      "And her grandmother nodded, as if she'd known it all along. Because, of course, she had.",
-    ],
-  },
-];
+type StoryRow = {
+  id: string;
+  blueprint: string;
+  length: string;
+  voice: string | null;
+  status: "pending" | "generating" | "ready" | "failed";
+  progress: number;
+  title: string | null;
+  full_text: Chapter[] | null;
+  favorite: boolean;
+  error: string | null;
+  children: { nickname: string; age: number; pronouns: string } | { nickname: string; age: number; pronouns: string }[] | null;
+};
+
+type ImageRow = { chapter_index: number; url: string | null };
 
 const SPEEDS = ["0.75×", "1×", "1.25×", "1.5×"];
-const FILL_PCTS = [10, 32, 58, 74, 96];
-const TIMES = ["0:14", "0:47", "1:23", "1:46", "2:18"];
-const TOTAL = "2:24";
 
 const STAR_POSITIONS: Array<React.CSSProperties> = [
   { top: 50, left: 60, width: 6, height: 6, animationDelay: "0s" },
@@ -86,43 +40,96 @@ const STAR_POSITIONS: Array<React.CSSProperties> = [
   { top: 220, left: 100, width: 3, height: 3, animationDelay: "1.8s" },
 ];
 
+function pickChild(children: StoryRow["children"]) {
+  if (!children) return null;
+  return Array.isArray(children) ? children[0] ?? null : children;
+}
+
 export default function StoryReaderPage() {
-  const params = useSearchParams();
-  const heroName = params.get("name") || "Maya";
-  const heroAge = params.get("age") || "5";
-  const blueprint = params.get("blueprint") || "Bravery";
-  const lengthLabel = params.get("length") || "Bedtime";
-  const voice = params.get("voice") || "Juniper";
-  const lengthMap: Record<string, string> = {
-    Shortie: "5 min",
-    Bedtime: "12 min",
-    "Long tale": "20 min",
-  };
+  const params = useParams<{ id: string }>();
+  const id = params?.id as string;
+  const router = useRouter();
+
+  const [story, setStory] = useState<StoryRow | null>(null);
+  const [images, setImages] = useState<ImageRow[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const [cur, setCur] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const [spIdx, setSpIdx] = useState(1);
+  const [fillPct, setFillPct] = useState(0);
+  const pollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const fetchStory = useCallback(async () => {
+    const res = await fetch(`/api/stories/${id}`, { cache: "no-store" });
+    if (res.status === 401) {
+      router.push(`/sign-in?next=${encodeURIComponent(`/stories/${id}`)}`);
+      return null;
+    }
+    if (res.status === 404) {
+      setLoadError("Story not found.");
+      return null;
+    }
+    if (!res.ok) {
+      setLoadError(`Failed to load story (${res.status})`);
+      return null;
+    }
+    const j = (await res.json()) as { story: StoryRow; images: ImageRow[] };
+    setStory(j.story);
+    setImages(j.images ?? []);
+    return j.story;
+  }, [id, router]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function tick() {
+      const s = await fetchStory();
+      if (cancelled || !s) return;
+      if (s.status === "pending" || s.status === "generating") {
+        pollTimer.current = setTimeout(tick, 2000);
+      }
+    }
+    tick();
+    return () => {
+      cancelled = true;
+      if (pollTimer.current) clearTimeout(pollTimer.current);
+    };
+  }, [fetchStory]);
+
+  const child = pickChild(story?.children ?? null);
+  const heroName = child?.nickname ?? "Hero";
+  const heroAge = child?.age ?? 5;
+  const blueprint = story?.blueprint ?? "Bravery";
+  const lengthLabel = story?.length ?? "Bedtime";
+  const voice = story?.voice ?? "Juniper";
+  const lengthMap: Record<string, string> = { Shortie: "5 min", Bedtime: "12 min", "Long tale": "20 min" };
   const readMins = lengthMap[lengthLabel] ?? "12 min";
 
-  const [cur, setCur] = useState(1);
-  const [playing, setPlaying] = useState(true);
-  const [spIdx, setSpIdx] = useState(1);
-  const [fillPct, setFillPct] = useState(FILL_PCTS[1]);
-  const [saved, setSaved] = useState(false);
-
-  const chapter = CHAPTERS[cur];
+  const chapters = story?.full_text ?? [];
+  const chapter: Chapter | null = chapters[cur] ?? null;
   const prevIdx = cur > 0 ? cur - 1 : null;
-  const nextIdx = cur < CHAPTERS.length - 1 ? cur + 1 : null;
+  const nextIdx = chapters.length > 0 && cur < chapters.length - 1 ? cur + 1 : null;
+  const ready = story?.status === "ready" && chapters.length > 0;
 
   const voiceDesc = useMemo(() => {
     const map: Record<string, string> = {
-      Juniper: "Warm, unhurried · ElevenLabs narration",
-      Atlas: "Soft grandfather · ElevenLabs narration",
-      Wren: "Bright, theatrical · ElevenLabs narration",
-      "My voice": "Your voice · ElevenLabs clone",
+      Juniper: "Warm, unhurried · narration coming soon",
+      Atlas: "Soft grandfather · narration coming soon",
+      Wren: "Bright, theatrical · narration coming soon",
+      "My voice": "Your voice · narration coming soon",
     };
-    return map[voice] ?? "Warm, unhurried · ElevenLabs narration";
+    return map[voice ?? "Juniper"] ?? "Warm, unhurried · narration coming soon";
   }, [voice]);
+
+  const imageByIndex = useMemo(() => {
+    const map = new Map<number, string>();
+    for (const img of images) if (img.url) map.set(img.chapter_index, img.url);
+    return map;
+  }, [images]);
 
   function render(i: number) {
     setCur(i);
-    setFillPct(FILL_PCTS[i]);
+    if (chapters.length) setFillPct(((i + 1) / chapters.length) * 100);
   }
 
   function onProgClick(e: React.MouseEvent<HTMLDivElement>) {
@@ -131,7 +138,112 @@ export default function StoryReaderPage() {
     setFillPct(Math.max(0, Math.min(100, pct)));
   }
 
-  const heroTitle = `${heroName} & the Brave Lantern`;
+  async function toggleFavorite() {
+    if (!story) return;
+    const next = !story.favorite;
+    setStory({ ...story, favorite: next });
+    try {
+      await fetch(`/api/stories/${id}/favorite`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ favorite: next }),
+      });
+    } catch {
+      setStory({ ...story, favorite: !next });
+    }
+  }
+
+  if (loadError) {
+    return (
+      <main className="page" style={{ padding: "60px 32px", maxWidth: 720, margin: "0 auto" }}>
+        <h1 style={{ fontFamily: "var(--font-young-serif), serif", color: "var(--twilight)", fontSize: 32 }}>
+          {loadError}
+        </h1>
+        <Link href="/dashboard" className="btn" style={{ marginTop: 16 }}>← Back to dashboard</Link>
+      </main>
+    );
+  }
+
+  if (!story || !ready) {
+    const pct = story?.progress ?? 5;
+    const failed = story?.status === "failed";
+    return (
+      <>
+        <header>
+          <nav className="nav">
+            <Link href="/" className="logo">
+              <div className="logo-mark" />
+              TellTales
+            </Link>
+            <div className="nav-crumbs">
+              <Link href="/dashboard">Dashboard</Link>
+              <span className="sep">/</span>
+              <span className="cur">{failed ? "Something went wrong" : "Conjuring your story…"}</span>
+            </div>
+            <span />
+          </nav>
+        </header>
+        <main className="page" style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div
+            style={{
+              maxWidth: 520,
+              width: "100%",
+              background: "var(--cream)",
+              border: "2.5px solid var(--ink)",
+              borderRadius: 24,
+              boxShadow: "8px 8px 0 var(--ink)",
+              padding: "36px 32px",
+              textAlign: "center",
+            }}
+          >
+            <div style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--berry)", fontSize: 14, marginBottom: 8 }}>
+              {failed ? "We tripped on a stone" : "Tonight's tale"}
+            </div>
+            <h1 style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 30, color: "var(--twilight)", marginBottom: 16, letterSpacing: "-0.02em" }}>
+              {failed ? "Story generation failed" : `Spinning ${heroName}'s adventure…`}
+            </h1>
+            {!failed && (
+              <>
+                <div style={{ height: 14, borderRadius: 999, background: "var(--cream-deep)", border: "2px solid var(--ink)", overflow: "hidden", marginBottom: 14 }}>
+                  <div
+                    style={{
+                      height: "100%",
+                      width: `${pct}%`,
+                      background: "var(--berry)",
+                      transition: "width 700ms ease-out",
+                    }}
+                  />
+                </div>
+                <div style={{ fontSize: 13.5, color: "var(--ink-soft)", fontWeight: 600 }}>
+                  {pct < 30
+                    ? "Drafting the chapters…"
+                    : pct < 95
+                      ? `Painting illustration ${Math.max(1, Math.min(5, Math.ceil((pct - 30) / 13)))} of 5…`
+                      : "Almost there…"}
+                </div>
+              </>
+            )}
+            {failed && story?.error && (
+              <div style={{ fontSize: 13, color: "var(--berry)", fontWeight: 700, marginTop: 12 }}>{story.error}</div>
+            )}
+            <div style={{ marginTop: 20, display: "flex", gap: 10, justifyContent: "center" }}>
+              <Link href="/dashboard" className="btn btn-ghost" style={{ border: "1.5px solid var(--ink)" }}>
+                Wait on the dashboard
+              </Link>
+              {failed && (
+                <Link href="/stories/new" className="btn btn-berry">
+                  Try a new tale →
+                </Link>
+              )}
+            </div>
+          </div>
+        </main>
+      </>
+    );
+  }
+
+  const heroTitle = story.title ?? `${heroName} & the ${blueprint} Tale`;
+  const chapterImage = imageByIndex.get(cur) ?? null;
 
   return (
     <>
@@ -142,19 +254,19 @@ export default function StoryReaderPage() {
             TellTales
           </Link>
           <div className="nav-crumbs">
-            <Link href="/">Home</Link>
+            <Link href="/dashboard">Dashboard</Link>
             <span className="sep">/</span>
             <Link href="/stories/new">New story</Link>
             <span className="sep">/</span>
             <span className="cur">{heroTitle}</span>
           </div>
-          <a
-            href="#"
+          <button
             className="btn"
-            style={{ padding: "10px 18px", fontSize: 13.5 }}
+            style={{ padding: "10px 18px", fontSize: 13.5, background: story.favorite ? "var(--berry)" : "var(--cream)", color: story.favorite ? "var(--cream)" : "var(--ink)" }}
+            onClick={toggleFavorite}
           >
-            Save to shelf ♡
-          </a>
+            {story.favorite ? "Saved ♥" : "Save to shelf ♡"}
+          </button>
         </nav>
       </header>
 
@@ -162,16 +274,12 @@ export default function StoryReaderPage() {
         <div className="gen-banner">
           <span className="check">✓</span>
           <span>Your story is ready.</span>
-          <span className="time">· conjured in 38 seconds</span>
         </div>
 
         <div className="progress-row">
           <div>
             <span className="page-kicker">Tonight&apos;s tale</span>
-            <h1 className="story-title">
-              {heroName} &amp; the{" "}
-              <span className="script-em">Brave Lantern</span>
-            </h1>
+            <h1 className="story-title">{heroTitle}</h1>
           </div>
           <div className="progress-pill">
             <span className="lbl">Step 2 of 2</span>
@@ -186,45 +294,33 @@ export default function StoryReaderPage() {
         <div className="reader">
           {/* LEFT: ILLUSTRATION */}
           <div className="illus-col">
-            <div className="illus">
-              <div className="tag-chap">{chapter.chip}</div>
+            <div className="illus" style={{ position: "relative", overflow: "hidden" }}>
+              <div className="tag-chap">{chapter?.chip ?? `Chapter ${cur + 1}`}</div>
               <div className="tag-ai">AI · CHARACTER-CONSISTENT</div>
-              <div className="moon-big" />
-              {STAR_POSITIONS.map((s, i) => (
-                <div key={i} className="star" style={s} />
-              ))}
-              <div className="tree" style={{ left: "12%" }} />
-              <div
-                className="tree"
-                style={{
-                  left: "78%",
-                  borderBottomWidth: 70,
-                  borderLeftWidth: 20,
-                  borderRightWidth: 20,
-                }}
-              />
-              <div
-                className="tree"
-                style={{
-                  left: "28%",
-                  bottom: "24%",
-                  borderBottomWidth: 48,
-                  borderLeftWidth: 14,
-                  borderRightWidth: 14,
-                  opacity: 0.7,
-                }}
-              />
-              <div className="mountain" />
-              <div className="hero-silhouette">
-                <div className="head" />
-                <div className="body" />
-              </div>
-              <div className="lantern" />
-              <div className="caption-strip">{chapter.caption}</div>
+              {chapterImage ? (
+                <Image
+                  src={chapterImage}
+                  alt={chapter?.title ?? `Chapter ${cur + 1}`}
+                  fill
+                  sizes="(max-width: 900px) 100vw, 600px"
+                  style={{ objectFit: "cover", borderRadius: "inherit" }}
+                  priority={cur === 0}
+                />
+              ) : (
+                <>
+                  <div className="moon-big" />
+                  {STAR_POSITIONS.map((s, i) => (
+                    <div key={i} className="star" style={s} />
+                  ))}
+                  <div className="tree" style={{ left: "12%" }} />
+                  <div className="mountain" />
+                </>
+              )}
+              <div className="caption-strip">{chapter?.caption ?? ""}</div>
             </div>
 
             <div className="illus-thumbs">
-              {CHAPTERS.map((_, i) => (
+              {chapters.map((_, i) => (
                 <div
                   key={i}
                   className={`thumb ch${i + 1}${cur === i ? " active" : ""}`}
@@ -241,61 +337,51 @@ export default function StoryReaderPage() {
             <div className="story-head">
               <div className="chip-row">
                 <span className="chip berry">{blueprint}</span>
-                <span className="chip moon">
-                  For {heroName} · {heroAge}
-                </span>
+                <span className="chip moon">For {heroName} · {heroAge}</span>
                 <span className="chip">{readMins} read</span>
               </div>
               <div className="head-actions">
                 <div
-                  className={`icon-btn${saved ? " active" : ""}`}
+                  className={`icon-btn${story.favorite ? " active" : ""}`}
                   title="Save"
-                  onClick={() => setSaved((v) => !v)}
+                  onClick={toggleFavorite}
                 >
                   ♡
                 </div>
-                <div className="icon-btn" title="Print">
-                  ⎙
-                </div>
-                <div className="icon-btn" title="Share">
-                  ↗
-                </div>
+                <div className="icon-btn" title="Print">⎙</div>
+                <div className="icon-btn" title="Share">↗</div>
               </div>
             </div>
 
-            <span className="chap-label">{chapter.label}</span>
-            <h2 className="chap-title">{chapter.title}</h2>
+            <span className="chap-label">{chapter?.label}</span>
+            <h2 className="chap-title">{chapter?.title}</h2>
 
             <div
               className="story-text"
               key={cur}
               dangerouslySetInnerHTML={{
-                __html: chapter.paras.map((p) => `<p>${p}</p>`).join(""),
+                __html: (chapter?.paras ?? []).map((p) => `<p>${p}</p>`).join(""),
               }}
             />
 
-            {/* AUDIO BAR */}
-            <div className="audio-bar">
+            {/* AUDIO BAR — narration TODO: ElevenLabs (Phase 2) */}
+            <div className="audio-bar" style={{ opacity: 0.6 }}>
               <div
                 className={`play-btn${playing ? " playing" : ""}`}
                 onClick={() => setPlaying((v) => !v)}
+                title="Narration arrives in a future update"
               >
                 <div className="play-tri" />
               </div>
               <div className="audio-meta">
-                <div className="audio-title">
-                  Read to {heroName} — {voice}&apos;s voice
-                </div>
+                <div className="audio-title">Read to {heroName} — {voice}&apos;s voice</div>
                 <div className="audio-sub">{voiceDesc}</div>
                 <div className="audio-prog" onClick={onProgClick}>
-                  <div
-                    className="fill"
-                    style={{ width: `${fillPct}%` }}
-                  />
+                  <div className="fill" style={{ width: `${fillPct}%` }} />
                 </div>
                 <div className="audio-time">
-                  <span>{TIMES[cur]}</span>
-                  <span>{TOTAL}</span>
+                  <span>—</span>
+                  <span>—</span>
                 </div>
               </div>
               <div className="audio-tools">
@@ -305,9 +391,7 @@ export default function StoryReaderPage() {
                 >
                   {SPEEDS[spIdx]}
                 </div>
-                <div className="speed-pill" title="Sleep timer">
-                  ⏾ 20m
-                </div>
+                <div className="speed-pill" title="Sleep timer">⏾ 20m</div>
               </div>
             </div>
 
@@ -321,13 +405,11 @@ export default function StoryReaderPage() {
                 <span className="big">←</span>
                 <div className="nv-lbl">
                   Previous
-                  <span className="nv-ttl">
-                    {prevIdx !== null ? CHAPTERS[prevIdx].title : ""}
-                  </span>
+                  <span className="nv-ttl">{prevIdx !== null ? chapters[prevIdx].title : ""}</span>
                 </div>
               </div>
               <div className="chap-counter">
-                <span className="now">{cur + 1}</span> / {CHAPTERS.length}
+                <span className="now">{cur + 1}</span> / {chapters.length}
               </div>
               <div
                 className="nav-chip next"
@@ -336,9 +418,7 @@ export default function StoryReaderPage() {
                 <div className="nv-lbl">
                   {nextIdx !== null ? "Next chapter" : "The end"}
                   <span className="nv-ttl">
-                    {nextIdx !== null
-                      ? CHAPTERS[nextIdx].title
-                      : "You finished it ✦"}
+                    {nextIdx !== null ? chapters[nextIdx].title : "You finished it ✦"}
                   </span>
                 </div>
                 <span className="big">→</span>
@@ -347,31 +427,31 @@ export default function StoryReaderPage() {
           </div>
         </div>
 
-        {/* END CTA */}
+        {/* END CTA — keepsake checkout TODO: Stripe (Phase 3) */}
         <div className="end-actions">
           <div>
             <div className="ea-title">
               Love this one? <em>Keep it forever.</em>
             </div>
             <div className="ea-sub">
-              Print {heroName}&apos;s tale as a linen-spined hardcover keepsake
-              book — shipped to your door in 5–7 days.
+              Print {heroName}&apos;s tale as a linen-spined hardcover keepsake book — coming soon.
             </div>
           </div>
           <div className="ea-btns">
-            <a
-              href="#"
+            <button
               className="btn"
-              style={{
-                background: "var(--cream)",
-                borderColor: "var(--ink)",
-              }}
+              style={{ background: "var(--cream)", borderColor: "var(--ink)" }}
+              onClick={toggleFavorite}
             >
-              Save to shelf
-            </a>
-            <a href="#" className="btn btn-berry">
+              {story.favorite ? "Saved ♥" : "Save to shelf"}
+            </button>
+            <span
+              className="btn btn-berry"
+              style={{ opacity: 0.6, pointerEvents: "none" }}
+              title="Keepsake books arrive in a future update"
+            >
               Order the keepsake book →
-            </a>
+            </span>
           </div>
         </div>
       </main>
@@ -379,9 +459,9 @@ export default function StoryReaderPage() {
       <div className="foot-mini">
         <div>© 2026 TellTales · Sweet dreams guaranteed.</div>
         <div>
-          <a href="#">Privacy (COPPA)</a>
-          <a href="#">Delete all my data</a>
-          <a href="#">Help</a>
+          <Link href="#">Privacy (COPPA)</Link>
+          <Link href="#">Delete all my data</Link>
+          <Link href="#">Help</Link>
         </div>
       </div>
     </>

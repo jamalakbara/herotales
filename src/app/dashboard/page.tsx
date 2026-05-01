@@ -1,7 +1,49 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DashboardNav } from "@/components/dashboard-nav";
+
+type APIChild = {
+  id: string;
+  nickname: string;
+  age: number;
+  pronouns: string;
+  detail_tags: string[];
+  character_description: string | null;
+  tales: number;
+  favorites: number;
+};
+type APIStory = {
+  id: string;
+  child_id: string;
+  blueprint: string;
+  length: string;
+  voice: string | null;
+  status: "pending" | "generating" | "ready" | "failed";
+  progress: number;
+  title: string | null;
+  favorite: boolean;
+  created_at: string;
+  completed_at: string | null;
+  children: { nickname: string } | { nickname: string }[] | null;
+};
+type APIDashboard = {
+  profile: { display_name: string | null; email: string; streak_nights: number; last_read_date: string | null } | null;
+  quota: { quota: number; used: number; remaining: number; periodStart: string };
+  kids: APIChild[];
+  recent_stories: APIStory[];
+};
+
+const COVER_CLASSES = ["bc-2", "bc-3", "bc-1", "bc-4", "bc-5", "bc-6"];
+const THEME_STAR: Record<string, string> = {
+  Bravery: "★",
+  Honesty: "✦",
+  Patience: "⟲",
+  Kindness: "♡",
+  Persistence: "↑",
+};
+const KID_AVATAR_BG = ["var(--berry)", "var(--lilac)", "var(--sage)", "var(--moon)"];
+const KID_AVATAR_FG = ["var(--cream)", "var(--twilight)", "var(--cream)", "var(--twilight)"];
 
 function covStyle(cls: string): React.CSSProperties {
   const bg: Record<string, string> = {
@@ -15,35 +57,122 @@ function covStyle(cls: string): React.CSSProperties {
   return { background: bg[cls] ?? "var(--cream)", color: col[cls] ?? "var(--ink)" };
 }
 
-const books = [
-  { id: 1, cls: "bc-2", badge: "In progress", badgeBerry: true, label: "Chapter 2 of 5", title: "Maya & the", script: "Brave Lantern", theme: "Bravery", star: "★", infoTitle: "Maya & the Brave Lantern", forKid: "Ada", when: "Last night", href: "/stories/1" },
-  { id: 2, cls: "bc-3", badge: "Favorite ♡", badgeBerry: false, label: "Complete · 5 chapters", title: "The Garden That", script: "Grew Slowly", theme: "Patience", star: "☾", infoTitle: "The Garden That Grew Slowly", forKid: "Ada", when: "3 nights ago", href: "#" },
-  { id: 3, cls: "bc-1", badge: "", badgeBerry: false, label: "Complete · 5 chapters", title: "Ada & the", script: "Honest Fox", theme: "Honesty", star: "✦", infoTitle: "Ada & the Honest Fox", forKid: "Ada", when: "Last Tuesday", href: "#" },
-  { id: 4, cls: "bc-4", badge: "Printed ✦", badgeBerry: false, label: "Complete · 5 chapters", title: "The Smallest", script: "Friend at School", theme: "Kindness", star: "♡", infoTitle: "The Smallest Friend at School", forKid: "Ada", when: "12 days ago", href: "#" },
-  { id: 5, cls: "bc-5", badge: "", badgeBerry: false, label: "Complete · 5 chapters", title: "Theo & the", script: "Long Climb", theme: "Persistence", star: "↑", infoTitle: "Theo & the Long Climb", forKid: "Theo", when: "Last Saturday", href: "#" },
-  { id: 6, cls: "bc-6", badge: "", badgeBerry: false, label: "Complete · 5 chapters", title: "The Quiet Stage", script: "& the Deep Breath", theme: "Bravery", star: "★", infoTitle: "The Quiet Stage & the Deep Breath", forKid: "Ada", when: "3 weeks ago", href: "#" },
-  { id: 7, cls: "bc-2", badge: "", badgeBerry: false, label: "Complete · 5 chapters", title: "Noor & the", script: "Patient Seed", theme: "Patience", star: "☾", infoTitle: "Noor & the Patient Seed", forKid: "Noor", when: "last month", href: "#" },
-];
+function timeAgo(iso: string): string {
+  const then = new Date(iso).getTime();
+  const diff = Date.now() - then;
+  const mins = Math.round(diff / 60000);
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins} min ago`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.round(hrs / 24);
+  if (days < 7) return `${days} day${days === 1 ? "" : "s"} ago`;
+  const wks = Math.round(days / 7);
+  if (wks < 4) return `${wks} week${wks === 1 ? "" : "s"} ago`;
+  const months = Math.round(days / 30);
+  return `${months} month${months === 1 ? "" : "s"} ago`;
+}
 
-const kids = [
-  { name: "Ada", age: "5 years · she/her", avBg: "var(--berry)", avCol: "var(--cream)", tales: 14, favs: 5, printed: 1 },
-  { name: "Theo", age: "3 years · he/him", avBg: "var(--lilac)", avCol: "var(--twilight)", tales: 9, favs: 3, printed: 0 },
-  { name: "Noor", age: "7 years · they/them", avBg: "var(--sage)", avCol: "var(--cream)", tales: 5, favs: 2, printed: 0 },
-];
+function splitTitle(title: string): { line1: string; line2: string } {
+  const words = title.split(" ");
+  if (words.length <= 3) return { line1: title, line2: "" };
+  const mid = Math.ceil(words.length / 2);
+  return { line1: words.slice(0, mid).join(" "), line2: words.slice(mid).join(" ") };
+}
+
+function pickName(s: APIStory["children"]): string {
+  if (!s) return "";
+  return Array.isArray(s) ? s[0]?.nickname ?? "" : s.nickname;
+}
 
 const filters = ["All", "Favorites ♡", "Bravery", "Kindness", "Patience", "Sort: Recent ▾"];
 
 export default function DashboardPage() {
+  const [data, setData] = useState<APIDashboard | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [activeKid, setActiveKid] = useState(0);
   const [activeFilter, setActiveFilter] = useState("All");
 
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/dashboard", { cache: "no-store" })
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`Dashboard load failed (${r.status})`);
+        return (await r.json()) as APIDashboard;
+      })
+      .then((j) => {
+        if (!cancelled) setData(j);
+      })
+      .catch((e: unknown) => {
+        if (!cancelled) setLoadError(e instanceof Error ? e.message : "Could not load");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const kids = data?.kids ?? [];
+  const recent = data?.recent_stories ?? [];
+  const profile = data?.profile;
+  const quota = data?.quota;
+
+  const activeKidObj = kids[activeKid];
+
+  const filteredStories = useMemo(() => {
+    let xs = recent;
+    if (activeKidObj) xs = xs.filter((s) => s.child_id === activeKidObj.id);
+    if (activeFilter === "Favorites ♡") xs = xs.filter((s) => s.favorite);
+    else if (activeFilter !== "All" && !activeFilter.startsWith("Sort:")) xs = xs.filter((s) => s.blueprint === activeFilter);
+    return xs;
+  }, [recent, activeKidObj, activeFilter]);
+
+  const inProgress = recent.find((s) => s.status === "ready") ?? null;
+  const greetingFirstName = profile?.display_name?.split(" ")[0] ?? profile?.email?.split("@")[0] ?? "Friend";
+
   const scriptCol = (cls: string) => (cls === "bc-2" || cls === "bc-1" || cls === "bc-4") ? "var(--moon)" : "inherit";
   const starBg = (cls: string) => (cls === "bc-3" || cls === "bc-5" || cls === "bc-6") ? "rgba(28,21,64,0.12)" : "rgba(255,255,255,0.18)";
+
+  const kidsView = kids.map((k, i) => ({
+    id: k.id,
+    name: k.nickname,
+    age: `${k.age} years · ${k.pronouns}`,
+    avBg: KID_AVATAR_BG[i % KID_AVATAR_BG.length],
+    avCol: KID_AVATAR_FG[i % KID_AVATAR_FG.length],
+    tales: k.tales,
+    favs: k.favorites,
+    printed: 0,
+  }));
+
+  const booksView = filteredStories.map((s, i) => {
+    const t = s.title ?? `Chapter ${s.progress}%`;
+    const { line1, line2 } = splitTitle(t);
+    return {
+      id: s.id,
+      cls: COVER_CLASSES[i % COVER_CLASSES.length],
+      badge: s.status !== "ready" ? "In progress" : s.favorite ? "Favorite ♡" : "",
+      badgeBerry: s.status !== "ready",
+      label: s.status === "ready" ? "Complete · 5 chapters" : `Conjuring · ${s.progress}%`,
+      title: line1,
+      script: line2,
+      theme: s.blueprint,
+      star: THEME_STAR[s.blueprint] ?? "✦",
+      infoTitle: t,
+      forKid: pickName(s.children),
+      when: timeAgo(s.created_at),
+      href: `/stories/${s.id}`,
+    };
+  });
 
   return (
     <>
       <DashboardNav />
       <main className="dash-page" style={{ maxWidth: 1400, margin: "0 auto", padding: "10px 48px 80px", position: "relative", zIndex: 2 }}>
+
+        {loadError && (
+          <div style={{ marginBottom: 24, padding: "14px 18px", background: "rgba(180,60,90,0.08)", border: "2px solid var(--berry)", borderRadius: 16, color: "var(--berry)", fontWeight: 700, fontSize: 13.5 }}>
+            {loadError}
+          </div>
+        )}
 
         {/* GREETING */}
         <div className="dash-greet" style={{ display: "grid", gridTemplateColumns: "1.15fr 0.85fr", gap: 36, marginBottom: 48, alignItems: "stretch" }}>
@@ -51,10 +180,12 @@ export default function DashboardPage() {
             <span style={{ position: "absolute", top: 20, right: 32, fontFamily: "var(--font-caprasimo), serif", fontSize: 64, color: "var(--moon)", transform: "rotate(14deg)", opacity: 0.85, pointerEvents: "none" }}>✦</span>
             <div style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--berry)", fontSize: 16, transform: "rotate(-1.5deg)", display: "inline-block", marginBottom: 10 }}>Friday evening, 7:14pm</div>
             <h1 style={{ fontFamily: "var(--font-young-serif), serif", fontSize: "clamp(36px, 3.6vw, 50px)", lineHeight: 1.02, letterSpacing: "-0.02em", color: "var(--twilight)", maxWidth: 560, marginBottom: 14 }}>
-              Welcome back, <span style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--berry)" }}>Ramona</span>. The woods are ready when you are.
+              Welcome back, <span style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--berry)" }}>{greetingFirstName}</span>. The woods are ready when you are.
             </h1>
             <p style={{ fontSize: 17, color: "var(--ink-soft)", fontWeight: 500, maxWidth: 500, marginBottom: 28, lineHeight: 1.5 }}>
-              You&apos;ve read 28 bedtime tales together. Ada&apos;s shelf is filling up — and tonight feels like a good night for another chapter.
+              {recent.length === 0
+                ? "Ready to spin your first tale? Pick a hero, pick a value — the woods will do the rest."
+                : `You've ${recent.length === 1 ? "read 1 bedtime tale" : `read ${recent.length} bedtime tales`} together. Tonight feels like a good night for another chapter.`}
             </p>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               <Link href="/stories/new" className="dash-btn dash-btn-berry">Start tonight&apos;s story →</Link>
@@ -65,19 +196,29 @@ export default function DashboardPage() {
           <div style={{ background: "var(--twilight)", color: "var(--cream)", border: "2.5px solid var(--ink)", borderRadius: 28, boxShadow: "8px 8px 0 var(--ink)", padding: 32, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
             <div style={{ position: "absolute", top: -40, right: -40, width: 160, height: 160, background: "var(--moon)", borderRadius: "50%", opacity: 0.18, pointerEvents: "none" }} />
             <div>
-              <div style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--moon)", fontSize: 15, marginBottom: 8 }}>Pick up where you left off</div>
-              <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 28, lineHeight: 1.1, maxWidth: 320, marginBottom: 14 }}>
-                Maya &amp; the <span style={{ color: "var(--moon)", fontFamily: "var(--font-caprasimo), serif" }}>Brave Lantern</span>
+              <div style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--moon)", fontSize: 15, marginBottom: 8 }}>
+                {inProgress ? "Pick up where you left off" : "Tonight's first chapter"}
               </div>
-              <div style={{ fontSize: 14, color: "rgba(251,243,227,0.75)", fontWeight: 500, lineHeight: 1.5, maxWidth: 360, marginBottom: 22 }}>You finished Chapter 2 last night. One more and the owl appears with kind eyes.</div>
+              <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 28, lineHeight: 1.1, maxWidth: 320, marginBottom: 14 }}>
+                {inProgress?.title ?? "No story yet — let's spin one"}
+              </div>
+              <div style={{ fontSize: 14, color: "rgba(251,243,227,0.75)", fontWeight: 500, lineHeight: 1.5, maxWidth: 360, marginBottom: 22 }}>
+                {inProgress
+                  ? `${inProgress.blueprint} · for ${pickName(inProgress.children)} · ${timeAgo(inProgress.created_at)}`
+                  : "Pick a hero and a value — your library starts tonight."}
+              </div>
             </div>
             <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
               <div className="dash-play-icon" style={{ width: 56, height: 56, borderRadius: 14, background: "var(--berry)", border: "2px solid var(--cream)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--cream)", fontFamily: "var(--font-caprasimo), serif", fontSize: 22, flexShrink: 0 }}>▶</div>
               <div style={{ flex: 1, minWidth: 0, fontSize: 12, opacity: 0.7 }}>
-                <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 18, color: "var(--cream)", opacity: 1, marginBottom: 2 }}>Chapter 3 · A whisper in the dark</div>
-                <div>2 min 14 sec · Juniper&apos;s voice</div>
+                <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 18, color: "var(--cream)", opacity: 1, marginBottom: 2 }}>
+                  {inProgress ? inProgress.blueprint : "5-chapter bedtime adventure"}
+                </div>
+                <div>{inProgress ? `${inProgress.length} · ${inProgress.voice ?? "Juniper"}'s voice` : "Takes about 40 seconds to conjure"}</div>
               </div>
-              <Link href="/stories/1" className="dash-resume-btn">Resume</Link>
+              <Link href={inProgress ? `/stories/${inProgress.id}` : "/stories/new"} className="dash-resume-btn">
+                {inProgress ? "Resume" : "Start"}
+              </Link>
             </div>
           </div>
         </div>
@@ -95,7 +236,7 @@ export default function DashboardPage() {
 
         {/* KIDS ROW */}
         <div className="dash-kids-row" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 56 }}>
-          {kids.map((kid, i) => (
+          {kidsView.map((kid, i) => (
             <div key={kid.name} className="dash-kid-card" onClick={() => setActiveKid(i)} style={{ background: activeKid === i ? "var(--moon)" : "var(--cream)", border: "2.5px solid var(--ink)", borderRadius: 20, boxShadow: "5px 5px 0 var(--ink)", padding: 22 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 16 }}>
                 <div style={{ width: 54, height: 54, borderRadius: 16, border: "2px solid var(--ink)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 24, background: kid.avBg, color: kid.avCol, flexShrink: 0 }}>{kid.name[0]}</div>
@@ -122,9 +263,13 @@ export default function DashboardPage() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, gap: 16, flexWrap: "wrap" }}>
           <div>
             <h2 style={{ fontFamily: "var(--font-young-serif), serif", fontSize: "clamp(24px, 2.4vw, 30px)", color: "var(--twilight)", letterSpacing: "-0.01em" }}>
-              Ada&apos;s <span style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--berry)", fontSize: "0.9em" }}>shelf</span>
+              {activeKidObj?.nickname ?? "Your"}<span style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--berry)", fontSize: "0.9em" }}>{activeKidObj ? "'s shelf" : " shelf"}</span>
             </h2>
-            <div style={{ fontSize: 13.5, color: "var(--ink-soft)", fontWeight: 600, marginTop: 4 }}>14 stories · 5 favorites · last read last night</div>
+            <div style={{ fontSize: 13.5, color: "var(--ink-soft)", fontWeight: 600, marginTop: 4 }}>
+              {activeKidObj
+                ? `${activeKidObj.tales} ${activeKidObj.tales === 1 ? "story" : "stories"} · ${activeKidObj.favorites} favorite${activeKidObj.favorites === 1 ? "" : "s"}`
+                : "Add a hero to begin"}
+            </div>
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
             {filters.map(f => (
@@ -141,7 +286,7 @@ export default function DashboardPage() {
         {/* SHELF PLANK + BOOKS */}
         <div style={{ height: 14, background: "var(--ink)", borderRadius: 3, marginBottom: -2, boxShadow: "0 3px 0 rgba(28,21,64,0.4)" }} />
         <div className="dash-shelf-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 24, padding: "24px 20px 36px", background: "var(--cream-deep)", border: "2.5px solid var(--ink)", borderRadius: "4px 4px 24px 24px", borderTop: "none", boxShadow: "5px 8px 0 var(--ink)", marginBottom: 56 }}>
-          {books.map(b => (
+          {booksView.map(b => (
             <Link key={b.id} href={b.href} className="dash-book-card">
               {b.badge && (
                 <div style={{ position: "absolute", top: -8, right: -6, padding: "4px 10px", background: b.badgeBerry ? "var(--berry)" : "var(--moon)", border: "2px solid var(--ink)", borderRadius: 999, fontFamily: "var(--font-caprasimo), serif", fontSize: 12, color: b.badgeBerry ? "var(--cream)" : "var(--twilight)", transform: "rotate(6deg)", zIndex: 3 }}>{b.badge}</div>
@@ -186,7 +331,7 @@ export default function DashboardPage() {
           <div style={{ background: "var(--moon)", border: "2.5px solid var(--ink)", borderRadius: 22, boxShadow: "6px 6px 0 var(--ink)", padding: "24px 26px" }}>
             <div style={{ fontFamily: "var(--font-caprasimo), serif", fontSize: 13, color: "var(--berry)", marginBottom: 6 }}>Bedtime streak</div>
             <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 46, color: "var(--twilight)", lineHeight: 1, letterSpacing: "-0.02em", display: "flex", alignItems: "baseline", gap: 8 }}>
-              12<span style={{ fontSize: 14, fontWeight: 700, fontFamily: "var(--font-nunito), sans-serif", color: "var(--ink-soft)" }}>nights in a row</span>
+              {profile?.streak_nights ?? 0}<span style={{ fontSize: 14, fontWeight: 700, fontFamily: "var(--font-nunito), sans-serif", color: "var(--ink-soft)" }}>{(profile?.streak_nights ?? 0) === 1 ? "night so far" : "nights in a row"}</span>
             </div>
             <div style={{ marginTop: 14, display: "flex", gap: 4 }}>
               {["M","T","W","T","F","S"].map((d, i) => (
@@ -200,10 +345,12 @@ export default function DashboardPage() {
           <div style={{ background: "var(--cream)", border: "2.5px solid var(--ink)", borderRadius: 22, boxShadow: "6px 6px 0 var(--ink)", padding: "24px 26px" }}>
             <div style={{ fontFamily: "var(--font-caprasimo), serif", fontSize: 13, color: "var(--berry)", marginBottom: 6 }}>This month</div>
             <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 46, color: "var(--twilight)", lineHeight: 1, letterSpacing: "-0.02em", display: "flex", alignItems: "baseline", gap: 8 }}>
-              28<span style={{ fontSize: 14, fontWeight: 700, fontFamily: "var(--font-nunito), sans-serif", color: "var(--ink-soft)" }}>of 31 stories used</span>
+              {quota?.used ?? 0}<span style={{ fontSize: 14, fontWeight: 700, fontFamily: "var(--font-nunito), sans-serif", color: "var(--ink-soft)" }}>of {quota?.quota ?? 0} stories used</span>
             </div>
-            <div style={{ fontSize: 13, color: "var(--ink-soft)", fontWeight: 600, marginTop: 8, maxWidth: 280, lineHeight: 1.4 }}>Lantern plan resets on Apr 30. You&apos;re 3 stories away from your monthly cap.</div>
-            <Link href="#" className="dash-stat-link" style={{ marginTop: 12, display: "inline-block" }}>Upgrade to Constellation →</Link>
+            <div style={{ fontSize: 13, color: "var(--ink-soft)", fontWeight: 600, marginTop: 8, maxWidth: 280, lineHeight: 1.4 }}>
+              {quota ? `${quota.remaining} ${quota.remaining === 1 ? "story" : "stories"} left this period.` : "Loading…"}
+            </div>
+            <span className="dash-stat-link" style={{ marginTop: 12, display: "inline-block", opacity: 0.6 }} title="Upgrades arrive in a future update">Upgrades coming soon →</span>
           </div>
           {/* Keepsake */}
           <div style={{ background: "var(--sage)", color: "var(--cream)", border: "2.5px solid var(--ink)", borderRadius: 22, boxShadow: "6px 6px 0 var(--ink)", padding: "24px 26px" }}>

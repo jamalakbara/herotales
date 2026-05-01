@@ -64,6 +64,9 @@ export default function CreateStoryPage() {
   const [describeOpen, setDescribeOpen] = useState(false);
   const [description, setDescription] = useState("");
 
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
   const displayName = (name || "").trim() || "Hero";
   const initial = (name || "H").trim()[0]?.toUpperCase() ?? "H";
   const blueprintMeta = useMemo(
@@ -91,17 +94,45 @@ export default function CreateStoryPage() {
     });
   }
 
-  function handleGenerate(e: React.MouseEvent<HTMLAnchorElement>) {
+  async function handleGenerate(e: React.MouseEvent<HTMLAnchorElement>) {
     e.preventDefault();
-    const params = new URLSearchParams({
-      name: displayName,
-      age,
-      blueprint,
-      length,
-      voice,
-      hook: hook.slice(0, 240),
-    });
-    router.push(`/stories/maya-brave-lantern?${params.toString()}`);
+    if (submitting) return;
+    setSubmitError(null);
+    setSubmitting(true);
+    try {
+      const pronouns = pronoun === "let me type" ? "they/them" : pronoun.replace(/\s+/g, "");
+      const voiceName = voice === "My voice" ? "My voice" : voice;
+      const res = await fetch("/api/stories", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          child: {
+            nickname: displayName,
+            age: parseInt(age, 10),
+            pronouns,
+            detail_tags: Array.from(tags),
+            character_description: description.trim() ? description.trim() : undefined,
+          },
+          blueprint,
+          length,
+          voice: voiceName,
+          hook: hook.slice(0, 240) || undefined,
+        }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        if (res.status === 401) {
+          router.push(`/sign-in?next=${encodeURIComponent("/stories/new")}`);
+          return;
+        }
+        throw new Error(j.error ?? `Request failed (${res.status})`);
+      }
+      const j = (await res.json()) as { story_id: string };
+      router.push(`/stories/${j.story_id}`);
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "Something went wrong");
+      setSubmitting(false);
+    }
   }
 
   function handleRandomize(e: React.MouseEvent<HTMLAnchorElement>) {
@@ -121,9 +152,9 @@ export default function CreateStoryPage() {
             TellTales
           </Link>
           <div className="nav-crumbs">
-            <Link href="/">Home</Link>
+            <Link href="/dashboard">Home</Link>
             <span className="sep">/</span>
-            <a href="#">Library</a>
+            <Link href="/shelf">Shelf</Link>
             <span className="sep">/</span>
             <span className="cur">New story</span>
           </div>
@@ -454,10 +485,16 @@ export default function CreateStoryPage() {
                   href="#"
                   className="btn btn-berry"
                   onClick={handleGenerate}
+                  style={{ opacity: submitting ? 0.6 : 1, pointerEvents: submitting ? "none" : "auto" }}
                 >
-                  Generate story →
+                  {submitting ? "Conjuring…" : "Generate story →"}
                 </a>
               </div>
+              {submitError && (
+                <div style={{ marginTop: 12, color: "var(--berry)", fontSize: 13, fontWeight: 700 }}>
+                  {submitError}
+                </div>
+              )}
             </div>
           </div>
 

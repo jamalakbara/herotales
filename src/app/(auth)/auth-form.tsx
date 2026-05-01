@@ -1,0 +1,397 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { createClient } from "@/lib/supabase/client";
+import styles from "./auth-form.module.css";
+
+type Mode = "sign-in" | "sign-up";
+type Action = (formData: FormData) => Promise<{ error?: string } | void>;
+
+export function AuthForm({
+  initialMode,
+  next,
+  signInAction,
+  signUpAction,
+}: {
+  initialMode: Mode;
+  next: string;
+  signInAction: Action;
+  signUpAction: Action;
+}) {
+  const [mode, setMode] = useState<Mode>(initialMode);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, start] = useTransition();
+  const [showPw, setShowPw] = useState(false);
+  const [pw, setPw] = useState("");
+  const [oauthPending, setOauthPending] = useState(false);
+
+  const isSignUp = mode === "sign-up";
+
+  const signinBtnRef = useRef<HTMLButtonElement>(null);
+  const signupBtnRef = useRef<HTMLButtonElement>(null);
+  const [pillStyle, setPillStyle] = useState<{ left: number; width: number }>({ left: 4, width: 0 });
+
+  useEffect(() => {
+    function position() {
+      const active = mode === "sign-up" ? signupBtnRef.current : signinBtnRef.current;
+      if (!active || !active.parentElement) return;
+      const p = active.parentElement.getBoundingClientRect();
+      const a = active.getBoundingClientRect();
+      setPillStyle({ left: a.left - p.left, width: a.width });
+    }
+    requestAnimationFrame(() => requestAnimationFrame(position));
+    window.addEventListener("resize", position);
+    if (typeof document !== "undefined" && document.fonts?.ready) {
+      document.fonts.ready.then(position);
+    }
+    return () => window.removeEventListener("resize", position);
+  }, [mode]);
+
+  const pwScore = useMemo(() => {
+    if (!pw) return 0;
+    let s = 0;
+    if (pw.length >= 8) s++;
+    if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) s++;
+    if (/\d/.test(pw)) s++;
+    if (/[^A-Za-z0-9]/.test(pw) || pw.length >= 14) s++;
+    return s;
+  }, [pw]);
+
+  const pwColors = ["var(--berry)", "var(--moon)", "var(--moon)", "var(--sage)"];
+  const pwLabels = ["Soft", "Cozy", "Strong", "Brave"];
+
+  async function handleGoogle() {
+    setError(null);
+    setOauthPending(true);
+    try {
+      const supabase = createClient();
+      const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo },
+      });
+      if (error) {
+        setError(error.message);
+        setOauthPending(false);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not start Google sign-in.");
+      setOauthPending(false);
+    }
+  }
+
+  return (
+    <>
+      <header>
+        <nav className={styles.nav}>
+          <Link href="/" className={styles.logo} aria-label="TellTales home">
+            <div className={styles.logoMark} />
+            TellTales
+          </Link>
+          <div className={styles.navAside}>
+            <Link href="/" className={styles.helpLink}>Need a hand?</Link>
+            <Link href="/" className={styles.backPill}>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+              Back home
+            </Link>
+          </div>
+        </nav>
+      </header>
+
+      <main>
+        <div className={styles.authWrap}>
+          <section className={styles.formCard} aria-labelledby="form-title">
+            <span className={styles.eyebrow}>
+              <span className={styles.eyebrowDot} />
+              {isSignUp ? "Begin your shelf" : "Welcome back"}
+            </span>
+
+            <h1 className={styles.formTitle} id="form-title">
+              {isSignUp ? (
+                <>Make their bedtime <span className={styles.script}>magical</span>.</>
+              ) : (
+                <>Tonight, the storyteller is <span className={styles.script}>you</span>.</>
+              )}
+            </h1>
+            <p className={styles.formSub}>
+              {isSignUp
+                ? "Create your free account — your first story is on us, and the shelf is yours forever."
+                : "Sign in to find your shelf, finish last night's chapter, or start a brand-new tale."}
+            </p>
+
+            <div className={styles.modeToggle} role="tablist" aria-label="Choose sign-in or sign-up">
+              <span className={styles.pill} style={{ left: pillStyle.left, width: pillStyle.width }} />
+              <button
+                ref={signinBtnRef}
+                type="button"
+                role="tab"
+                aria-selected={!isSignUp}
+                className={!isSignUp ? "active" : ""}
+                onClick={() => setMode("sign-in")}
+              >
+                Sign in
+              </button>
+              <button
+                ref={signupBtnRef}
+                type="button"
+                role="tab"
+                aria-selected={isSignUp}
+                className={isSignUp ? "active" : ""}
+                onClick={() => setMode("sign-up")}
+              >
+                Create account
+              </button>
+            </div>
+
+            <div className={styles.socials}>
+              <button
+                type="button"
+                className={styles.socialBtn}
+                aria-label="Continue with Google"
+                onClick={handleGoogle}
+                disabled={oauthPending || pending}
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.56c2.08-1.92 3.28-4.74 3.28-8.1z" />
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.56-2.77c-.99.66-2.25 1.06-3.72 1.06-2.86 0-5.28-1.93-6.15-4.53H2.18v2.84A11 11 0 0 0 12 23z" />
+                  <path fill="#FBBC05" d="M5.85 14.1A6.6 6.6 0 0 1 5.5 12c0-.73.13-1.44.35-2.1V7.06H2.18A11 11 0 0 0 1 12c0 1.78.43 3.46 1.18 4.94l3.67-2.84z" />
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.46 2.1 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.67 2.84C6.72 7.31 9.14 5.38 12 5.38z" />
+                </svg>
+                {oauthPending ? "Opening Google…" : "Google"}
+              </button>
+              <button
+                type="button"
+                className={styles.socialBtn}
+                aria-label="Continue with Apple"
+                disabled
+                title="Apple sign-in coming soon"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true" fill="#1C1540">
+                  <path d="M16.36 12.65c-.02-2.4 1.96-3.55 2.05-3.6-1.12-1.64-2.86-1.86-3.48-1.89-1.48-.15-2.89.87-3.64.87-.76 0-1.91-.85-3.15-.83-1.62.02-3.12.94-3.95 2.39-1.69 2.93-.43 7.27 1.21 9.65.8 1.16 1.75 2.47 3 2.42 1.21-.05 1.66-.78 3.13-.78 1.46 0 1.87.78 3.15.76 1.3-.02 2.12-1.18 2.91-2.35.92-1.34 1.3-2.65 1.32-2.72-.03-.02-2.53-.97-2.55-3.92zM13.96 5.6c.66-.81 1.11-1.92.99-3.04-.96.04-2.13.64-2.81 1.44-.61.71-1.15 1.85-1 2.94 1.07.08 2.16-.55 2.82-1.34z" />
+                </svg>
+                Apple
+              </button>
+            </div>
+
+            <div className={styles.divider}>or with email</div>
+
+            <form
+              noValidate
+              action={(fd) => {
+                setError(null);
+                fd.set("next", next);
+                start(async () => {
+                  const action = isSignUp ? signUpAction : signInAction;
+                  const res = await action(fd);
+                  if (res && "error" in res && res.error) setError(res.error);
+                });
+              }}
+            >
+              {error && <div className={styles.errorBanner}>{error}</div>}
+
+              {isSignUp && (
+                <div className={styles.field}>
+                  <label htmlFor="name">Your name</label>
+                  <div className={styles.inputShell}>
+                    <svg className="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></svg>
+                    <input type="text" id="name" name="name" autoComplete="name" placeholder="e.g. Ramona" />
+                  </div>
+                </div>
+              )}
+
+              <div className={styles.field}>
+                <label htmlFor="email">Email</label>
+                <div className={styles.inputShell}>
+                  <svg className="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 7l9 6 9-6" /></svg>
+                  <input type="email" id="email" name="email" autoComplete="email" placeholder="grownup@bedtime.co" required />
+                </div>
+              </div>
+
+              <div className={styles.field}>
+                <label htmlFor="password">
+                  <span>Password</span>
+                  {!isSignUp && (
+                    <a
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        alert("We'll send a magic lantern (a.k.a. reset link) to your email. ✦");
+                      }}
+                    >
+                      Forgot it?
+                    </a>
+                  )}
+                </label>
+                <div className={styles.inputShell}>
+                  <svg className="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
+                  <input
+                    type={showPw ? "text" : "password"}
+                    id="password"
+                    name="password"
+                    autoComplete={isSignUp ? "new-password" : "current-password"}
+                    placeholder="At least 8 cozy characters"
+                    required
+                    minLength={8}
+                    value={pw}
+                    onChange={(e) => setPw(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className={styles.togglePw}
+                    aria-label={showPw ? "Hide password" : "Show password"}
+                    onClick={() => setShowPw((v) => !v)}
+                  >
+                    {showPw ? (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M2 12s3.5-7 10-7c2.4 0 4.4.7 6 1.7M22 12s-3.5 7-10 7c-2.4 0-4.4-.7-6-1.7" />
+                        <path d="M3 3l18 18" />
+                        <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />
+                      </svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+                {isSignUp && (
+                  <div className={styles.pwMeter} aria-hidden="true">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div
+                        key={i}
+                        className={styles.pwSeg}
+                        style={{
+                          background: i <= pwScore ? pwColors[Math.max(0, pwScore - 1)] : "var(--paper-line)",
+                        }}
+                      />
+                    ))}
+                    <span className={styles.pwLabel}>{pwScore === 0 ? "—" : pwLabels[pwScore - 1]}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className={styles.rowLine}>
+                {isSignUp ? (
+                  <label className={styles.check}>
+                    <input type="checkbox" name="terms" required />
+                    <span className={styles.checkBox} />
+                    <span>I agree to the <a href="#" style={{ color: "var(--berry)" }}>terms</a> &amp; <a href="#" style={{ color: "var(--berry)" }}>privacy</a></span>
+                  </label>
+                ) : (
+                  <label className={styles.check}>
+                    <input type="checkbox" name="remember" defaultChecked />
+                    <span className={styles.checkBox} />
+                    Keep me cozy &amp; signed in
+                  </label>
+                )}
+              </div>
+
+              <button type="submit" className={styles.submit} disabled={pending || oauthPending}>
+                {pending ? (
+                  <span>{isSignUp ? "Creating your shelf…" : "Opening your shelf…"}</span>
+                ) : (
+                  <>
+                    <span>{isSignUp ? "Create my shelf" : "Open my shelf"}</span>
+                    <span className={styles.arr}>→</span>
+                  </>
+                )}
+              </button>
+
+              <p className={styles.legal}>
+                {isSignUp ? (
+                  <>
+                    Already have a shelf?{" "}
+                    <a
+                      href="#"
+                      onClick={(e) => { e.preventDefault(); setMode("sign-in"); }}
+                    >
+                      Sign in instead
+                    </a>
+                  </>
+                ) : (
+                  <>
+                    New here?{" "}
+                    <a
+                      href="#"
+                      onClick={(e) => { e.preventDefault(); setMode("sign-up"); }}
+                    >
+                      Make a free account
+                    </a>
+                  </>
+                )}
+              </p>
+
+              <div className={styles.coppa}>
+                <div className={styles.coppaMark}>✦</div>
+                <div>
+                  <strong style={{ color: "var(--ink)", fontWeight: 800 }}>For grown-ups only.</strong>{" "}
+                  TellTales is a parent-managed account. We never collect data on children directly — heroes are added by you, the grown-up, and stay safely on your shelf.{" "}
+                  <a href="#" style={{ color: "var(--twilight)", borderBottom: "1.5px dashed var(--twilight)" }}>Read our COPPA promise →</a>
+                </div>
+              </div>
+            </form>
+          </section>
+
+          <aside className={styles.visual} aria-hidden="true">
+            <div className={`${styles.float} ${styles.d1} ${styles.starDecor}`} />
+            <div className={`${styles.float} ${styles.d2} ${styles.moonDecor}`} />
+            <div className={`${styles.float} ${styles.d3} ${styles.cloudDecor}`} />
+            <div className={`${styles.float} ${styles.d4} ${styles.starDecor}`} />
+            <div className={`${styles.float} ${styles.d5} ${styles.starDecor}`} />
+
+            <div className={`${styles.tuckBook} ${styles.tuck1}`}>
+              <div>
+                <div className="label">Saved · last night</div>
+                <div className="title">Maya &amp; the <span className="sc">Brave Lantern</span></div>
+              </div>
+              <div className="meta">
+                <span>Bravery</span>
+                <div className="star">★</div>
+              </div>
+            </div>
+
+            <div className={`${styles.tuckBook} ${styles.tuck2}`}>
+              <div>
+                <div className="label">Up next</div>
+                <div className="title">Leo &amp; the <span className="sc">Patient Seed</span></div>
+              </div>
+              <div className="meta">
+                <span>Patience</span>
+                <div className="star">☾</div>
+              </div>
+            </div>
+
+            <div className={styles.welcomeCard}>
+              <div className={styles.sparkles}>
+                <span className="sp" /><span className="sp" /><span className="sp" />
+              </div>
+              <div className={styles.welcomeEyebrow}>Your shelf is waiting</div>
+              <div className={styles.welcomeQuote}>
+                A <em>14-night streak</em>, three little heroes, and one chapter unfinished — let&apos;s pick up where you left off.
+              </div>
+              <div className={styles.welcomeMeta}>
+                <div className={styles.welcomeAvatars}>
+                  <div>A</div><div>M</div><div>K</div><div>+</div>
+                </div>
+                <div className={styles.welcomeMetaText}>
+                  Joining 2,400+ families
+                  <span className="stars">★★★★★ 4.9</span>
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.tonightStrip}>
+              <div className={styles.tonightIcon}>☾</div>
+              <div className={styles.tonightText}>
+                <strong>Tonight&apos;s blueprint: Patience</strong>
+                A gentle 5-chapter tale, ready in under a minute.
+              </div>
+            </div>
+          </aside>
+        </div>
+      </main>
+    </>
+  );
+}

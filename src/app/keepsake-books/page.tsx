@@ -1,15 +1,44 @@
 "use client";
 import Link from "next/link";
-import { useState, CSSProperties } from "react";
+import { useState, useEffect, useMemo, CSSProperties } from "react";
 import { DashboardNav } from "@/components/dashboard-nav";
 
-const stories = [
-  { id: 1, pcov: "p4", bg: "var(--sage)", col: "var(--cream)", label: "5 chapters · complete", title: "The Smallest", script: "Friend at School", theme: "Kindness", forKid: "Ada", infoTitle: "The Smallest Friend at School" },
-  { id: 2, pcov: "p3", bg: "var(--moon)", col: "var(--twilight)", label: "5 chapters · complete", title: "The Garden That", script: "Grew Slowly", theme: "Patience", forKid: "Ada", infoTitle: "The Garden That Grew Slowly" },
-  { id: 3, pcov: "p1", bg: "var(--berry)", col: "var(--cream)", label: "5 chapters · complete", title: "Ada & the", script: "Honest Fox", theme: "Honesty", forKid: "Ada", infoTitle: "Ada & the Honest Fox" },
-  { id: 4, pcov: "p5", bg: "var(--lilac)", col: "var(--twilight)", label: "5 chapters · complete", title: "Theo & the", script: "Long Climb", theme: "Persistence", forKid: "Theo", infoTitle: "Theo & the Long Climb" },
-  { id: 5, pcov: "p2", bg: "var(--twilight)", col: "var(--cream)", label: "5 chapters · complete", title: "Noor & the", script: "Patient Seed", theme: "Patience", forKid: "Noor", infoTitle: "Noor & the Patient Seed" },
+type APIStory = {
+  id: string;
+  blueprint: string;
+  status: string;
+  title: string | null;
+  created_at: string;
+  children?: { nickname: string } | null;
+};
+
+type StoryCard = {
+  id: string;
+  pcov: string;
+  bg: string;
+  col: string;
+  label: string;
+  title: string;
+  script: string;
+  theme: string;
+  forKid: string;
+  infoTitle: string;
+};
+
+const COVER_PALETTES: { pcov: string; bg: string; col: string }[] = [
+  { pcov: "p1", bg: "var(--berry)", col: "var(--cream)" },
+  { pcov: "p2", bg: "var(--twilight)", col: "var(--cream)" },
+  { pcov: "p3", bg: "var(--moon)", col: "var(--twilight)" },
+  { pcov: "p4", bg: "var(--sage)", col: "var(--cream)" },
+  { pcov: "p5", bg: "var(--lilac)", col: "var(--twilight)" },
 ];
+
+function splitTitle(t: string): [string, string] {
+  const words = t.trim().split(/\s+/);
+  if (words.length <= 2) return [words.join(" "), ""];
+  const mid = Math.ceil(words.length / 2);
+  return [words.slice(0, mid).join(" "), words.slice(mid).join(" ")];
+}
 
 const features = [
   { icon: "⌾", title: "Linen-spined hardcover", sub: "Sturdy 8.5 × 8.5\" square, foil-pressed title, built for small hands and bedtime re-reads." },
@@ -18,11 +47,17 @@ const features = [
   { icon: "✦", title: "Printed in 3 days, shipped in 5", sub: "Carbon-neutral print-on-demand — we wait until you order, so no books sit on a shelf." },
 ];
 
-const orders = [
-  { spineCls: "s2", title: "The Smallest Friend at School", sub: "Hardcover · For Ada · Dedication: \"For Ada, always kind\"", status: "shipping", statusLabel: "Shipping", date: "Apr 19, 2026", eta: "Arrives Apr 30", actions: [{ label: "Track", prim: true }, { label: "Receipt", prim: false }] },
-  { spineCls: "s1", title: "Ada & the Honest Fox", sub: "Hardcover · For Ada · Dedication: \"For my brave, honest girl\"", status: "delivered", statusLabel: "Delivered", date: "Feb 12, 2026", eta: "", actions: [{ label: "Reorder", prim: false }, { label: "Receipt", prim: false }] },
-  { spineCls: "s3", title: "Noor & the Patient Seed", sub: "Softcover · For Noor · No dedication", status: "printing", statusLabel: "Printing", date: "Apr 22, 2026", eta: "Ships Apr 26", actions: [{ label: "Track", prim: true }, { label: "Edit", prim: false }] },
-];
+// TODO: Phase 3 — Stripe. Real keepsake orders backed by `keepsake_orders` table.
+const orders: {
+  spineCls: string;
+  title: string;
+  sub: string;
+  status: string;
+  statusLabel: string;
+  date: string;
+  eta: string;
+  actions: { label: string; prim: boolean }[];
+}[] = [];
 
 const spineBg: Record<string, string> = { s1: "var(--berry)", s2: "var(--sage)", s3: "var(--twilight)" };
 const statusStyle: Record<string, { background: string; color: string }> = {
@@ -43,6 +78,46 @@ export default function KeepsakeBooksPage() {
   const [selectedStory, setSelectedStory] = useState(0);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [featuredPlan, setFeaturedPlan] = useState(1);
+  const [apiStories, setApiStories] = useState<APIStory[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/stories?status=ready&limit=20", { cache: "no-store" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        if (!alive) return;
+        setApiStories(json.stories ?? []);
+      } catch (e) {
+        if (!alive) return;
+        setLoadError(e instanceof Error ? e.message : "Failed to load stories");
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const stories: StoryCard[] = useMemo(() => {
+    return apiStories.slice(0, 5).map((s, i) => {
+      const palette = COVER_PALETTES[i % COVER_PALETTES.length];
+      const fullTitle = s.title ?? "Untitled tale";
+      const [title, script] = splitTitle(fullTitle);
+      const kid = s.children?.nickname ?? "—";
+      return {
+        id: s.id,
+        ...palette,
+        label: "5 chapters · complete",
+        title,
+        script,
+        theme: s.blueprint,
+        forKid: kid,
+        infoTitle: fullTitle,
+      };
+    });
+  }, [apiStories]);
 
   return (
     <>
@@ -60,7 +135,7 @@ export default function KeepsakeBooksPage() {
             </h1>
             <p className="kp-hero-fade kp-hero-fade-d2" style={{ fontSize: 17, color: "rgba(251,243,227,0.82)", maxWidth: 480, lineHeight: 1.5, fontWeight: 500, marginBottom: 28 }}>Any story on your shelf becomes a linen-spined, glossy-page book — printed on demand, shipped to your door in 5–7 days, and kept on their shelf forever.</p>
             <div className="kp-hero-fade kp-hero-fade-d3" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <a href="#pick" className="kp-cta" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 22px", borderRadius: 999, fontWeight: 800, fontSize: 15, border: "2px solid var(--ink)", background: "var(--moon)", color: "var(--ink)", cursor: "pointer", boxShadow: "3px 3px 0 var(--ink)", textDecoration: "none" }}>Order a book →</a>
+              <a href="#pick" className="kp-cta" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 22px", borderRadius: 999, fontWeight: 800, fontSize: 15, border: "2px solid var(--ink)", background: "var(--moon)", color: "var(--ink)", cursor: "pointer", boxShadow: "3px 3px 0 var(--ink)", textDecoration: "none" }}>Pick a tale →</a>
               <a href="#how" className="kp-cta-ghost" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 22px", borderRadius: 999, fontWeight: 800, fontSize: 15, border: "1.5px solid rgba(251,243,227,0.4)", background: "transparent", color: "var(--cream)", cursor: "pointer", textDecoration: "none" }}>See what&apos;s inside</a>
             </div>
           </div>
@@ -121,6 +196,21 @@ export default function KeepsakeBooksPage() {
           <Link href="/shelf" className="kp-cta" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "8px 16px", borderRadius: 999, fontWeight: 800, fontSize: 13, border: "1.5px solid var(--ink)", background: "transparent", color: "var(--ink)", cursor: "pointer", boxShadow: "none", textDecoration: "none" }}>Browse full shelf →</Link>
         </div>
 
+        {loadError && (
+          <div style={{ background: "var(--berry)", color: "var(--cream)", border: "2px solid var(--ink)", borderRadius: 14, padding: "12px 18px", marginBottom: 16, fontSize: 13.5, fontWeight: 700 }}>
+            Could not load your library: {loadError}
+          </div>
+        )}
+
+        {stories.length === 0 ? (
+          <div style={{ background: "var(--cream-deep)", border: "2.5px solid var(--ink)", borderRadius: 20, boxShadow: "5px 5px 0 var(--ink)", padding: 36, marginBottom: 56, textAlign: "center" }}>
+            <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 22, color: "var(--twilight)", marginBottom: 6 }}>No printable tales yet</div>
+            <div style={{ fontSize: 14, color: "var(--ink-soft)", fontWeight: 600, marginBottom: 18 }}>Finish a story first — every completed tale lands here for keepsake printing.</div>
+            <Link href="/stories/new" className="kp-cta" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 22px", borderRadius: 999, fontWeight: 800, fontSize: 14, border: "2px solid var(--ink)", background: "var(--moon)", color: "var(--ink)", cursor: "pointer", boxShadow: "3px 3px 0 var(--ink)", textDecoration: "none" }}>
+              Start a new tale →
+            </Link>
+          </div>
+        ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 18, background: "var(--cream-deep)", border: "2.5px solid var(--ink)", borderRadius: 20, boxShadow: "5px 5px 0 var(--ink)", padding: 22, marginBottom: 56 }}>
           {stories.map((s, i) => {
             const styleVars = { "--i": i } as CSSProperties;
@@ -151,6 +241,7 @@ export default function KeepsakeBooksPage() {
             );
           })}
         </div>
+        )}
 
         {/* PRICING */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 20, flexWrap: "wrap", gap: 14 }}>
@@ -186,7 +277,16 @@ export default function KeepsakeBooksPage() {
                     </li>
                   ))}
                 </ul>
-                <button onClick={(e) => e.stopPropagation()} className="kp-price-cta" style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px 22px", borderRadius: 999, fontWeight: 800, fontSize: 15, border: "2px solid var(--ink)", background: plan.ctaVariant === "berry" ? "var(--berry)" : "var(--moon)", color: plan.ctaVariant === "berry" ? "var(--cream)" : "var(--ink)", cursor: "pointer", boxShadow: "3px 3px 0 var(--ink)" }}>{plan.cta}</button>
+                {/* TODO: Phase 3 — Stripe checkout. Wire to /api/stripe/checkout once subscription/keepsake billing lands. */}
+                <button
+                  onClick={(e) => e.stopPropagation()}
+                  disabled
+                  title="Keepsake printing coming soon"
+                  className="kp-price-cta"
+                  style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px 22px", borderRadius: 999, fontWeight: 800, fontSize: 15, border: "2px solid var(--ink)", background: plan.ctaVariant === "berry" ? "var(--berry)" : "var(--moon)", color: plan.ctaVariant === "berry" ? "var(--cream)" : "var(--ink)", cursor: "not-allowed", boxShadow: "3px 3px 0 var(--ink)", opacity: 0.6 }}
+                >
+                  {plan.cta} (soon)
+                </button>
               </div>
             );
           })}
@@ -198,15 +298,23 @@ export default function KeepsakeBooksPage() {
             <h2 style={{ fontFamily: "var(--font-young-serif), serif", fontSize: "clamp(24px, 2.4vw, 30px)", color: "var(--twilight)", letterSpacing: "-0.01em" }}>
               Your <span style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--berry)", fontSize: "0.9em" }}>orders</span>
             </h2>
-            <div style={{ fontSize: 13.5, color: "var(--ink-soft)", fontWeight: 600, marginTop: 4 }}>3 keepsakes ordered this year · 1 in transit</div>
+            <div style={{ fontSize: 13.5, color: "var(--ink-soft)", fontWeight: 600, marginTop: 4 }}>
+              {orders.length === 0 ? "No keepsake orders yet — printing arrives once checkout opens." : `${orders.length} keepsake${orders.length === 1 ? "" : "s"} ordered`}
+            </div>
           </div>
-          <button className="kp-cta" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "8px 16px", borderRadius: 999, fontWeight: 800, fontSize: 13, border: "1.5px solid var(--ink)", background: "transparent", color: "var(--ink)", cursor: "pointer" }}>Download receipts</button>
+          {/* TODO: Phase 3 — Stripe. Receipts download wired post-billing. */}
+          <button disabled title="Available once keepsake checkout opens" className="kp-cta" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "8px 16px", borderRadius: 999, fontWeight: 800, fontSize: 13, border: "1.5px solid var(--ink)", background: "transparent", color: "var(--ink)", cursor: "not-allowed", opacity: 0.5 }}>Download receipts</button>
         </div>
 
         <div style={{ background: "var(--cream)", border: "2.5px solid var(--ink)", borderRadius: 20, boxShadow: "5px 5px 0 var(--ink)", overflow: "hidden", marginBottom: 56 }}>
           <div style={{ display: "grid", gridTemplateColumns: "60px 1.4fr 1fr 1fr 140px", gap: 16, alignItems: "center", padding: "14px 22px", background: "var(--cream-deep)", fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-soft)" }}>
             <div /><div>Book</div><div>Status</div><div>Ordered</div><div />
           </div>
+          {orders.length === 0 && (
+            <div style={{ padding: "28px 22px", textAlign: "center", fontSize: 13.5, color: "var(--ink-soft)", fontWeight: 600 }}>
+              Keepsake printing is launching soon. Pick a tale + binding above and we&apos;ll let you know the moment orders open.
+            </div>
+          )}
           {orders.map((o, i) => {
             const styleVars = { "--i": i } as CSSProperties;
             return (
@@ -228,8 +336,9 @@ export default function KeepsakeBooksPage() {
                   {o.date}{o.eta && <><br /><span style={{ fontSize: 11, opacity: 0.7 }}>{o.eta}</span></>}
                 </div>
                 <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                  {/* TODO: Phase 3 — Stripe. Wire order actions when checkout lands. */}
                   {o.actions.map(a => (
-                    <button key={a.label} className="kp-ord-btn" style={{ padding: "7px 14px", border: "1.5px solid var(--ink)", borderRadius: 999, background: a.prim ? "var(--twilight)" : "transparent", fontWeight: 700, fontSize: 12, color: a.prim ? "var(--cream)" : "var(--twilight)", cursor: "pointer" }}>{a.label}</button>
+                    <button key={a.label} disabled className="kp-ord-btn" style={{ padding: "7px 14px", border: "1.5px solid var(--ink)", borderRadius: 999, background: a.prim ? "var(--twilight)" : "transparent", fontWeight: 700, fontSize: 12, color: a.prim ? "var(--cream)" : "var(--twilight)", cursor: "not-allowed", opacity: 0.55 }}>{a.label}</button>
                   ))}
                 </div>
               </div>
