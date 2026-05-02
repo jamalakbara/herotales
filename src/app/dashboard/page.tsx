@@ -34,6 +34,17 @@ type APIDashboard = {
   recent_stories: APIStory[];
 };
 
+const ALL_BLUEPRINTS = ["Bravery", "Honesty", "Patience", "Kindness", "Persistence"];
+
+function getGreetingTime(): string {
+  return new Date().toLocaleString("en-US", {
+    weekday: "long",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
 const COVER_CLASSES = ["bc-2", "bc-3", "bc-1", "bc-4", "bc-5", "bc-6"];
 const THEME_STAR: Record<string, string> = {
   Bravery: "★",
@@ -129,6 +140,11 @@ export default function DashboardPage() {
   const inProgress = recent.find((s) => s.status === "ready") ?? null;
   const greetingFirstName = profile?.display_name?.split(" ")[0] ?? profile?.email?.split("@")[0] ?? "Friend";
 
+  const kidStories = activeKidObj ? recent.filter((s) => s.child_id === activeKidObj.id) : recent;
+  const usedBlueprints = new Set(kidStories.map((s) => s.blueprint));
+  const newStoryHref = activeKidObj ? `/stories/new?child_id=${activeKidObj.id}` : "/stories/new";
+  const nudgeBlueprint = ALL_BLUEPRINTS.find((b) => !usedBlueprints.has(b)) ?? null;
+
   const scriptCol = (cls: string) => (cls === "bc-2" || cls === "bc-1" || cls === "bc-4") ? "var(--moon)" : "inherit";
   const starBg = (cls: string) => (cls === "bc-3" || cls === "bc-5" || cls === "bc-6") ? "rgba(28,21,64,0.12)" : "rgba(255,255,255,0.18)";
 
@@ -178,7 +194,7 @@ export default function DashboardPage() {
         <div className="dash-greet" style={{ display: "grid", gridTemplateColumns: "1.15fr 0.85fr", gap: 36, marginBottom: 48, alignItems: "stretch" }}>
           <div style={{ background: "var(--cream)", border: "2.5px solid var(--ink)", borderRadius: 28, boxShadow: "8px 8px 0 var(--ink)", padding: "40px 44px", position: "relative", overflow: "hidden" }}>
             <span style={{ position: "absolute", top: 20, right: 32, fontFamily: "var(--font-caprasimo), serif", fontSize: 64, color: "var(--moon)", transform: "rotate(14deg)", opacity: 0.85, pointerEvents: "none" }}>✦</span>
-            <div style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--berry)", fontSize: 16, transform: "rotate(-1.5deg)", display: "inline-block", marginBottom: 10 }}>Friday evening, 7:14pm</div>
+            <div style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--berry)", fontSize: 16, transform: "rotate(-1.5deg)", display: "inline-block", marginBottom: 10 }}>{getGreetingTime()}</div>
             <h1 style={{ fontFamily: "var(--font-young-serif), serif", fontSize: "clamp(36px, 3.6vw, 50px)", lineHeight: 1.02, letterSpacing: "-0.02em", color: "var(--twilight)", maxWidth: 560, marginBottom: 14 }}>
               Welcome back, <span style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--berry)" }}>{greetingFirstName}</span>. The woods are ready when you are.
             </h1>
@@ -188,7 +204,7 @@ export default function DashboardPage() {
                 : `You've ${recent.length === 1 ? "read 1 bedtime tale" : `read ${recent.length} bedtime tales`} together. Tonight feels like a good night for another chapter.`}
             </p>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <Link href="/stories/new" className="dash-btn dash-btn-berry">Start tonight&apos;s story →</Link>
+              <Link href={newStoryHref} className="dash-btn dash-btn-berry">Start tonight&apos;s story →</Link>
               <button className="dash-btn dash-btn-ghost" style={{ border: "1.5px solid var(--ink)" }}>Re-read last night&apos;s</button>
             </div>
           </div>
@@ -216,7 +232,7 @@ export default function DashboardPage() {
                 </div>
                 <div>{inProgress ? `${inProgress.length} · ${inProgress.voice ?? "Juniper"}'s voice` : "Takes about 40 seconds to conjure"}</div>
               </div>
-              <Link href={inProgress ? `/stories/${inProgress.id}` : "/stories/new"} className="dash-resume-btn">
+              <Link href={inProgress ? `/stories/${inProgress.id}` : newStoryHref} className="dash-resume-btn">
                 {inProgress ? "Resume" : "Start"}
               </Link>
             </div>
@@ -237,7 +253,7 @@ export default function DashboardPage() {
         {/* KIDS ROW */}
         <div className="dash-kids-row" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 56 }}>
           {kidsView.map((kid, i) => (
-            <div key={kid.name} className="dash-kid-card" onClick={() => setActiveKid(i)} style={{ background: activeKid === i ? "var(--moon)" : "var(--cream)", border: "2.5px solid var(--ink)", borderRadius: 20, boxShadow: "5px 5px 0 var(--ink)", padding: 22 }}>
+            <div key={kid.id} className="dash-kid-card" onClick={() => setActiveKid(i)} style={{ background: activeKid === i ? "var(--moon)" : "var(--cream)", border: "2.5px solid var(--ink)", borderRadius: 20, boxShadow: "5px 5px 0 var(--ink)", padding: 22 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 16 }}>
                 <div style={{ width: 54, height: 54, borderRadius: 16, border: "2px solid var(--ink)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 24, background: kid.avBg, color: kid.avCol, flexShrink: 0 }}>{kid.name[0]}</div>
                 <div>
@@ -252,11 +268,11 @@ export default function DashboardPage() {
               </div>
             </div>
           ))}
-          <div className="dash-kid-add" style={{ background: "transparent", border: "2.5px dashed var(--ink)", borderRadius: 20, boxShadow: "none", padding: "22px 16px", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", textAlign: "center", color: "var(--ink-soft)" }}>
+          <Link href="/heroes/new" className="dash-kid-add" style={{ background: "transparent", border: "2.5px dashed var(--ink)", borderRadius: 20, boxShadow: "none", padding: "22px 16px", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", textAlign: "center", color: "var(--ink-soft)", textDecoration: "none" }}>
             <div style={{ width: 54, height: 54, borderRadius: 16, border: "2px dashed var(--ink)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30, fontWeight: 400, background: "var(--cream-deep)", color: "var(--ink-soft)" }}>+</div>
             <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 18, color: "var(--twilight)", marginTop: 12 }}>Add another hero</div>
             <div style={{ fontSize: 12, color: "var(--ink-soft)", marginTop: 4, fontWeight: 600 }}>Up to 3 on your Lantern plan</div>
-          </div>
+          </Link>
         </div>
 
         {/* SHELF HEADER */}
@@ -316,7 +332,7 @@ export default function DashboardPage() {
             </Link>
           ))}
           {/* New story tile */}
-          <Link href="/stories/new" className="dash-new-tile">
+          <Link href={newStoryHref} className="dash-new-tile">
             <div className="dash-new-cover" style={{ aspectRatio: "5/6.4", borderRadius: "6px 12px 12px 6px", border: "2.5px dashed var(--ink)", background: "var(--cream)", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", color: "var(--twilight)", textAlign: "center", marginBottom: 12 }}>
               <div style={{ width: 48, height: 48, borderRadius: "50%", background: "var(--moon)", border: "2px solid var(--ink)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 28, color: "var(--twilight)", marginBottom: 14 }}>+</div>
               <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 18 }}>Craft a new tale</div>
@@ -355,40 +371,53 @@ export default function DashboardPage() {
           {/* Keepsake */}
           <div style={{ background: "var(--sage)", color: "var(--cream)", border: "2.5px solid var(--ink)", borderRadius: 22, boxShadow: "6px 6px 0 var(--ink)", padding: "24px 26px" }}>
             <div style={{ fontFamily: "var(--font-caprasimo), serif", fontSize: 13, color: "var(--moon)", marginBottom: 6 }}>Keepsake book</div>
-            <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 46, color: "var(--cream)", lineHeight: 1, letterSpacing: "-0.02em", display: "flex", alignItems: "baseline", gap: 8 }}>
-              1<span style={{ fontSize: 14, fontWeight: 700, fontFamily: "var(--font-nunito), sans-serif", color: "rgba(251,243,227,0.75)" }}>on its way</span>
+            <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 28, color: "var(--cream)", lineHeight: 1.2, marginTop: 8 }}>Coming soon</div>
+            <div style={{ fontSize: 13, fontWeight: 600, opacity: 0.75, marginTop: 8, lineHeight: 1.4, maxWidth: 240 }}>
+              Turn your stories into a printed keepsake book — available soon.
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 16 }}>
-              <div style={{ width: 48, height: 58, background: "var(--berry)", border: "2px solid var(--ink)", borderRadius: "3px 6px 6px 3px", position: "relative", flexShrink: 0 }}>
-                <div style={{ position: "absolute", left: 4, top: 6, bottom: 6, width: 2, background: "rgba(251,243,227,0.35)" }} />
-                <span style={{ position: "absolute", top: 16, left: "50%", transform: "translateX(-50%)", color: "var(--moon)", fontFamily: "var(--font-caprasimo), serif", fontSize: 12 }}>✦</span>
-              </div>
-              <div style={{ fontSize: 13, fontWeight: 600 }}>
-                &ldquo;The Smallest Friend at School&rdquo;<br />
-                <span style={{ opacity: 0.7 }}>Ships Tuesday · arrives Apr 30</span>
-              </div>
-            </div>
-            <Link href="/keepsake-books" className="dash-stat-link" style={{ color: "var(--moon)", marginTop: 14, display: "inline-block" }}>Track &amp; order more →</Link>
+            <Link href="/keepsake-books" className="dash-stat-link" style={{ color: "var(--moon)", marginTop: 14, display: "inline-block" }}>Learn more →</Link>
           </div>
         </div>
 
         {/* BLUEPRINT NUDGE */}
+        {activeKidObj && (
         <div style={{ background: "var(--berry)", color: "var(--cream)", border: "2.5px solid var(--ink)", borderRadius: 28, boxShadow: "8px 8px 0 var(--ink)", padding: "36px 40px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 28, flexWrap: "wrap", position: "relative", overflow: "hidden", marginBottom: 40 }}>
           <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, background: "var(--moon)", borderRadius: "50%", opacity: 0.2, pointerEvents: "none" }} />
           <div style={{ position: "relative", maxWidth: 560 }}>
             <div style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--moon)", fontSize: 14, marginBottom: 6 }}>Gentle nudge</div>
-            <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 28, lineHeight: 1.1, marginBottom: 8 }}>Ada hasn&apos;t met Kindness in a while.</div>
-            <div style={{ fontSize: 14.5, opacity: 0.88, lineHeight: 1.5 }}>Her last Kindness tale was 12 days ago. Want to spin one for tonight — or keep building Bravery?</div>
+            {nudgeBlueprint ? (
+              <>
+                <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 28, lineHeight: 1.1, marginBottom: 8 }}>
+                  {activeKidObj.nickname} hasn&apos;t tried <em>{nudgeBlueprint}</em> yet.
+                </div>
+                <div style={{ fontSize: 14.5, opacity: 0.88, lineHeight: 1.5 }}>
+                  Want to spin a {nudgeBlueprint} tale tonight?
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 28, lineHeight: 1.1, marginBottom: 8 }}>
+                  Great variety, {activeKidObj.nickname}!
+                </div>
+                <div style={{ fontSize: 14.5, opacity: 0.88, lineHeight: 1.5 }}>
+                  Every value explored. Keep going — repetition deepens the lesson.
+                </div>
+              </>
+            )}
           </div>
           <div style={{ display: "flex", gap: 10, position: "relative" }}>
-            {[{ icon: "♡", label: "Kindness" }, { icon: "⟲", label: "Patience" }, { icon: "↑", label: "Persistence" }].map(bp => (
-              <Link key={bp.label} href="/stories/new" className="dash-bpc" style={{ padding: "12px 14px", background: "var(--cream)", color: "var(--twilight)", border: "2px solid var(--ink)", borderRadius: 14, fontFamily: "var(--font-young-serif), serif", fontSize: 13, textAlign: "center", minWidth: 84 }}>
-                <span style={{ display: "block", fontFamily: "var(--font-caprasimo), serif", fontSize: 20, color: "var(--berry)", marginBottom: 4 }}>{bp.icon}</span>
-                {bp.label}
-              </Link>
-            ))}
+            {ALL_BLUEPRINTS.filter((b) => !usedBlueprints.has(b)).slice(0, 3).map((label) => {
+              const icons: Record<string, string> = { Bravery: "★", Honesty: "✓", Patience: "⟲", Kindness: "♡", Persistence: "↑" };
+              return (
+                <Link key={label} href={newStoryHref} className="dash-bpc" style={{ padding: "12px 14px", background: "var(--cream)", color: "var(--twilight)", border: "2px solid var(--ink)", borderRadius: 14, fontFamily: "var(--font-young-serif), serif", fontSize: 13, textAlign: "center", minWidth: 84 }}>
+                  <span style={{ display: "block", fontFamily: "var(--font-caprasimo), serif", fontSize: 20, color: "var(--berry)", marginBottom: 4 }}>{icons[label]}</span>
+                  {label}
+                </Link>
+              );
+            })}
           </div>
         </div>
+        )}
 
       </main>
 

@@ -48,6 +48,13 @@ export interface Database {
           portrait_url: string | null;
           portrait_storage_path: string | null;
           gen_seed: string | null;
+          avatar_idx: number;
+          narrator_voice: string;
+          growth_traits: string[];
+          quirk: string | null;
+          skip_scary: boolean;
+          short_stories: boolean;
+          use_real_name: boolean;
           created_at: string;
         };
         Insert: {
@@ -61,6 +68,13 @@ export interface Database {
           portrait_url?: string | null;
           portrait_storage_path?: string | null;
           gen_seed?: string | null;
+          avatar_idx?: number;
+          narrator_voice?: string;
+          growth_traits?: string[];
+          quirk?: string | null;
+          skip_scary?: boolean;
+          short_stories?: boolean;
+          use_real_name?: boolean;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["children"]["Insert"]>;

@@ -25,11 +25,12 @@ export function buildChapterImagePrompt(opts: {
   chapterIndex: number;
   blueprint: string;
 }) {
+  void opts.blueprint;
   return [
-    `Children's storybook illustration. ${STYLE_ANCHOR}`,
-    `Hero (must be drawn EXACTLY the same in every illustration): ${opts.characterDescription}`,
-    `Scene to depict (chapter ${opts.chapterIndex + 1}, value: ${opts.blueprint}): ${opts.caption}`,
-    `Composition: a single picture-book spread, the hero as the focal subject, gentle storybook framing, full body or upper-body when appropriate.`,
-    `Do not include any text, captions, page numbers, or borders.`,
+    `Scene (chapter ${opts.chapterIndex + 1}): ${opts.caption} — fill the entire frame with this moment.`,
+    `Style: ${STYLE_ANCHOR}`,
+    `The child protagonist in this scene: ${opts.characterDescription}`,
+    `Composition: one single-panel illustration, full frame. The hero is actively engaged in the scene above. Full body or upper-body as appropriate. No splits, no open-book layout, no page divisions.`,
+    `Strictly forbidden: any text, letters, labels, captions embedded in art, open book pages, split panels, character reference sheets, color swatches, design layouts, page borders, frames within frames, watermarks, logos.`,
   ].join("\n\n");
 }

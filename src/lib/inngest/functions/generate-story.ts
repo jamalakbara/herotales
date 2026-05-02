@@ -1,6 +1,6 @@
 import { inngest } from "../client";
 import { adminClient } from "../../supabase/admin";
-import { openai } from "../../openai";
+import { generateText, generateImageBytes } from "../../vertexai";
 import { StoryDocSchema } from "../../types";
 import {
   buildStorySystemPrompt,
@@ -10,7 +10,6 @@ import {
   buildCharacterDescriptionPrompt,
   buildChapterImagePrompt,
 } from "../../prompts/image";
-import { toFile } from "openai";
 
 const BUCKET = "story-assets";
 
@@ -40,7 +39,7 @@ export const generateStory = inngest.createFunction(
       const child = await step.run("load-child", async () => {
         const { data, error } = await sb
           .from("children")
-          .select("id, nickname, age, pronouns, detail_tags, character_description")
+          .select("id, nickname, age, pronouns, detail_tags, character_description, growth_traits, quirk, skip_scary, short_stories, narrator_voice")
           .eq("id", story.child_id)
           .single();
         if (error || !data) throw new Error(error?.message ?? "Child not found");
@@ -61,12 +60,7 @@ export const generateStory = inngest.createFunction(
           detailTags: child.detail_tags ?? [],
           description: null,
         });
-        const res = await openai().chat.completions.create({
-          model: "gpt-4o-mini",
-          temperature: 0.6,
-          messages: [{ role: "user", content: prompt }],
-        });
-        const desc = res.choices[0]?.message?.content?.trim() ?? "";
+        const desc = await generateText(prompt, "You are a creative writer helping describe child characters for illustrated stories.", 0.6);
         if (!desc) throw new Error("Failed to draft character description");
         await sb.from("children").update({ character_description: desc }).eq("id", child.id);
         return desc;
@@ -80,21 +74,16 @@ export const generateStory = inngest.createFunction(
           pronouns: child.pronouns ?? "they/them",
           blueprint: story.blueprint,
           length: story.length ?? "Bedtime",
+          skipScary: child.skip_scary ?? true,
+          shortStories: child.short_stories ?? false,
         });
         const usrPrompt = buildStoryUserPrompt({
           hook: story.hook,
           detailTags: child.detail_tags ?? [],
+          growthTraits: child.growth_traits ?? [],
+          quirk: child.quirk,
         });
-        const res = await openai().chat.completions.create({
-          model: "gpt-4o-mini",
-          temperature: 0.85,
-          response_format: { type: "json_object" },
-          messages: [
-            { role: "system", content: sysPrompt },
-            { role: "user", content: usrPrompt },
-          ],
-        });
-        const raw = res.choices[0]?.message?.content;
+        const raw = await generateText(usrPrompt, sysPrompt, 0.85, true);
         if (!raw) throw new Error("Empty story response");
         const parsed = StoryDocSchema.parse(JSON.parse(raw));
         await sb
@@ -104,43 +93,18 @@ export const generateStory = inngest.createFunction(
         return parsed;
       });
 
-      // 3. generate 5 chapter images
-      let firstImageBytes: Buffer | null = null;
-
+      // 3. generate 5 chapter images independently (character consistency via prompt)
       for (let i = 0; i < 5; i++) {
         const chapter = doc.chapters[i];
         const stepName = `chapter-${i}-image`;
-        const result = await step.run(stepName, async () => {
+        await step.run(stepName, async () => {
           const prompt = buildChapterImagePrompt({
             characterDescription,
             caption: chapter.caption,
             chapterIndex: i,
             blueprint: story.blueprint,
           });
-
-          let b64: string | undefined;
-          if (i === 0 || !firstImageBytes) {
-            const r = await openai().images.generate({
-              model: "gpt-image-1",
-              prompt,
-              size: "1024x1024",
-              n: 1,
-            });
-            b64 = r.data?.[0]?.b64_json;
-          } else {
-            const ref = await toFile(firstImageBytes, "chapter-0.png", { type: "image/png" });
-            const r = await openai().images.edit({
-              model: "gpt-image-1",
-              image: ref,
-              prompt,
-              size: "1024x1024",
-              input_fidelity: "high",
-              n: 1,
-            });
-            b64 = r.data?.[0]?.b64_json;
-          }
-          if (!b64) throw new Error(`No image bytes for chapter ${i}`);
-          const bytes = Buffer.from(b64, "base64");
+          const bytes = await generateImageBytes(prompt);
           const path = `users/${story.parent_id}/stories/${storyId}/chapter-${i}.png`;
           const { error: upErr } = await sb.storage
             .from(BUCKET)
@@ -160,10 +124,8 @@ export const generateStory = inngest.createFunction(
             .from("stories")
             .update({ progress: Math.min(95, 30 + (i + 1) * 13) })
             .eq("id", storyId);
-          return { path, b64 };
+          return { path };
         });
-
-        if (i === 0) firstImageBytes = Buffer.from(result.b64, "base64");
       }
 
       await step.run("mark-ready", async () => {

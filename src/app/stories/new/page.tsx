@@ -1,8 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState } from "react";
+
+type ExistingChild = {
+  id: string;
+  nickname: string;
+  age: number;
+  pronouns: string;
+  narrator_voice: string;
+};
 
 const BLUEPRINTS = [
   { name: "Bravery", icon: "★", desc: "Facing the dark", hook: "Brave Lantern" },
@@ -47,8 +55,10 @@ const SUGGESTIONS = [
 const DEFAULT_HOOK =
   "She's nervous about her first sleepover at Grandma's house this Saturday — says the guest room is \"too quiet\" at night.";
 
-export default function CreateStoryPage() {
+function CreateStoryPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const preselectedChildId = searchParams.get("child_id");
 
   const [name, setName] = useState("Maya");
   const [age, setAge] = useState<string>("5");
@@ -64,8 +74,34 @@ export default function CreateStoryPage() {
   const [describeOpen, setDescribeOpen] = useState(false);
   const [description, setDescription] = useState("");
 
+  const [existingKids, setExistingKids] = useState<ExistingChild[]>([]);
+  const [heroMode, setHeroMode] = useState<"new" | "existing">("new");
+  const [selectedKidId, setSelectedKidId] = useState<string | null>(null);
+
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/children")
+      .then((r) => (r.ok ? r.json() : { children: [] }))
+      .then((d: { children: ExistingChild[] }) => {
+        if (d.children.length > 0) {
+          setExistingKids(d.children);
+          if (preselectedChildId) {
+            const match = d.children.find((k) => k.id === preselectedChildId);
+            if (match) {
+              setHeroMode("existing");
+              setSelectedKidId(preselectedChildId);
+              setName(match.nickname);
+              setAge(String(match.age));
+              setPronoun(match.pronouns);
+              setVoice(match.narrator_voice ?? "Juniper");
+            }
+          }
+        }
+      })
+      .catch(() => {});
+  }, [preselectedChildId]);
 
   const displayName = (name || "").trim() || "Hero";
   const initial = (name || "H").trim()[0]?.toUpperCase() ?? "H";
@@ -100,24 +136,29 @@ export default function CreateStoryPage() {
     setSubmitError(null);
     setSubmitting(true);
     try {
-      const pronouns = pronoun === "let me type" ? "they/them" : pronoun.replace(/\s+/g, "");
       const voiceName = voice === "My voice" ? "My voice" : voice;
+      const useExisting = heroMode === "existing" && selectedKidId;
+      const pronouns = pronoun === "let me type" ? "they/them" : pronoun.replace(/\s+/g, "");
       const res = await fetch("/api/stories", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          child: {
-            nickname: displayName,
-            age: parseInt(age, 10),
-            pronouns,
-            detail_tags: Array.from(tags),
-            character_description: description.trim() ? description.trim() : undefined,
-          },
-          blueprint,
-          length,
-          voice: voiceName,
-          hook: hook.slice(0, 240) || undefined,
-        }),
+        body: JSON.stringify(
+          useExisting
+            ? { child_id: selectedKidId, blueprint, length, voice: voiceName, hook: hook.slice(0, 240) || undefined }
+            : {
+                child: {
+                  nickname: displayName,
+                  age: parseInt(age, 10),
+                  pronouns,
+                  detail_tags: Array.from(tags),
+                  character_description: description.trim() ? description.trim() : undefined,
+                },
+                blueprint,
+                length,
+                voice: voiceName,
+                hook: hook.slice(0, 240) || undefined,
+              },
+        ),
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
@@ -198,6 +239,56 @@ export default function CreateStoryPage() {
               </div>
             </div>
 
+            {existingKids.length > 0 && (
+              <div className="form-block" style={{ paddingBottom: 0 }}>
+                <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+                  {(["existing", "new"] as const).map((m) => (
+                    <button
+                      key={m}
+                      onClick={() => { setHeroMode(m); if (m === "new") setSelectedKidId(null); }}
+                      style={{
+                        padding: "8px 16px",
+                        borderRadius: 999,
+                        border: "1.5px solid var(--ink)",
+                        background: heroMode === m ? "var(--twilight)" : "var(--cream)",
+                        color: heroMode === m ? "var(--cream)" : "var(--twilight)",
+                        fontWeight: 700,
+                        fontSize: 13,
+                        cursor: "pointer",
+                      }}
+                    >
+                      {m === "existing" ? "Pick existing hero" : "New hero"}
+                    </button>
+                  ))}
+                </div>
+                {heroMode === "existing" && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 20 }}>
+                    {existingKids.map((k) => (
+                      <div
+                        key={k.id}
+                        onClick={() => setSelectedKidId(k.id)}
+                        style={{
+                          padding: "12px 18px",
+                          borderRadius: 14,
+                          border: `2px solid ${selectedKidId === k.id ? "var(--berry)" : "var(--ink)"}`,
+                          background: selectedKidId === k.id ? "var(--moon)" : "var(--cream)",
+                          cursor: "pointer",
+                          fontWeight: 700,
+                          fontSize: 14,
+                          color: "var(--twilight)",
+                        }}
+                      >
+                        <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 17 }}>{k.nickname}</div>
+                        <div style={{ fontSize: 12, color: "var(--ink-soft)", marginTop: 2 }}>{k.age} yrs · {k.pronouns}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {heroMode === "new" && (
+            <>
             <div className="form-block">
               <div className="portrait-row">
                 <div className="portrait">
@@ -329,6 +420,8 @@ export default function CreateStoryPage() {
                 <div className="tag">+ add your own</div>
               </div>
             </div>
+            </>
+            )}
 
             {/* STEP 2: LESSON */}
             <div className="form-step" style={{ marginTop: 40 }}>
@@ -609,5 +702,13 @@ export default function CreateStoryPage() {
         </div>
       </div>
     </>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense>
+      <CreateStoryPage />
+    </Suspense>
   );
 }

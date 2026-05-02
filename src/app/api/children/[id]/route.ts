@@ -9,6 +9,13 @@ const PatchChild = z
     pronouns: z.string().min(1).max(40).optional(),
     detail_tags: z.array(z.string().max(60)).max(12).optional(),
     character_description: z.string().max(1000).optional(),
+    avatar_idx: z.number().int().min(0).max(7).optional(),
+    narrator_voice: z.string().max(40).optional(),
+    growth_traits: z.array(z.string().max(60)).max(8).optional(),
+    quirk: z.string().max(500).optional(),
+    skip_scary: z.boolean().optional(),
+    short_stories: z.boolean().optional(),
+    use_real_name: z.boolean().optional(),
   })
   .refine((v) => Object.keys(v).length > 0, { message: "Empty patch" });
 
@@ -35,7 +42,7 @@ export async function PATCH(
     .update(parsed.data)
     .eq("id", id)
     .eq("parent_id", user.id)
-    .select("id, nickname, age, pronouns, detail_tags, character_description, created_at")
+    .select("id, nickname, age, pronouns, detail_tags, character_description, avatar_idx, narrator_voice, growth_traits, quirk, skip_scary, short_stories, use_real_name, created_at")
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   if (!data) return notFound("Child not found");

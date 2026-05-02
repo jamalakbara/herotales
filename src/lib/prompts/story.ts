@@ -20,8 +20,13 @@ export function buildStorySystemPrompt(opts: {
   pronouns: string;
   blueprint: string;
   length: string;
+  skipScary?: boolean;
+  shortStories?: boolean;
 }) {
-  const { nickname, age, pronouns, blueprint, length } = opts;
+  const { nickname, age, pronouns, blueprint, length, skipScary, shortStories } = opts;
+  const extraRules: string[] = [];
+  if (skipScary) extraRules.push("No villains, no chases, no scary moments — soft tension only.");
+  if (shortStories) extraRules.push("Keep the story under 8 minutes when read aloud.");
   return `You write personalized bedtime stories for young children (ages 2-8).
 
 Hero details:
@@ -39,7 +44,7 @@ Rules:
 4. Embed the Blueprint as something lived, never lectured. End on a warm, restful note in chapter 5.
 5. Caption strings must clearly describe a single picturable scene (one moment, one composition) — what the reader is meant to see.
 6. The first chapter establishes the hero, place, and a small problem; chapters 2-4 face it; chapter 5 resolves it warmly.
-7. Do NOT use markdown or HTML. Plain prose only. No emojis.
+7. Do NOT use markdown or HTML. Plain prose only. No emojis.${extraRules.length ? "\n" + extraRules.map((r) => `8. ${r}`).join("\n") : ""}
 
 Output strictly valid JSON matching this shape:
 {
@@ -51,10 +56,21 @@ Output strictly valid JSON matching this shape:
 }`;
 }
 
-export function buildStoryUserPrompt(opts: { hook?: string | null; detailTags: string[] }) {
+export function buildStoryUserPrompt(opts: {
+  hook?: string | null;
+  detailTags: string[];
+  growthTraits?: string[];
+  quirk?: string | null;
+}) {
   const parts: string[] = [];
   if (opts.detailTags.length) {
     parts.push(`Little details that make this hero feel like them: ${opts.detailTags.join(", ")}.`);
+  }
+  if (opts.growthTraits && opts.growthTraits.length) {
+    parts.push(`Themes to weave in gently (do not lecture — let them be lived): ${opts.growthTraits.join(", ")}.`);
+  }
+  if (opts.quirk && opts.quirk.trim()) {
+    parts.push(`A small thing only their parent would know: ${opts.quirk.trim()}`);
   }
   if (opts.hook && opts.hook.trim()) {
     parts.push(`What's going on in their world right now (weave in gently, never word-for-word): "${opts.hook.trim()}"`);

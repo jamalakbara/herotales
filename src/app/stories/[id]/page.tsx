@@ -413,7 +413,7 @@ export default function StoryReaderPage() {
               </div>
               <div
                 className="nav-chip next"
-                onClick={() => nextIdx !== null && render(nextIdx)}
+                onClick={() => nextIdx !== null ? render(nextIdx) : router.push('/dashboard')}
               >
                 <div className="nv-lbl">
                   {nextIdx !== null ? "Next chapter" : "The end"}
