@@ -2,6 +2,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState, CSSProperties } from "react";
 import { DashboardNav } from "@/components/dashboard-nav";
+import { DeleteMyDataLink } from "@/components/delete-data-link";
+import { BookCover, coverAccent, accentColors, type CoverAccent } from "@/components/book-cover";
 
 type APIKid = { id: string; nickname: string; tales: number; favorites: number };
 type APIStory = {
@@ -15,7 +17,6 @@ type APIStory = {
   created_at: string;
   children: { nickname: string } | { nickname: string }[] | null;
 };
-const COVER_CLASSES = ["bc-2", "bc-3", "bc-1", "bc-4", "bc-5", "bc-6"];
 const THEME_STAR: Record<string, string> = { Bravery: "★", Honesty: "✦", Patience: "⟲", Kindness: "♡", Persistence: "↑" };
 function splitTitleWords(t: string) {
   const words = t.split(" ");
@@ -38,10 +39,12 @@ function pickName(c: APIStory["children"]) {
 function toBook(s: APIStory, i: number, opts?: { badgeForced?: string; badgeCls?: string }): Book {
   const t = s.title ?? "Untitled tale";
   const { line1, line2 } = splitTitleWords(t);
+  const badgeText = opts?.badgeForced ?? (s.status !== "ready" ? "In progress" : s.favorite ? "Favorite ♡" : undefined);
+  const badgeKey = opts?.badgeCls ?? (s.status !== "ready" ? "berry" : undefined);
+  const badgeAccent: "berry" | "sage" | "moon" = badgeKey === "berry" ? "berry" : badgeKey === "sage" ? "sage" : "moon";
   return {
-    cls: COVER_CLASSES[i % COVER_CLASSES.length],
-    badge: opts?.badgeForced ?? (s.status !== "ready" ? "In progress" : s.favorite ? "Favorite ♡" : undefined),
-    badgeCls: opts?.badgeCls ?? (s.status !== "ready" ? "berry" : undefined),
+    accent: coverAccent(i),
+    badge: badgeText ? { text: badgeText, accent: badgeAccent } : undefined,
     label: s.status === "ready" ? "5 chapters" : `Conjuring · ${s.progress}%`,
     title: line1,
     script: line2,
@@ -54,42 +57,13 @@ function toBook(s: APIStory, i: number, opts?: { badgeForced?: string; badgeCls?
   };
 }
 
-function BookCoverStyle(cls: string) {
-  const bg: Record<string, string> = {
-    "bc-1": "var(--berry)", "bc-2": "var(--twilight)", "bc-3": "var(--moon)",
-    "bc-4": "var(--sage)", "bc-5": "var(--lilac)", "bc-6": "var(--cream)",
-  };
-  const col: Record<string, string> = {
-    "bc-1": "var(--cream)", "bc-2": "var(--cream)", "bc-3": "var(--twilight)",
-    "bc-4": "var(--cream)", "bc-5": "var(--twilight)", "bc-6": "var(--twilight)",
-  };
-  return { background: bg[cls] || "var(--cream)", color: col[cls] || "var(--ink)" };
-}
+type Book = { accent: CoverAccent; badge?: { text: string; accent: "berry" | "sage" | "moon" }; label: string; title: string; script: string; theme: string; star: string; infoTitle: string; forKid: string; when?: string; href: string };
 
-type Book = { cls: string; badge?: string; badgeCls?: string; label: string; title: string; script: string; theme: string; star: string; infoTitle: string; forKid: string; when?: string; href: string };
-
-function BookCard({ b, small, index }: { b: Book; small?: boolean; index: number }) {
-  const sz = small ? { fontSize: 18, scriptSz: 17 } : { fontSize: 22, scriptSz: 20 };
+function BookCard({ b, index }: { b: Book; index: number }) {
   const styleVars = { "--i": index } as CSSProperties;
   return (
     <Link href={b.href} className="dash-book-card dash-book-card-anim" style={{ ...styleVars, textDecoration: "none", display: "block", position: "relative" }}>
-      {b.badge && (
-        <div className="dash-bc-badge-anim" style={{ position: "absolute", top: -8, right: -6, padding: "3px 9px", background: b.badgeCls === "berry" ? "var(--berry)" : b.badgeCls === "sage" ? "var(--sage)" : "var(--moon)", border: "2px solid var(--ink)", borderRadius: 999, fontFamily: "var(--font-caprasimo), serif", fontSize: 11, color: (b.badgeCls === "berry" || b.badgeCls === "sage") ? "var(--cream)" : "var(--twilight)", transform: "rotate(6deg)", zIndex: 3 }}>{b.badge}</div>
-      )}
-      <div className="dash-book-cover-anim" style={{ aspectRatio: "5/6.4", borderRadius: "6px 12px 12px 6px", border: "2.5px solid var(--ink)", boxShadow: "5px 5px 0 var(--ink)", padding: "16px 14px", position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "space-between", marginBottom: 10, ...BookCoverStyle(b.cls) }}>
-        <div style={{ position: "absolute", left: 5, top: 10, bottom: 10, width: 2, background: (b.cls === "bc-3" || b.cls === "bc-5" || b.cls === "bc-6") ? "rgba(28,21,64,0.2)" : "rgba(255,255,255,0.3)" }} />
-        <div>
-          <div style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.7 }}>{b.label}</div>
-          <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: sz.fontSize, lineHeight: 1.05, marginTop: 5 }}>
-            {b.title}
-            <span style={{ fontFamily: "var(--font-caprasimo), serif", display: "block", fontSize: sz.scriptSz, color: (b.cls === "bc-2" || b.cls === "bc-1" || b.cls === "bc-4") ? "var(--moon)" : "inherit" }}>{b.script}</span>
-          </div>
-        </div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", fontSize: 10.5, fontWeight: 700 }}>
-          <span>{b.theme}</span>
-          <div className="dash-bc-star-anim" style={{ width: 30, height: 30, borderRadius: "50%", background: (b.cls === "bc-3" || b.cls === "bc-5" || b.cls === "bc-6") ? "rgba(28,21,64,0.12)" : "rgba(255,255,255,0.18)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 13 }}>{b.star}</div>
-        </div>
-      </div>
+      <BookCover size="md" animated accent={b.accent} badge={b.badge} label={b.label} title={b.title} script={b.script} theme={b.theme} star={b.star} />
       <div>
         <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 14, color: "var(--twilight)", lineHeight: 1.15, marginBottom: 2 }}>{b.infoTitle}</div>
         <div style={{ fontSize: 11.5, color: "var(--ink-soft)", fontWeight: 600, display: "flex", gap: 5, alignItems: "center", flexWrap: "wrap" }}>
@@ -111,7 +85,7 @@ function ShelfSection({ label, count, books }: { label: string; count: string; b
       </div>
       <div className="dash-shelf-plank-anim" style={{ height: 14, background: "var(--ink)", borderRadius: 3, marginBottom: -2 }} />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "24px 20px", padding: "28px 22px 40px", background: "var(--cream-deep)", border: "2.5px solid var(--ink)", borderRadius: "4px 4px 24px 24px", borderTop: "none", boxShadow: "5px 8px 0 var(--ink)", marginBottom: 26 }}>
-        {books.map((b, i) => <BookCard key={i} b={b} small index={i} />)}
+        {books.map((b, i) => <BookCard key={i} b={b} index={i} />)}
         {label === "Earlier this month" && (
           <Link href="/stories/new" className="dash-book-card dash-book-card-anim" style={{ ...craftStyle, textDecoration: "none", display: "block", position: "relative" }}>
             <div className="dash-new-cover-anim" style={{ aspectRatio: "5/6.4", borderRadius: "6px 12px 12px 6px", border: "2.5px dashed var(--ink)", background: "var(--cream)", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", color: "var(--twilight)", textAlign: "center", marginBottom: 10 }}>
@@ -123,6 +97,25 @@ function ShelfSection({ label, count, books }: { label: string; count: string; b
         )}
       </div>
     </>
+  );
+}
+
+function BookRow({ b, index }: { b: Book; index: number }) {
+  const styleVars = { "--i": index } as CSSProperties;
+  const cover = accentColors(b.accent);
+  return (
+    <Link href={b.href} className="dash-book-card-anim dash-list-row" style={{ ...styleVars, textDecoration: "none", display: "flex", alignItems: "center", gap: 16, padding: "12px 16px", background: "var(--cream)", border: "2px solid var(--ink)", borderRadius: 16, boxShadow: "3px 3px 0 var(--ink)" }}>
+      <div style={{ width: 44, height: 56, flexShrink: 0, borderRadius: "4px 8px 8px 4px", border: "2px solid var(--ink)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 18, ...cover }}>{b.star}</div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 16, color: "var(--twilight)", lineHeight: 1.15, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{b.infoTitle}</div>
+        <div style={{ fontSize: 12, color: "var(--ink-soft)", fontWeight: 600, display: "flex", gap: 6, alignItems: "center", marginTop: 2 }}>
+          <span style={{ color: "var(--berry)", fontWeight: 800 }}>{b.forKid}</span>
+          <span style={{ opacity: 0.4 }}>·</span><span>{b.theme}</span>
+          {b.when && <><span style={{ opacity: 0.4 }}>·</span><span>{b.when}</span></>}
+        </div>
+      </div>
+      <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-soft)", flexShrink: 0 }}>{b.label}</span>
+    </Link>
   );
 }
 
@@ -189,15 +182,17 @@ export default function ShelfPage() {
     return xs;
   }, [stories, activeTab, activeFilter, search]);
 
-  const { recentBooks, favBooks, monthBooks } = useMemo(() => {
+  const { recentBooks, favBooks, monthBooks, listBooks } = useMemo(() => {
     const cutoff = nowMs - 14 * 86400000;
     const recentList = filtered.filter((s) => new Date(s.created_at).getTime() >= cutoff);
     const favList = filtered.filter((s) => s.favorite);
     const olderList = filtered.filter((s) => new Date(s.created_at).getTime() < cutoff && !s.favorite);
+    const sorted = [...filtered].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     return {
       recentBooks: recentList.map((s, i) => toBook(s, i)) as Book[],
       favBooks: favList.map((s, i) => toBook(s, i, { badgeForced: "♡", badgeCls: "" })) as Book[],
       monthBooks: olderList.map((s, i) => toBook(s, i)) as Book[],
+      listBooks: sorted.map((s, i) => toBook(s, i)) as Book[],
     };
   }, [filtered, nowMs]);
 
@@ -257,13 +252,23 @@ export default function ShelfPage() {
           </div>
         </div>
 
-        {recentBooks.length > 0 && (
-          <ShelfSection label="Recently read" count={`${recentBooks.length} ${recentBooks.length === 1 ? "tale" : "tales"} · last 2 weeks`} books={recentBooks} />
+        {activeView === "List" ? (
+          filtered.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {listBooks.map((b, i) => <BookRow key={i} b={b} index={i} />)}
+            </div>
+          )
+        ) : (
+          <>
+            {recentBooks.length > 0 && (
+              <ShelfSection label="Recently read" count={`${recentBooks.length} ${recentBooks.length === 1 ? "tale" : "tales"} · last 2 weeks`} books={recentBooks} />
+            )}
+            {favBooks.length > 0 && (
+              <ShelfSection label="Favorites" count={`${favBooks.length} ${favBooks.length === 1 ? "keeper" : "keepers"}`} books={favBooks} />
+            )}
+            <ShelfSection label="Earlier this month" count={`${monthBooks.length} ${monthBooks.length === 1 ? "tale" : "tales"}`} books={monthBooks} />
+          </>
         )}
-        {favBooks.length > 0 && (
-          <ShelfSection label="Favorites" count={`${favBooks.length} ${favBooks.length === 1 ? "keeper" : "keepers"}`} books={favBooks} />
-        )}
-        <ShelfSection label="Earlier this month" count={`${monthBooks.length} ${monthBooks.length === 1 ? "tale" : "tales"}`} books={monthBooks} />
 
         {filtered.length === 0 && !loadError && (
           <div style={{ textAlign: "center", padding: "60px 20px", color: "var(--ink-soft)" }}>
@@ -285,7 +290,7 @@ export default function ShelfPage() {
         <div>© 2026 TellTales · Sweet dreams guaranteed.</div>
         <div>
           <Link href="#" style={{ marginLeft: 20, color: "inherit", textDecoration: "none" }}>Privacy (COPPA)</Link>
-          <Link href="#" style={{ marginLeft: 20, color: "inherit", textDecoration: "none" }}>Delete all my data</Link>
+          <DeleteMyDataLink />
           <Link href="#" style={{ marginLeft: 20, color: "inherit", textDecoration: "none" }}>Help</Link>
         </div>
       </footer>

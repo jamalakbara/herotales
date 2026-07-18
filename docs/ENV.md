@@ -13,7 +13,12 @@ Create `.env.local` at the repo root with the following keys.
 | `NEXT_PUBLIC_SUPABASE_URL` | Browser + server Supabase clients | `https://<project-ref>.supabase.co` |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser + server (RLS-respecting) clients | Public anon key from Supabase project settings |
 | `SUPABASE_SERVICE_ROLE_KEY` | `src/lib/supabase/admin.ts` (Inngest only) | **Never** import the admin client from any code that ships to the browser. |
-| `OPENAI_API_KEY` | `src/lib/openai.ts` | Account must have access to `gpt-4o-mini` and `gpt-image-1`. |
+| `ANTHROPIC_API_KEY` | `src/lib/anthropic.ts` (default story-text provider, via `vertexai.ts`) | Claude Haiku for story text. If unset, every text call falls back to OpenAI. |
+| `ANTHROPIC_TEXT_MODEL` | `src/lib/anthropic.ts` | Optional. Overrides the Haiku model id. Default `claude-haiku-4-5`. |
+| `BYTEPLUS_API_KEY` | `src/lib/byteplus.ts` (default image provider, via `vertexai.ts`) | BytePlus ModelArk (Seedream) for chapter art. If unset, every image call falls back to DALL-E. |
+| `BYTEPLUS_BASE_URL` | `src/lib/byteplus.ts` | Optional. ModelArk API base. Default `https://ark.ap-southeast.bytepluses.com/api/v3`. |
+| `BYTEPLUS_IMAGE_MODEL` | `src/lib/byteplus.ts` | Optional. Seedream model id. Default `seedream-4-0-250828` (confirm the exact id in the BytePlus console). |
+| `OPENAI_API_KEY` | `src/lib/openai.ts` (fallback provider, via `vertexai.ts`) | Fallback for both stages. Account must have access to `gpt-4o` (text) and `dall-e-3` (images). |
 | `INNGEST_EVENT_KEY` | `src/lib/inngest/client.ts` | From Inngest Cloud → Event keys. Optional locally if running `inngest-cli dev`. |
 | `INNGEST_SIGNING_KEY` | `src/app/api/inngest/route.ts` (`serve`) | Required in production; `inngest-cli dev` works without it. |
 | `NEXT_PUBLIC_APP_URL` | Email links / future webhooks | e.g. `http://localhost:3000` in dev, full origin in prod. |
@@ -37,12 +42,19 @@ Do **not** commit `.env.local`. Vercel/your host should hold the same set as pro
 
 ---
 
-## OpenAI setup
+## AI providers (default → fallback)
 
-- Generate an API key with access to:
-  - `gpt-4o-mini` (text + character description)
-  - `gpt-image-1` (chapter art, including `images.edit` with `input_fidelity: "high"`)
-- Set a sensible monthly cap on the key while iterating — image generation is the dominant cost.
+Story generation runs through one swappable wrapper (`src/lib/vertexai.ts`) with a primary provider and an OpenAI fallback per stage:
+
+- **Story text** → Claude Haiku (`ANTHROPIC_API_KEY`); on any Anthropic error, falls back to OpenAI `gpt-4o`.
+- **Chapter images** → BytePlus ModelArk / Seedream (`BYTEPLUS_API_KEY`); on any BytePlus error, falls back to OpenAI `dall-e-3`.
+
+Setup:
+
+- **Anthropic** — generate a key with access to Claude Haiku (`claude-haiku-4-5`). Story text uses JSON mode (prefilled `{` + parsed against `StoryDocSchema`).
+- **BytePlus** — create a ModelArk API key and confirm the Seedream model id in the console (set `BYTEPLUS_IMAGE_MODEL`). The endpoint is OpenAI-shaped: `POST {BYTEPLUS_BASE_URL}/images/generations`.
+- **OpenAI (fallback)** — key must have access to `gpt-4o` (text) and `dall-e-3` (images).
+- Set a sensible monthly cap on each key while iterating — image generation is the dominant cost.
 
 ---
 

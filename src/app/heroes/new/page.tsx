@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { DashboardNav } from "@/components/dashboard-nav";
+import { DeleteMyDataLink } from "@/components/delete-data-link";
 
 type ExistingChild = {
   id: string;
@@ -476,7 +477,7 @@ export default function AddHeroPage() {
         <div>© 2026 TellTales · Sweet dreams guaranteed.</div>
         <div>
           <a href="#" style={{ marginLeft: 20 }}>Privacy (COPPA)</a>
-          <a href="#" style={{ marginLeft: 20 }}>Delete all my data</a>
+          <DeleteMyDataLink style={{ marginLeft: 20 }} />
           <a href="#" style={{ marginLeft: 20 }}>Help</a>
         </div>
       </footer>

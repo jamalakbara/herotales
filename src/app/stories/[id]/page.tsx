@@ -3,6 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { DeleteMyDataLink } from "@/components/delete-data-link";
+import { ReaderNav } from "@/components/reader-nav";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type Chapter = {
@@ -102,8 +104,8 @@ export default function StoryReaderPage() {
   const blueprint = story?.blueprint ?? "Bravery";
   const lengthLabel = story?.length ?? "Bedtime";
   const voice = story?.voice ?? "Juniper";
-  const lengthMap: Record<string, string> = { Shortie: "5 min", Bedtime: "12 min", "Long tale": "20 min" };
-  const readMins = lengthMap[lengthLabel] ?? "12 min";
+  const lengthMap: Record<string, string> = { Shortie: "3 min", Bedtime: "7 min", "Long tale": "12 min" };
+  const readMins = lengthMap[lengthLabel] ?? "7 min";
 
   const chapters = story?.full_text ?? [];
   const chapter: Chapter | null = chapters[cur] ?? null;
@@ -169,20 +171,12 @@ export default function StoryReaderPage() {
     const failed = story?.status === "failed";
     return (
       <>
-        <header>
-          <nav className="nav">
-            <Link href="/" className="logo">
-              <div className="logo-mark" />
-              TellTales
-            </Link>
-            <div className="nav-crumbs">
-              <Link href="/dashboard">Dashboard</Link>
-              <span className="sep">/</span>
-              <span className="cur">{failed ? "Something went wrong" : "Conjuring your story…"}</span>
-            </div>
-            <span />
-          </nav>
-        </header>
+        <ReaderNav
+          crumbs={[
+            { label: "Dashboard", href: "/dashboard" },
+            { label: failed ? "Something went wrong" : "Conjuring your story…" },
+          ]}
+        />
         <main className="page" style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div
             style={{
@@ -247,19 +241,13 @@ export default function StoryReaderPage() {
 
   return (
     <>
-      <header>
-        <nav className="nav">
-          <Link href="/" className="logo">
-            <div className="logo-mark" />
-            TellTales
-          </Link>
-          <div className="nav-crumbs">
-            <Link href="/dashboard">Dashboard</Link>
-            <span className="sep">/</span>
-            <Link href="/stories/new">New story</Link>
-            <span className="sep">/</span>
-            <span className="cur">{heroTitle}</span>
-          </div>
+      <ReaderNav
+        crumbs={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: "Shelf", href: "/shelf" },
+          { label: heroTitle },
+        ]}
+        action={
           <button
             className="btn"
             style={{ padding: "10px 18px", fontSize: 13.5, background: story.favorite ? "var(--berry)" : "var(--cream)", color: story.favorite ? "var(--cream)" : "var(--ink)" }}
@@ -267,8 +255,8 @@ export default function StoryReaderPage() {
           >
             {story.favorite ? "Saved ♥" : "Save to shelf ♡"}
           </button>
-        </nav>
-      </header>
+        }
+      />
 
       <main className="page">
         <div className="gen-banner">
@@ -460,7 +448,7 @@ export default function StoryReaderPage() {
         <div>© 2026 TellTales · Sweet dreams guaranteed.</div>
         <div>
           <Link href="#">Privacy (COPPA)</Link>
-          <Link href="#">Delete all my data</Link>
+          <DeleteMyDataLink style={{ marginLeft: 0 }} />
           <Link href="#">Help</Link>
         </div>
       </div>

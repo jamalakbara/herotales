@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
+import { and, eq } from "drizzle-orm";
 import { requireUser, notFound, signImageUrlsForStory } from "@/lib/api";
+import { db } from "@/lib/db";
+import { chapterImages, children, stories } from "@/lib/db/schema";
+import { deleteStoryImages } from "@/lib/cloudinary";
 
 export async function GET(
   _req: Request,
@@ -7,21 +11,39 @@ export async function GET(
 ) {
   const auth = await requireUser();
   if ("error" in auth) return auth.error;
-  const { supabase, user } = auth;
+  const { userId } = auth;
   const { id } = await ctx.params;
 
-  const { data, error } = await supabase
-    .from("stories")
-    .select(
-      "id, parent_id, child_id, blueprint, length, voice, status, progress, title, full_text, favorite, error, created_at, completed_at, children(nickname, age, pronouns, character_description)",
-    )
-    .eq("id", id)
-    .eq("parent_id", user.id)
-    .single();
-  if (error || !data) return notFound("Story not found");
+  const [data] = await db
+    .select({
+      id: stories.id,
+      parent_id: stories.parentId,
+      child_id: stories.childId,
+      blueprint: stories.blueprint,
+      length: stories.length,
+      voice: stories.voice,
+      status: stories.status,
+      progress: stories.progress,
+      title: stories.title,
+      full_text: stories.fullText,
+      favorite: stories.favorite,
+      error: stories.error,
+      created_at: stories.createdAt,
+      completed_at: stories.completedAt,
+      children: {
+        nickname: children.nickname,
+        age: children.age,
+        pronouns: children.pronouns,
+        character_description: children.characterDescription,
+      },
+    })
+    .from(stories)
+    .leftJoin(children, eq(children.id, stories.childId))
+    .where(and(eq(stories.id, id), eq(stories.parentId, userId)));
+  if (!data) return notFound("Story not found");
 
   const images = data.status === "ready" || data.status === "generating"
-    ? await signImageUrlsForStory(user.id, id)
+    ? await signImageUrlsForStory(userId, id)
     : [];
 
   return NextResponse.json({ story: data, images });
@@ -33,27 +55,18 @@ export async function DELETE(
 ) {
   const auth = await requireUser();
   if ("error" in auth) return auth.error;
-  const { supabase, user } = auth;
+  const { userId } = auth;
   const { id } = await ctx.params;
 
-  // pull image paths so we can clean storage
-  const { data: imgs } = await supabase
-    .from("chapter_images")
-    .select("storage_path, stories!inner(parent_id)")
-    .eq("story_id", id);
-  const paths = (imgs ?? [])
-    .filter((r) => Array.isArray(r.stories) ? r.stories.some((s) => s.parent_id === user.id) : (r.stories as { parent_id: string } | null)?.parent_id === user.id)
-    .map((r) => r.storage_path);
+  // pull image public_ids (ownership enforced via the story join) so we can clean Cloudinary
+  const imgs = await db
+    .select({ storagePath: chapterImages.storagePath })
+    .from(chapterImages)
+    .innerJoin(stories, eq(stories.id, chapterImages.storyId))
+    .where(and(eq(chapterImages.storyId, id), eq(stories.parentId, userId)));
 
-  if (paths.length) {
-    await supabase.storage.from("story-assets").remove(paths);
-  }
+  await deleteStoryImages(imgs.map((r) => r.storagePath));
 
-  const { error } = await supabase
-    .from("stories")
-    .delete()
-    .eq("id", id)
-    .eq("parent_id", user.id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  await db.delete(stories).where(and(eq(stories.id, id), eq(stories.parentId, userId)));
   return NextResponse.json({ ok: true });
 }

@@ -2,6 +2,8 @@
 import Link from "next/link";
 import { useState, useEffect, useMemo, CSSProperties } from "react";
 import { DashboardNav } from "@/components/dashboard-nav";
+import { DeleteMyDataLink } from "@/components/delete-data-link";
+import { BookCover, coverAccent, type CoverAccent } from "@/components/book-cover";
 
 type APIStory = {
   id: string;
@@ -14,9 +16,7 @@ type APIStory = {
 
 type StoryCard = {
   id: string;
-  pcov: string;
-  bg: string;
-  col: string;
+  accent: CoverAccent;
   label: string;
   title: string;
   script: string;
@@ -24,14 +24,6 @@ type StoryCard = {
   forKid: string;
   infoTitle: string;
 };
-
-const COVER_PALETTES: { pcov: string; bg: string; col: string }[] = [
-  { pcov: "p1", bg: "var(--berry)", col: "var(--cream)" },
-  { pcov: "p2", bg: "var(--twilight)", col: "var(--cream)" },
-  { pcov: "p3", bg: "var(--moon)", col: "var(--twilight)" },
-  { pcov: "p4", bg: "var(--sage)", col: "var(--cream)" },
-  { pcov: "p5", bg: "var(--lilac)", col: "var(--twilight)" },
-];
 
 function splitTitle(t: string): [string, string] {
   const words = t.trim().split(/\s+/);
@@ -102,13 +94,12 @@ export default function KeepsakeBooksPage() {
 
   const stories: StoryCard[] = useMemo(() => {
     return apiStories.slice(0, 5).map((s, i) => {
-      const palette = COVER_PALETTES[i % COVER_PALETTES.length];
       const fullTitle = s.title ?? "Untitled tale";
       const [title, script] = splitTitle(fullTitle);
       const kid = s.children?.nickname ?? "—";
       return {
         id: s.id,
-        ...palette,
+        accent: coverAccent(i),
         label: "5 chapters · complete",
         title,
         script,
@@ -216,23 +207,20 @@ export default function KeepsakeBooksPage() {
             const styleVars = { "--i": i } as CSSProperties;
             return (
               <div key={s.id} onClick={() => setSelectedStory(i)} className="kp-pick kp-stagger" style={{ ...styleVars, position: "relative" }}>
-                {selectedStory === i && (
-                  <div className="kp-pick-check" style={{ position: "absolute", top: -10, right: -10, width: 34, height: 34, borderRadius: "50%", background: "var(--moon)", border: "2px solid var(--ink)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 16, color: "var(--twilight)", zIndex: 3 }}>✓</div>
-                )}
-                <div className="kp-pick-cov" style={{ aspectRatio: "5/6.4", borderRadius: "6px 12px 12px 6px", border: selectedStory === i ? "3px solid var(--moon)" : "2.5px solid var(--ink)", boxShadow: selectedStory === i ? "6px 6px 0 var(--ink)" : "4px 4px 0 var(--ink)", padding: "14px 12px", position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "space-between", marginBottom: 10, background: s.bg, color: s.col }}>
-                  <div style={{ position: "absolute", left: 5, top: 10, bottom: 10, width: 2, background: (s.pcov === "p3" || s.pcov === "p5") ? "rgba(28,21,64,0.2)" : "rgba(255,255,255,0.3)" }} />
-                  <div>
-                    <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.7 }}>{s.label}</div>
-                    <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 15, lineHeight: 1.05, marginTop: 4 }}>
-                      {s.title}
-                      <span style={{ fontFamily: "var(--font-caprasimo), serif", display: "block", fontSize: 14, color: (s.pcov === "p1" || s.pcov === "p2" || s.pcov === "p4") ? "var(--moon)" : "inherit" }}>{s.script}</span>
-                    </div>
-                  </div>
-                  <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.85, display: "flex", justifyContent: "space-between" }}>
-                    <span>{s.theme}</span>
-                    <span>{s.forKid}</span>
-                  </div>
-                </div>
+                <BookCover
+                  size="sm"
+                  coverClassName="kp-pick-cov"
+                  accent={s.accent}
+                  selected={selectedStory === i}
+                  label={s.label}
+                  title={s.title}
+                  script={s.script}
+                  theme={s.theme}
+                  footerRight={s.forKid}
+                  overlay={selectedStory === i ? (
+                    <div className="kp-pick-check" style={{ position: "absolute", top: -10, right: -10, width: 34, height: 34, borderRadius: "50%", background: "var(--moon)", border: "2px solid var(--ink)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 16, color: "var(--twilight)", zIndex: 3 }}>✓</div>
+                  ) : undefined}
+                />
                 <div>
                   <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 13.5, color: "var(--twilight)", lineHeight: 1.2 }}>{s.infoTitle}</div>
                   <div style={{ fontSize: 11, color: "var(--ink-soft)", fontWeight: 600, marginTop: 2 }}>For {s.forKid} · {s.theme}</div>
@@ -374,7 +362,7 @@ export default function KeepsakeBooksPage() {
         <div>© 2026 TellTales · Sweet dreams guaranteed.</div>
         <div>
           <Link href="#" style={{ marginLeft: 20, color: "inherit", textDecoration: "none" }}>Privacy (COPPA)</Link>
-          <Link href="#" style={{ marginLeft: 20, color: "inherit", textDecoration: "none" }}>Delete all my data</Link>
+          <DeleteMyDataLink style={{ marginLeft: 20 }} />
           <Link href="#" style={{ marginLeft: 20, color: "inherit", textDecoration: "none" }}>Help</Link>
         </div>
       </footer>

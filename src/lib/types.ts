@@ -8,6 +8,11 @@ export const BlueprintEnum = z.enum(BLUEPRINTS);
 export const LengthEnum = z.enum(LENGTHS);
 export const VoiceEnum = z.enum(VOICES);
 
+export type Json = string | number | boolean | null | { [k: string]: Json | undefined } | Json[];
+export type StoryStatus = "pending" | "generating" | "ready" | "failed";
+export type StoryBlueprint = (typeof BLUEPRINTS)[number];
+export type StoryLength = (typeof LENGTHS)[number];
+
 export const ChapterSchema = z.object({
   label: z.string(),
   title: z.string(),

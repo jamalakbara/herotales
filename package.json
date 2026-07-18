@@ -6,11 +6,17 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push"
   },
   "dependencies": {
-    "@supabase/ssr": "^0.10.2",
-    "@supabase/supabase-js": "^2.105.1",
+    "@anthropic-ai/sdk": "^0.112.1",
+    "@clerk/nextjs": "^6.39.6",
+    "@neondatabase/serverless": "^1.1.0",
+    "cloudinary": "^2.10.0",
+    "drizzle-orm": "^0.45.2",
     "inngest": "^4.2.5",
     "next": "^16.2.4",
     "openai": "^6.35.0",
@@ -23,6 +29,7 @@
     "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "drizzle-kit": "^0.31.10",
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.2.4",
     "tailwindcss": "^4.2.4",

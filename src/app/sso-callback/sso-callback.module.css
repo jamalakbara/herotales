@@ -1,0 +1,86 @@
+.screen {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+  background: var(--cream);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 18px;
+  max-width: 420px;
+  padding: 40px 36px;
+  border-radius: 28px;
+  border: 2.5px solid var(--ink);
+  background: var(--cream-deep);
+  box-shadow: 8px 8px 0 var(--ink);
+}
+
+.mark {
+  width: 56px;
+  height: 56px;
+  background: var(--twilight);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 4px 4px 0 var(--moon);
+  animation: float 3.5s ease-in-out infinite;
+}
+.mark::before {
+  content: "";
+  width: 32px;
+  height: 32px;
+  background: var(--moon);
+  border-radius: 50%;
+  box-shadow: inset -8px -3px 0 var(--twilight);
+}
+
+.eyebrow {
+  font-family: var(--font-caprasimo), serif;
+  font-size: 15px;
+  color: var(--twilight);
+  letter-spacing: 0.02em;
+}
+
+.title {
+  font-family: var(--font-young-serif), serif;
+  font-size: 24px;
+  line-height: 1.2;
+  color: var(--ink);
+  margin: 0;
+}
+
+.sub {
+  font-family: var(--font-nunito), sans-serif;
+  font-size: 15px;
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+.dots {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+.dots span {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--moon);
+  border: 1.5px solid var(--ink);
+  animation: pulseDot 1.6s ease-in-out infinite;
+}
+.dots span:nth-child(2) { animation-delay: 0.2s; }
+.dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mark,
+  .dots span {
+    animation: none;
+  }
+}

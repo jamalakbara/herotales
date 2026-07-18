@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { and, eq } from "drizzle-orm";
 import { requireUser, badRequest, notFound } from "@/lib/api";
+import { db } from "@/lib/db";
+import { children } from "@/lib/db/schema";
+import { childSelect, toChildColumns } from "@/lib/db/children-fields";
 
 const PatchChild = z
   .object({
@@ -25,7 +29,7 @@ export async function PATCH(
 ) {
   const auth = await requireUser();
   if ("error" in auth) return auth.error;
-  const { supabase, user } = auth;
+  const { userId } = auth;
   const { id } = await ctx.params;
 
   let body: unknown;
@@ -37,14 +41,11 @@ export async function PATCH(
   const parsed = PatchChild.safeParse(body);
   if (!parsed.success) return badRequest("Invalid patch", parsed.error.flatten());
 
-  const { data, error } = await supabase
-    .from("children")
-    .update(parsed.data)
-    .eq("id", id)
-    .eq("parent_id", user.id)
-    .select("id, nickname, age, pronouns, detail_tags, character_description, avatar_idx, narrator_voice, growth_traits, quirk, skip_scary, short_stories, use_real_name, created_at")
-    .single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  const [data] = await db
+    .update(children)
+    .set(toChildColumns(parsed.data))
+    .where(and(eq(children.id, id), eq(children.parentId, userId)))
+    .returning(childSelect);
   if (!data) return notFound("Child not found");
   return NextResponse.json({ child: data });
 }
@@ -55,14 +56,9 @@ export async function DELETE(
 ) {
   const auth = await requireUser();
   if ("error" in auth) return auth.error;
-  const { supabase, user } = auth;
+  const { userId } = auth;
   const { id } = await ctx.params;
 
-  const { error } = await supabase
-    .from("children")
-    .delete()
-    .eq("id", id)
-    .eq("parent_id", user.id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  await db.delete(children).where(and(eq(children.id, id), eq(children.parentId, userId)));
   return NextResponse.json({ ok: true });
 }

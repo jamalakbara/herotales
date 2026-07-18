@@ -1,5 +1,4 @@
 import { AuthForm } from "../auth-form";
-import { signIn, signUp } from "../actions";
 
 export default async function SignUpPage({
   searchParams,
@@ -7,5 +6,5 @@ export default async function SignUpPage({
   searchParams: Promise<{ next?: string }>;
 }) {
   const { next = "/dashboard" } = await searchParams;
-  return <AuthForm initialMode="sign-up" next={next} signInAction={signIn} signUpAction={signUp} />;
+  return <AuthForm initialMode="sign-up" next={next} />;
 }

@@ -1,4 +1,6 @@
-import { adminClient } from "./supabase/admin";
+import { eq } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { profiles } from "@/lib/db/schema";
 
 export type QuotaStatus = {
   quota: number;
@@ -8,22 +10,25 @@ export type QuotaStatus = {
 };
 
 export async function getOrResetQuota(userId: string): Promise<QuotaStatus> {
-  const sb = adminClient();
   const today = new Date().toISOString().slice(0, 10);
 
-  const { error: upsertErr } = await sb
-    .from("profiles")
-    .upsert({ id: userId, quota_period_start: today }, { onConflict: "id", ignoreDuplicates: true });
-  if (upsertErr) throw new Error(upsertErr.message);
+  // Lazy-create the profile row (replaces the old handle_new_user auth trigger).
+  await db
+    .insert(profiles)
+    .values({ id: userId, quotaPeriodStart: today })
+    .onConflictDoNothing({ target: profiles.id });
 
-  const { data, error } = await sb
-    .from("profiles")
-    .select("story_quota_monthly, stories_used_this_month, quota_period_start")
-    .eq("id", userId)
-    .single();
-  if (error || !data) throw new Error(error?.message ?? "Profile not found");
+  const [data] = await db
+    .select({
+      storyQuotaMonthly: profiles.storyQuotaMonthly,
+      storiesUsedThisMonth: profiles.storiesUsedThisMonth,
+      quotaPeriodStart: profiles.quotaPeriodStart,
+    })
+    .from(profiles)
+    .where(eq(profiles.id, userId));
+  if (!data) throw new Error("Profile not found");
 
-  const periodStart = new Date(data.quota_period_start);
+  const periodStart = new Date(data.quotaPeriodStart);
   const now = new Date();
   const sameMonth =
     periodStart.getUTCFullYear() === now.getUTCFullYear() &&
@@ -33,25 +38,28 @@ export async function getOrResetQuota(userId: string): Promise<QuotaStatus> {
     const newStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
       .toISOString()
       .slice(0, 10);
-    const { data: reset, error: e2 } = await sb
-      .from("profiles")
-      .update({ stories_used_this_month: 0, quota_period_start: newStart })
-      .eq("id", userId)
-      .select("story_quota_monthly, stories_used_this_month, quota_period_start")
-      .single();
-    if (e2 || !reset) throw new Error(e2?.message ?? "Quota reset failed");
+    const [reset] = await db
+      .update(profiles)
+      .set({ storiesUsedThisMonth: 0, quotaPeriodStart: newStart })
+      .where(eq(profiles.id, userId))
+      .returning({
+        storyQuotaMonthly: profiles.storyQuotaMonthly,
+        storiesUsedThisMonth: profiles.storiesUsedThisMonth,
+        quotaPeriodStart: profiles.quotaPeriodStart,
+      });
+    if (!reset) throw new Error("Quota reset failed");
     return {
-      quota: reset.story_quota_monthly,
-      used: reset.stories_used_this_month,
-      remaining: reset.story_quota_monthly - reset.stories_used_this_month,
-      periodStart: reset.quota_period_start,
+      quota: reset.storyQuotaMonthly,
+      used: reset.storiesUsedThisMonth,
+      remaining: reset.storyQuotaMonthly - reset.storiesUsedThisMonth,
+      periodStart: reset.quotaPeriodStart,
     };
   }
 
   return {
-    quota: data.story_quota_monthly,
-    used: data.stories_used_this_month,
-    remaining: data.story_quota_monthly - data.stories_used_this_month,
-    periodStart: data.quota_period_start,
+    quota: data.storyQuotaMonthly,
+    used: data.storiesUsedThisMonth,
+    remaining: data.storyQuotaMonthly - data.storiesUsedThisMonth,
+    periodStart: data.quotaPeriodStart,
   };
 }

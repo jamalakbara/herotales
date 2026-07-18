@@ -1339,6 +1339,26 @@ label.field-label .opt {
   color: var(--cream);
   box-shadow: 2px 2px 0 var(--ink);
 }
+.tag-picker .tag-input {
+  appearance: none;
+  padding: 8px 14px;
+  background: var(--cream);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  font-family: var(--font-nunito);
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--twilight);
+  width: 130px;
+  outline: none;
+  box-shadow: 2px 2px 0 var(--ink);
+  transition: box-shadow 0.12s ease;
+}
+.tag-picker .tag-input::placeholder { color: var(--twilight); opacity: 0.5; }
+.tag-picker .tag-input:focus {
+  border-color: var(--berry);
+  box-shadow: 3px 3px 0 var(--ink);
+}
 
 .bp-picker {
   display: grid;
@@ -2353,7 +2373,10 @@ h1.story-title .script-em {
 .dash-fc {
   cursor: pointer; transition: background 0.12s ease;
 }
-.dash-fc:hover { background: var(--cream) !important; }
+.dash-fc:not(.dash-fc-active):hover { background: var(--cream) !important; }
+.dash-list-row { transition: transform 0.14s ease, box-shadow 0.14s ease; }
+.dash-list-row:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--ink); }
+.dash-list-row:active { transform: translate(1px, 1px); box-shadow: 2px 2px 0 var(--ink); }
 .dash-fc-active {
   background: var(--twilight) !important; color: var(--cream) !important;
   box-shadow: 2px 2px 0 var(--ink) !important;

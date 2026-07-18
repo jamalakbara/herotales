@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { asc, eq } from "drizzle-orm";
 import { requireUser, badRequest } from "@/lib/api";
+import { db } from "@/lib/db";
+import { children } from "@/lib/db/schema";
+import { childSelect, toChildColumns } from "@/lib/db/children-fields";
+import { getOrResetQuota } from "@/lib/quota";
 
 const CreateChild = z.object({
   nickname: z.string().min(1).max(40),
@@ -20,20 +25,26 @@ const CreateChild = z.object({
 export async function GET() {
   const auth = await requireUser();
   if ("error" in auth) return auth.error;
-  const { supabase, user } = auth;
-  const { data, error } = await supabase
-    .from("children")
-    .select("id, nickname, age, pronouns, detail_tags, character_description, avatar_idx, narrator_voice, growth_traits, quirk, skip_scary, short_stories, use_real_name, created_at")
-    .eq("parent_id", user.id)
-    .order("created_at", { ascending: true });
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ children: data ?? [] });
+  const { userId } = auth;
+  try {
+    const [data, quota] = await Promise.all([
+      db
+        .select(childSelect)
+        .from(children)
+        .where(eq(children.parentId, userId))
+        .orderBy(asc(children.createdAt)),
+      getOrResetQuota(userId),
+    ]);
+    return NextResponse.json({ children: data, quota });
+  } catch (err) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : "Query failed" }, { status: 500 });
+  }
 }
 
 export async function POST(req: Request) {
   const auth = await requireUser();
   if ("error" in auth) return auth.error;
-  const { supabase, user } = auth;
+  const { userId } = auth;
 
   let body: unknown;
   try {
@@ -44,11 +55,18 @@ export async function POST(req: Request) {
   const parsed = CreateChild.safeParse(body);
   if (!parsed.success) return badRequest("Invalid child", parsed.error.flatten());
 
-  const { data, error } = await supabase
-    .from("children")
-    .insert({ ...parsed.data, parent_id: user.id, detail_tags: parsed.data.detail_tags ?? [], growth_traits: parsed.data.growth_traits ?? [] })
-    .select("id, nickname, age, pronouns, detail_tags, character_description, avatar_idx, narrator_voice, growth_traits, quirk, skip_scary, short_stories, use_real_name, created_at")
-    .single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  const [data] = await db
+    .insert(children)
+    .values({
+      ...toChildColumns(parsed.data),
+      parentId: userId,
+      nickname: parsed.data.nickname,
+      age: parsed.data.age,
+      pronouns: parsed.data.pronouns,
+      detailTags: parsed.data.detail_tags ?? [],
+      growthTraits: parsed.data.growth_traits ?? [],
+    })
+    .returning(childSelect);
+  if (!data) return NextResponse.json({ error: "Child create failed" }, { status: 500 });
   return NextResponse.json({ child: data }, { status: 201 });
 }

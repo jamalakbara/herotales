@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { requireUser, badRequest } from "@/lib/api";
-import { adminClient } from "@/lib/supabase/admin";
+import { db } from "@/lib/db";
+import { children, stories } from "@/lib/db/schema";
 import { getOrResetQuota } from "@/lib/quota";
 import { inngest } from "@/lib/inngest/client";
 import { BlueprintEnum, LengthEnum, VoiceEnum, ChildInputSchema } from "@/lib/types";
-import type { StoryBlueprint, StoryStatus } from "@/lib/supabase/database.types";
+import type { StoryBlueprint, StoryStatus } from "@/lib/types";
 
 const BLUEPRINT_VALUES: readonly StoryBlueprint[] = ["Bravery", "Honesty", "Patience", "Kindness", "Persistence"];
 const STATUS_VALUES: readonly StoryStatus[] = ["pending", "generating", "ready", "failed"];
@@ -24,7 +26,7 @@ const CreateStory = z
 export async function GET(req: Request) {
   const auth = await requireUser();
   if ("error" in auth) return auth.error;
-  const { supabase, user } = auth;
+  const { userId } = auth;
 
   const url = new URL(req.url);
   const childId = url.searchParams.get("child_id");
@@ -34,34 +36,53 @@ export async function GET(req: Request) {
   const limit = Math.min(parseInt(url.searchParams.get("limit") ?? "50", 10) || 50, 100);
   const offset = Math.max(parseInt(url.searchParams.get("offset") ?? "0", 10) || 0, 0);
 
-  let q = supabase
-    .from("stories")
-    .select(
-      "id, child_id, blueprint, length, voice, status, progress, title, favorite, created_at, completed_at, children(nickname, age, pronouns)",
-      { count: "exact" },
-    )
-    .eq("parent_id", user.id)
-    .order("created_at", { ascending: false })
-    .range(offset, offset + limit - 1);
-
-  if (childId) q = q.eq("child_id", childId);
+  const conds = [eq(stories.parentId, userId)];
+  if (childId) conds.push(eq(stories.childId, childId));
   if (blueprint && (BLUEPRINT_VALUES as readonly string[]).includes(blueprint)) {
-    q = q.eq("blueprint", blueprint as StoryBlueprint);
+    conds.push(eq(stories.blueprint, blueprint as StoryBlueprint));
   }
-  if (favorite === "true") q = q.eq("favorite", true);
+  if (favorite === "true") conds.push(eq(stories.favorite, true));
   if (status && (STATUS_VALUES as readonly string[]).includes(status)) {
-    q = q.eq("status", status as StoryStatus);
+    conds.push(eq(stories.status, status as StoryStatus));
   }
+  const where = and(...conds);
 
-  const { data, error, count } = await q;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ stories: data ?? [], total: count ?? 0, limit, offset });
+  try {
+    const [rows, [{ total }]] = await Promise.all([
+      db
+        .select({
+          id: stories.id,
+          child_id: stories.childId,
+          blueprint: stories.blueprint,
+          length: stories.length,
+          voice: stories.voice,
+          status: stories.status,
+          progress: stories.progress,
+          title: stories.title,
+          favorite: stories.favorite,
+          created_at: stories.createdAt,
+          completed_at: stories.completedAt,
+          children: { nickname: children.nickname, age: children.age, pronouns: children.pronouns },
+        })
+        .from(stories)
+        .leftJoin(children, eq(children.id, stories.childId))
+        .where(where)
+        .orderBy(desc(stories.createdAt))
+        .limit(limit)
+        .offset(offset),
+      db.select({ total: sql<number>`count(*)::int` }).from(stories).where(where),
+    ]);
+
+    return NextResponse.json({ stories: rows, total: total ?? 0, limit, offset });
+  } catch (err) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : "Query failed" }, { status: 500 });
+  }
 }
 
 export async function POST(req: Request) {
   const auth = await requireUser();
   if ("error" in auth) return auth.error;
-  const { supabase, user } = auth;
+  const { userId } = auth;
 
   let body: unknown;
   try {
@@ -72,45 +93,39 @@ export async function POST(req: Request) {
   const parsed = CreateStory.safeParse(body);
   if (!parsed.success) return badRequest("Invalid story request", parsed.error.flatten());
 
-  const quota = await getOrResetQuota(user.id);
+  const quota = await getOrResetQuota(userId);
   if (quota.remaining <= 0) {
-    return NextResponse.json(
-      { error: "Monthly story quota reached", quota },
-      { status: 402 },
-    );
+    return NextResponse.json({ error: "Monthly story quota reached", quota }, { status: 402 });
   }
 
   let childId = parsed.data.child_id;
   if (!childId && parsed.data.child) {
-    const { data: created, error: cErr } = await supabase
-      .from("children")
-      .insert({
-        parent_id: user.id,
+    const [created] = await db
+      .insert(children)
+      .values({
+        parentId: userId,
         nickname: parsed.data.child.nickname,
         age: parsed.data.child.age,
         pronouns: parsed.data.child.pronouns,
-        detail_tags: parsed.data.child.detail_tags ?? [],
-        character_description: parsed.data.child.character_description ?? null,
+        detailTags: parsed.data.child.detail_tags ?? [],
+        characterDescription: parsed.data.child.character_description ?? null,
       })
-      .select("id")
-      .single();
-    if (cErr || !created) return NextResponse.json({ error: cErr?.message ?? "Child create failed" }, { status: 500 });
+      .returning({ id: children.id });
+    if (!created) return NextResponse.json({ error: "Child create failed" }, { status: 500 });
     childId = created.id;
   } else if (childId) {
-    const { data: owned } = await supabase
-      .from("children")
-      .select("id")
-      .eq("id", childId)
-      .eq("parent_id", user.id)
-      .single();
+    const [owned] = await db
+      .select({ id: children.id })
+      .from(children)
+      .where(and(eq(children.id, childId), eq(children.parentId, userId)));
     if (!owned) return NextResponse.json({ error: "Child not found" }, { status: 404 });
   }
 
-  const { data: story, error: sErr } = await supabase
-    .from("stories")
-    .insert({
-      parent_id: user.id,
-      child_id: childId!,
+  const [story] = await db
+    .insert(stories)
+    .values({
+      parentId: userId,
+      childId: childId!,
       blueprint: parsed.data.blueprint,
       length: parsed.data.length,
       voice: parsed.data.voice,
@@ -118,14 +133,11 @@ export async function POST(req: Request) {
       status: "pending",
       progress: 0,
     })
-    .select("id")
-    .single();
-  if (sErr || !story) return NextResponse.json({ error: sErr?.message ?? "Story create failed" }, { status: 500 });
+    .returning({ id: stories.id });
+  if (!story) return NextResponse.json({ error: "Story create failed" }, { status: 500 });
 
-  // fire async pipeline (admin client because it bypasses any header constraints)
+  // fire async pipeline
   await inngest.send({ name: "story/requested", data: { storyId: story.id } });
-  // ensure DB shows pending immediately even if inngest is offline
-  await adminClient().from("stories").update({ status: "pending" }).eq("id", story.id);
 
   return NextResponse.json({ story_id: story.id, status: "pending" }, { status: 202 });
 }

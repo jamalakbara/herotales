@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
+import { and, eq } from "drizzle-orm";
 import { requireUser, notFound } from "@/lib/api";
+import { db } from "@/lib/db";
+import { stories } from "@/lib/db/schema";
 
 export async function PATCH(
   req: Request,
@@ -7,7 +10,7 @@ export async function PATCH(
 ) {
   const auth = await requireUser();
   if ("error" in auth) return auth.error;
-  const { supabase, user } = auth;
+  const { userId } = auth;
   const { id } = await ctx.params;
 
   let body: { favorite?: boolean } = {};
@@ -19,24 +22,19 @@ export async function PATCH(
 
   let favorite = body.favorite;
   if (typeof favorite !== "boolean") {
-    const { data: cur } = await supabase
-      .from("stories")
-      .select("favorite")
-      .eq("id", id)
-      .eq("parent_id", user.id)
-      .single();
+    const [cur] = await db
+      .select({ favorite: stories.favorite })
+      .from(stories)
+      .where(and(eq(stories.id, id), eq(stories.parentId, userId)));
     if (!cur) return notFound("Story not found");
     favorite = !cur.favorite;
   }
 
-  const { data, error } = await supabase
-    .from("stories")
-    .update({ favorite })
-    .eq("id", id)
-    .eq("parent_id", user.id)
-    .select("id, favorite")
-    .single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  const [data] = await db
+    .update(stories)
+    .set({ favorite })
+    .where(and(eq(stories.id, id), eq(stories.parentId, userId)))
+    .returning({ id: stories.id, favorite: stories.favorite });
   if (!data) return notFound("Story not found");
   return NextResponse.json({ story: data });
 }

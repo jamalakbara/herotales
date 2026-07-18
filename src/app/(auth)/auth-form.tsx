@@ -1,30 +1,40 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSignIn, useSignUp } from "@clerk/nextjs";
 import styles from "./auth-form.module.css";
 
 type Mode = "sign-in" | "sign-up";
-type Action = (formData: FormData) => Promise<{ error?: string } | void>;
+
+function clerkError(e: unknown): string {
+  if (e && typeof e === "object" && "errors" in e) {
+    const errs = (e as { errors?: Array<{ message?: string; longMessage?: string }> }).errors;
+    if (errs && errs[0]) return errs[0].longMessage || errs[0].message || "Something went wrong.";
+  }
+  return e instanceof Error ? e.message : "Something went wrong.";
+}
 
 export function AuthForm({
   initialMode,
   next,
-  signInAction,
-  signUpAction,
 }: {
   initialMode: Mode;
   next: string;
-  signInAction: Action;
-  signUpAction: Action;
 }) {
+  const router = useRouter();
+  const { isLoaded: siLoaded, signIn, setActive: setSignInActive } = useSignIn();
+  const { isLoaded: suLoaded, signUp, setActive: setSignUpActive } = useSignUp();
+
   const [mode, setMode] = useState<Mode>(initialMode);
   const [error, setError] = useState<string | null>(null);
-  const [pending, start] = useTransition();
+  const [pending, setPending] = useState(false);
   const [showPw, setShowPw] = useState(false);
   const [pw, setPw] = useState("");
   const [oauthPending, setOauthPending] = useState(false);
+  const [pendingVerification, setPendingVerification] = useState(false);
+  const [code, setCode] = useState("");
 
   const isSignUp = mode === "sign-up";
 
@@ -63,21 +73,76 @@ export function AuthForm({
 
   async function handleGoogle() {
     setError(null);
+    if (!siLoaded || !signIn) return;
     setOauthPending(true);
     try {
-      const supabase = createClient();
-      const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: { redirectTo },
+      await signIn.authenticateWithRedirect({
+        strategy: "oauth_google",
+        redirectUrl: "/sso-callback",
+        redirectUrlComplete: next,
       });
-      if (error) {
-        setError(error.message);
-        setOauthPending(false);
-      }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not start Google sign-in.");
+      setError(clerkError(e));
       setOauthPending(false);
+    }
+  }
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    const fd = new FormData(e.currentTarget);
+    const email = String(fd.get("email") ?? "").trim().toLowerCase();
+    const password = String(fd.get("password") ?? "");
+    const name = String(fd.get("name") ?? "").trim();
+
+    if (isSignUp) {
+      if (!suLoaded || !signUp) return;
+      setPending(true);
+      try {
+        await signUp.create({ emailAddress: email, password, ...(name ? { firstName: name } : {}) });
+        await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+        setPendingVerification(true);
+      } catch (err) {
+        setError(clerkError(err));
+      } finally {
+        setPending(false);
+      }
+    } else {
+      if (!siLoaded || !signIn) return;
+      setPending(true);
+      try {
+        const res = await signIn.create({ identifier: email, password });
+        if (res.status === "complete") {
+          await setSignInActive({ session: res.createdSessionId });
+          router.push(next);
+        } else {
+          setError("Additional verification is required to sign in.");
+        }
+      } catch (err) {
+        setError(clerkError(err));
+      } finally {
+        setPending(false);
+      }
+    }
+  }
+
+  async function handleVerify(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    if (!suLoaded || !signUp) return;
+    setPending(true);
+    try {
+      const res = await signUp.attemptEmailAddressVerification({ code });
+      if (res.status === "complete") {
+        await setSignUpActive({ session: res.createdSessionId });
+        router.push(next);
+      } else {
+        setError("That code didn't work. Try again.");
+      }
+    } catch (err) {
+      setError(clerkError(err));
+    } finally {
+      setPending(false);
     }
   }
 
@@ -120,6 +185,34 @@ export function AuthForm({
                 : "Sign in to find your shelf, finish last night's chapter, or start a brand-new tale."}
             </p>
 
+            {pendingVerification ? (
+              <form noValidate onSubmit={handleVerify}>
+                {error && <div className={styles.errorBanner}>{error}</div>}
+                <p className={styles.formSub}>
+                  We sent a 6-digit code to your email. Pop it in below to finish creating your shelf.
+                </p>
+                <div className={styles.field}>
+                  <label htmlFor="code">Verification code</label>
+                  <div className={styles.inputShell}>
+                    <input
+                      type="text"
+                      id="code"
+                      name="code"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      placeholder="123456"
+                      value={code}
+                      onChange={(ev) => setCode(ev.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+                <button type="submit" className={styles.submit} disabled={pending}>
+                  {pending ? <span>Verifying…</span> : (<><span>Verify &amp; open my shelf</span><span className={styles.arr}>→</span></>)}
+                </button>
+              </form>
+            ) : (
+            <>
             <div className={styles.modeToggle} role="tablist" aria-label="Choose sign-in or sign-up">
               <span className={styles.pill} style={{ left: pillStyle.left, width: pillStyle.width }} />
               <button
@@ -176,18 +269,7 @@ export function AuthForm({
 
             <div className={styles.divider}>or with email</div>
 
-            <form
-              noValidate
-              action={(fd) => {
-                setError(null);
-                fd.set("next", next);
-                start(async () => {
-                  const action = isSignUp ? signUpAction : signInAction;
-                  const res = await action(fd);
-                  if (res && "error" in res && res.error) setError(res.error);
-                });
-              }}
-            >
+            <form noValidate onSubmit={handleSubmit}>
               {error && <div className={styles.errorBanner}>{error}</div>}
 
               {isSignUp && (
@@ -288,6 +370,9 @@ export function AuthForm({
                 )}
               </div>
 
+              {/* Clerk Smart CAPTCHA mounts here for bot protection on sign-up */}
+              <div id="clerk-captcha" />
+
               <button type="submit" className={styles.submit} disabled={pending || oauthPending}>
                 {pending ? (
                   <span>{isSignUp ? "Creating your shelf…" : "Opening your shelf…"}</span>
@@ -332,6 +417,8 @@ export function AuthForm({
                 </div>
               </div>
             </form>
+            </>
+            )}
           </section>
 
           <aside className={styles.visual} aria-hidden="true">

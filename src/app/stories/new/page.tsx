@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { DeleteMyDataLink } from "@/components/delete-data-link";
+import { ReaderNav } from "@/components/reader-nav";
 import { Suspense, useEffect, useMemo, useState } from "react";
 
 type ExistingChild = {
@@ -11,6 +13,31 @@ type ExistingChild = {
   pronouns: string;
   narrator_voice: string;
 };
+
+type Quota = { quota: number; used: number; remaining: number; periodStart: string };
+
+type ShelfStory = {
+  id: string;
+  title: string | null;
+  blueprint: string;
+  created_at: string;
+};
+
+function timeAgo(iso: string): string {
+  const then = new Date(iso).getTime();
+  const diff = Date.now() - then;
+  const mins = Math.round(diff / 60000);
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins} min ago`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.round(hrs / 24);
+  if (days < 7) return `${days} day${days === 1 ? "" : "s"} ago`;
+  const wks = Math.round(days / 7);
+  if (wks < 4) return `${wks} week${wks === 1 ? "" : "s"} ago`;
+  const months = Math.round(days / 30);
+  return `${months} month${months === 1 ? "" : "s"} ago`;
+}
 
 const BLUEPRINTS = [
   { name: "Bravery", icon: "★", desc: "Facing the dark", hook: "Brave Lantern" },
@@ -40,9 +67,9 @@ const VOICES = [
 ] as const;
 
 const LENGTHS = [
-  { title: "Shortie", mins: "5 min" },
-  { title: "Bedtime", mins: "12 min" },
-  { title: "Long tale", mins: "20 min" },
+  { title: "Shortie", mins: "3 min" },
+  { title: "Bedtime", mins: "7 min" },
+  { title: "Long tale", mins: "12 min" },
 ] as const;
 
 const SUGGESTIONS = [
@@ -71,20 +98,47 @@ function CreateStoryPage() {
   const [voice, setVoice] = useState<string>("Juniper");
   const [length, setLength] = useState<string>("Bedtime");
 
+  const [addingTag, setAddingTag] = useState(false);
+  const [customTag, setCustomTag] = useState("");
+  const [customPronoun, setCustomPronoun] = useState("");
+
   const [describeOpen, setDescribeOpen] = useState(false);
   const [description, setDescription] = useState("");
 
   const [existingKids, setExistingKids] = useState<ExistingChild[]>([]);
   const [heroMode, setHeroMode] = useState<"new" | "existing">("new");
   const [selectedKidId, setSelectedKidId] = useState<string | null>(null);
+  const [quota, setQuota] = useState<Quota | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  const [shelf, setShelf] = useState<ShelfStory[]>([]);
+
+  useEffect(() => {
+    if (!selectedKidId) {
+      setShelf([]);
+      return;
+    }
+    let active = true;
+    fetch(`/api/stories?child_id=${selectedKidId}&status=ready&limit=3`)
+      .then((r) => (r.ok ? r.json() : { stories: [] }))
+      .then((d: { stories: ShelfStory[] }) => {
+        if (active) setShelf(d.stories ?? []);
+      })
+      .catch(() => {
+        if (active) setShelf([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [selectedKidId]);
+
   useEffect(() => {
     fetch("/api/children")
       .then((r) => (r.ok ? r.json() : { children: [] }))
-      .then((d: { children: ExistingChild[] }) => {
+      .then((d: { children: ExistingChild[]; quota?: Quota }) => {
+        if (d.quota) setQuota(d.quota);
         if (d.children.length > 0) {
           setExistingKids(d.children);
           if (preselectedChildId) {
@@ -105,6 +159,7 @@ function CreateStoryPage() {
 
   const displayName = (name || "").trim() || "Hero";
   const initial = (name || "H").trim()[0]?.toUpperCase() ?? "H";
+  const outOfQuota = quota != null && quota.remaining <= 0;
   const blueprintMeta = useMemo(
     () => BLUEPRINTS.find((b) => b.name === blueprint) ?? BLUEPRINTS[0],
     [blueprint],
@@ -123,6 +178,23 @@ function CreateStoryPage() {
     });
   }
 
+  function commitCustomTag() {
+    const t = customTag.trim();
+    if (t && !DETAIL_TAGS.includes(t)) {
+      setTags((prev) => new Set(prev).add(t));
+    }
+    setCustomTag("");
+    setAddingTag(false);
+  }
+
+  function selectExistingKid(k: ExistingChild) {
+    setSelectedKidId(k.id);
+    setName(k.nickname);
+    setAge(String(k.age));
+    setPronoun(k.pronouns);
+    setVoice(k.narrator_voice ?? "Juniper");
+  }
+
   function addSuggestion(s: string) {
     setHook((prev) => {
       const base = prev.trim();
@@ -132,13 +204,16 @@ function CreateStoryPage() {
 
   async function handleGenerate(e: React.MouseEvent<HTMLAnchorElement>) {
     e.preventDefault();
-    if (submitting) return;
+    if (submitting || outOfQuota) return;
     setSubmitError(null);
     setSubmitting(true);
     try {
       const voiceName = voice === "My voice" ? "My voice" : voice;
       const useExisting = heroMode === "existing" && selectedKidId;
-      const pronouns = pronoun === "let me type" ? "they/them" : pronoun.replace(/\s+/g, "");
+      const pronouns =
+        pronoun === "let me type"
+          ? customPronoun.trim().replace(/\s+/g, "") || "they/them"
+          : pronoun.replace(/\s+/g, "");
       const res = await fetch("/api/stories", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -186,24 +261,18 @@ function CreateStoryPage() {
 
   return (
     <>
-      <header>
-        <nav className="nav">
-          <Link href="/" className="logo">
-            <div className="logo-mark" />
-            TellTales
-          </Link>
-          <div className="nav-crumbs">
-            <Link href="/dashboard">Home</Link>
-            <span className="sep">/</span>
-            <Link href="/shelf">Shelf</Link>
-            <span className="sep">/</span>
-            <span className="cur">New story</span>
-          </div>
+      <ReaderNav
+        crumbs={[
+          { label: "Home", href: "/dashboard" },
+          { label: "Shelf", href: "/shelf" },
+          { label: "New story" },
+        ]}
+        action={
           <a href="#" className="btn btn-ghost" style={{ fontSize: 14 }}>
             Save draft
           </a>
-        </nav>
-      </header>
+        }
+      />
 
       <main className="page">
         <div className="page-title-row">
@@ -266,7 +335,7 @@ function CreateStoryPage() {
                     {existingKids.map((k) => (
                       <div
                         key={k.id}
-                        onClick={() => setSelectedKidId(k.id)}
+                        onClick={() => selectExistingKid(k)}
                         style={{
                           padding: "12px 18px",
                           borderRadius: 14,
@@ -400,6 +469,17 @@ function CreateStoryPage() {
                   </div>
                 ))}
               </div>
+              {pronoun === "let me type" && (
+                <input
+                  type="text"
+                  className="txt-input"
+                  style={{ marginTop: 10 }}
+                  value={customPronoun}
+                  placeholder="e.g. ze / zir"
+                  maxLength={40}
+                  onChange={(e) => setCustomPronoun(e.target.value)}
+                />
+              )}
             </div>
 
             <div className="form-block">
@@ -417,7 +497,40 @@ function CreateStoryPage() {
                     {t}
                   </div>
                 ))}
-                <div className="tag">+ add your own</div>
+                {Array.from(tags)
+                  .filter((t) => !DETAIL_TAGS.includes(t))
+                  .map((t) => (
+                    <div
+                      key={t}
+                      className="tag active"
+                      onClick={() => toggleTag(t)}
+                    >
+                      {t}
+                    </div>
+                  ))}
+                {addingTag ? (
+                  <input
+                    autoFocus
+                    className="tag-input"
+                    value={customTag}
+                    placeholder="type a detail…"
+                    onChange={(e) => setCustomTag(e.target.value)}
+                    onBlur={commitCustomTag}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        commitCustomTag();
+                      } else if (e.key === "Escape") {
+                        setCustomTag("");
+                        setAddingTag(false);
+                      }
+                    }}
+                  />
+                ) : (
+                  <div className="tag" onClick={() => setAddingTag(true)}>
+                    + add your own
+                  </div>
+                )}
               </div>
             </div>
             </>
@@ -557,8 +670,18 @@ function CreateStoryPage() {
                 <span className="coin">⌛</span>
                 <span>
                   Uses{" "}
-                  <strong style={{ color: "var(--twilight)" }}>1 story credit</strong>{" "}
-                  · Lantern plan, 28 left this month.
+                  <strong style={{ color: "var(--twilight)" }}>1 story credit</strong>
+                  {quota != null ? (
+                    <>
+                      {" "}· Lantern plan,{" "}
+                      <strong style={{ color: outOfQuota ? "var(--berry)" : "var(--twilight)" }}>
+                        {quota.remaining} of {quota.quota}
+                      </strong>{" "}
+                      left this month.
+                    </>
+                  ) : (
+                    " · Lantern plan."
+                  )}
                 </span>
               </div>
               <div className="action-right">
@@ -578,9 +701,17 @@ function CreateStoryPage() {
                   href="#"
                   className="btn btn-berry"
                   onClick={handleGenerate}
-                  style={{ opacity: submitting ? 0.6 : 1, pointerEvents: submitting ? "none" : "auto" }}
+                  aria-disabled={submitting || outOfQuota}
+                  style={{
+                    opacity: submitting || outOfQuota ? 0.6 : 1,
+                    pointerEvents: submitting || outOfQuota ? "none" : "auto",
+                  }}
                 >
-                  {submitting ? "Conjuring…" : "Generate story →"}
+                  {submitting
+                    ? "Conjuring…"
+                    : outOfQuota
+                      ? "Monthly limit reached"
+                      : "Generate story →"}
                 </a>
               </div>
               {submitError && (
@@ -660,34 +791,32 @@ function CreateStoryPage() {
             <div className="recents">
               <div className="recents-head">
                 <span>On {displayName}&apos;s shelf</span>
-                <a href="#">See all →</a>
+                <Link href="/shelf">See all →</Link>
               </div>
-              <ul>
-                <li>
-                  <div className="mini m1" />
-                  <div className="mini-body">
-                    <div className="mini-t">The Garden That Grew Slowly</div>
-                    <div className="mini-s">Patience · 3 nights ago</div>
-                  </div>
-                  <div className="re-arrow">›</div>
-                </li>
-                <li>
-                  <div className="mini m2" />
-                  <div className="mini-body">
-                    <div className="mini-t">{displayName} &amp; the Honest Fox</div>
-                    <div className="mini-s">Honesty · last Tuesday</div>
-                  </div>
-                  <div className="re-arrow">›</div>
-                </li>
-                <li>
-                  <div className="mini m3" />
-                  <div className="mini-body">
-                    <div className="mini-t">The Smallest Friend at School</div>
-                    <div className="mini-s">Kindness · 12 days ago</div>
-                  </div>
-                  <div className="re-arrow">›</div>
-                </li>
-              </ul>
+              {shelf.length > 0 ? (
+                <ul>
+                  {shelf.map((s, i) => (
+                    <li key={s.id}>
+                      <div className={`mini m${(i % 3) + 1}`} />
+                      <div className="mini-body">
+                        <div className="mini-t">{s.title ?? "Untitled story"}</div>
+                        <div className="mini-s">
+                          {s.blueprint} · {timeAgo(s.created_at)}
+                        </div>
+                      </div>
+                      <Link href={`/stories/${s.id}`} className="re-arrow">
+                        ›
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mini-s" style={{ padding: "4px 2px" }}>
+                  {selectedKidId
+                    ? `No finished stories for ${displayName} yet.`
+                    : "Pick an existing hero to see their shelf."}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -697,7 +826,7 @@ function CreateStoryPage() {
         <div>© 2026 TellTales · Sweet dreams guaranteed.</div>
         <div>
           <a href="#">Privacy (COPPA)</a>
-          <a href="#">Delete all my data</a>
+          <DeleteMyDataLink style={{ marginLeft: 0 }} />
           <a href="#">Help</a>
         </div>
       </div>

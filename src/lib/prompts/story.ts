@@ -9,9 +9,9 @@ const BLUEPRINT_GUIDANCE: Record<string, string> = {
 };
 
 const LENGTH_PARAS: Record<string, string> = {
-  Shortie: "2 short paragraphs per chapter (2-3 sentences each)",
-  Bedtime: "3-4 paragraphs per chapter (2-3 sentences each)",
-  "Long tale": "4-5 paragraphs per chapter (3-4 sentences each)",
+  Shortie: "2-3 short paragraphs per chapter (2-3 sentences each); aim for roughly 350-450 words total across all 5 chapters",
+  Bedtime: "4-5 paragraphs per chapter (3-4 sentences each); aim for roughly 800-1000 words total across all 5 chapters",
+  "Long tale": "6-7 rich paragraphs per chapter (4-5 sentences each); aim for roughly 1500-1800 words total across all 5 chapters",
 };
 
 export function buildStorySystemPrompt(opts: {

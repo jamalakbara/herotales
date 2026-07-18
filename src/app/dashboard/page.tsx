@@ -2,6 +2,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { DashboardNav } from "@/components/dashboard-nav";
+import { DeleteMyDataLink } from "@/components/delete-data-link";
+import { BookCover, coverAccent } from "@/components/book-cover";
 
 type APIChild = {
   id: string;
@@ -45,7 +47,6 @@ function getGreetingTime(): string {
   });
 }
 
-const COVER_CLASSES = ["bc-2", "bc-3", "bc-1", "bc-4", "bc-5", "bc-6"];
 const THEME_STAR: Record<string, string> = {
   Bravery: "★",
   Honesty: "✦",
@@ -55,18 +56,6 @@ const THEME_STAR: Record<string, string> = {
 };
 const KID_AVATAR_BG = ["var(--berry)", "var(--lilac)", "var(--sage)", "var(--moon)"];
 const KID_AVATAR_FG = ["var(--cream)", "var(--twilight)", "var(--cream)", "var(--twilight)"];
-
-function covStyle(cls: string): React.CSSProperties {
-  const bg: Record<string, string> = {
-    "bc-1": "var(--berry)", "bc-2": "var(--twilight)", "bc-3": "var(--moon)",
-    "bc-4": "var(--sage)", "bc-5": "var(--lilac)", "bc-6": "var(--cream)",
-  };
-  const col: Record<string, string> = {
-    "bc-1": "var(--cream)", "bc-2": "var(--cream)", "bc-3": "var(--twilight)",
-    "bc-4": "var(--cream)", "bc-5": "var(--twilight)", "bc-6": "var(--twilight)",
-  };
-  return { background: bg[cls] ?? "var(--cream)", color: col[cls] ?? "var(--ink)" };
-}
 
 function timeAgo(iso: string): string {
   const then = new Date(iso).getTime();
@@ -145,9 +134,6 @@ export default function DashboardPage() {
   const newStoryHref = activeKidObj ? `/stories/new?child_id=${activeKidObj.id}` : "/stories/new";
   const nudgeBlueprint = ALL_BLUEPRINTS.find((b) => !usedBlueprints.has(b)) ?? null;
 
-  const scriptCol = (cls: string) => (cls === "bc-2" || cls === "bc-1" || cls === "bc-4") ? "var(--moon)" : "inherit";
-  const starBg = (cls: string) => (cls === "bc-3" || cls === "bc-5" || cls === "bc-6") ? "rgba(28,21,64,0.12)" : "rgba(255,255,255,0.18)";
-
   const kidsView = kids.map((k, i) => ({
     id: k.id,
     name: k.nickname,
@@ -162,11 +148,13 @@ export default function DashboardPage() {
   const booksView = filteredStories.map((s, i) => {
     const t = s.title ?? `Chapter ${s.progress}%`;
     const { line1, line2 } = splitTitle(t);
+    const badge: { text: string; accent: "berry" | "moon" } | undefined =
+      s.status !== "ready" ? { text: "In progress", accent: "berry" }
+        : s.favorite ? { text: "Favorite ♡", accent: "moon" } : undefined;
     return {
       id: s.id,
-      cls: COVER_CLASSES[i % COVER_CLASSES.length],
-      badge: s.status !== "ready" ? "In progress" : s.favorite ? "Favorite ♡" : "",
-      badgeBerry: s.status !== "ready",
+      accent: coverAccent(i),
+      badge,
       label: s.status === "ready" ? "Complete · 5 chapters" : `Conjuring · ${s.progress}%`,
       title: line1,
       script: line2,
@@ -205,7 +193,9 @@ export default function DashboardPage() {
             </p>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               <Link href={newStoryHref} className="dash-btn dash-btn-berry">Start tonight&apos;s story →</Link>
-              <button className="dash-btn dash-btn-ghost" style={{ border: "1.5px solid var(--ink)" }}>Re-read last night&apos;s</button>
+              {inProgress && (
+                <Link href={`/stories/${inProgress.id}`} className="dash-btn dash-btn-ghost" style={{ border: "1.5px solid var(--ink)" }}>Re-read last night&apos;s</Link>
+              )}
             </div>
           </div>
 
@@ -304,23 +294,7 @@ export default function DashboardPage() {
         <div className="dash-shelf-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 24, padding: "24px 20px 36px", background: "var(--cream-deep)", border: "2.5px solid var(--ink)", borderRadius: "4px 4px 24px 24px", borderTop: "none", boxShadow: "5px 8px 0 var(--ink)", marginBottom: 56 }}>
           {booksView.map(b => (
             <Link key={b.id} href={b.href} className="dash-book-card">
-              {b.badge && (
-                <div style={{ position: "absolute", top: -8, right: -6, padding: "4px 10px", background: b.badgeBerry ? "var(--berry)" : "var(--moon)", border: "2px solid var(--ink)", borderRadius: 999, fontFamily: "var(--font-caprasimo), serif", fontSize: 12, color: b.badgeBerry ? "var(--cream)" : "var(--twilight)", transform: "rotate(6deg)", zIndex: 3 }}>{b.badge}</div>
-              )}
-              <div style={{ aspectRatio: "5/6.4", borderRadius: "6px 12px 12px 6px", border: "2.5px solid var(--ink)", boxShadow: "5px 5px 0 var(--ink)", padding: "18px 16px", position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "space-between", marginBottom: 12, ...covStyle(b.cls) }}>
-                <div style={{ position: "absolute", left: 6, top: 12, bottom: 12, width: 2, background: "rgba(255,255,255,0.3)", pointerEvents: "none" }} />
-                <div>
-                  <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.7 }}>{b.label}</div>
-                  <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 22, lineHeight: 1.05, marginTop: 6 }}>
-                    {b.title}
-                    <span style={{ fontFamily: "var(--font-caprasimo), serif", display: "block", fontSize: 20, color: scriptCol(b.cls) }}>{b.script}</span>
-                  </div>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", fontSize: 11, fontWeight: 700 }}>
-                  <span>{b.theme}</span>
-                  <div style={{ width: 34, height: 34, borderRadius: "50%", background: starBg(b.cls), display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 14 }}>{b.star}</div>
-                </div>
-              </div>
+              <BookCover size="lg" accent={b.accent} badge={b.badge} label={b.label} title={b.title} script={b.script} theme={b.theme} star={b.star} />
               <div>
                 <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 15.5, color: "var(--twilight)", lineHeight: 1.15, marginBottom: 2 }}>{b.infoTitle}</div>
                 <div style={{ fontSize: 12, color: "var(--ink-soft)", fontWeight: 600, display: "flex", gap: 6, alignItems: "center" }}>
@@ -425,7 +399,7 @@ export default function DashboardPage() {
         <div>© 2026 TellTales · Sweet dreams guaranteed.</div>
         <div>
           <Link href="#" className="dash-nav-link" style={{ marginLeft: 20 }}>Privacy (COPPA)</Link>
-          <Link href="#" className="dash-nav-link" style={{ marginLeft: 20 }}>Delete all my data</Link>
+          <DeleteMyDataLink style={{ marginLeft: 20 }} />
           <Link href="#" className="dash-nav-link" style={{ marginLeft: 20 }}>Help</Link>
         </div>
       </footer>
