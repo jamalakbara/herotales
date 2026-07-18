@@ -1,62 +1,52 @@
-const BLUEPRINTS = [
-  {
-    icon: "★",
-    name: "Bravery",
-    desc: "Facing what goes bump in the dark — and the classroom.",
-    num: "Blueprint 01",
-  },
-  {
-    icon: "✓",
-    name: "Honesty",
-    desc: "Owning the broken vase, the fib, the feeling.",
-    num: "Blueprint 02",
-  },
-  {
-    icon: "⟲",
-    name: "Patience",
-    desc: "Waiting, watching, letting good things grow slowly.",
-    num: "Blueprint 03",
-  },
-  {
-    icon: "♡",
-    name: "Kindness",
-    desc: "Seeing the lonely friend, helping the smaller one.",
-    num: "Blueprint 04",
-  },
-  {
-    icon: "↑",
-    name: "Persistence",
-    desc: "Try, tumble, try again — the long beautiful way.",
-    num: "Blueprint 05",
-  },
+import { FannedCards } from "./motion/FannedCards";
+import { Reveal } from "./motion/Reveal";
+
+const STORIES = [
+  { icon: "★", name: "Bravery", line: "Facing what goes bump in the dark — and the classroom.", scene: "var(--berry)" },
+  { icon: "⟲", name: "Patience", line: "Waiting, watching, letting good things grow slowly.", scene: "var(--sage)" },
+  { icon: "♡", name: "Kindness", line: "Seeing the lonely friend, helping the smaller one.", scene: "var(--lilac)" },
 ];
 
 export function Blueprints() {
   return (
-    <section id="blueprints">
-      <div className="blueprints">
-        <span className="section-kicker">Value blueprints</span>
-        <h2 className="section-title">
-          Five little lessons, woven into every adventure.
-        </h2>
-        <p className="section-sub">
-          Pick the lesson of the day. We turn it into a story that sticks —
-          because your child lived it as the main character.
+    <section id="stories" className="u-stories">
+      <Reveal>
+        <h2 className="u-stories-head">Stories of children who found their spark.</h2>
+        <p style={{ textAlign: "center", color: "rgba(251,243,227,0.78)", maxWidth: 560, margin: "0 auto 8px", fontSize: 16 }}>
+          Five gentle blueprints — bravery, honesty, patience, kindness, persistence — woven
+          into an adventure your child lives as the main character.
         </p>
+      </Reveal>
 
-        <div className="blueprint-grid">
-          {BLUEPRINTS.map((bp) => (
-            <div key={bp.name} className="bp-card">
-              <div>
-                <div className="bp-icon">{bp.icon}</div>
-                <div className="bp-name">{bp.name}</div>
-                <div className="bp-desc">{bp.desc}</div>
-              </div>
-              <div className="bp-num">{bp.num}</div>
+      <FannedCards>
+        {STORIES.map((s) => (
+          <div key={s.name} className="u-story-card">
+            <div
+              style={{
+                height: 120,
+                borderRadius: 14,
+                border: "2px solid var(--ink)",
+                background: `linear-gradient(160deg, ${s.scene}, var(--twilight-deep))`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 40,
+                color: "var(--cream)",
+                marginBottom: 16,
+              }}
+            >
+              {s.icon}
             </div>
-          ))}
-        </div>
-      </div>
+            <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 22, color: "var(--cream)" }}>
+              {s.name}
+            </div>
+            <p style={{ fontSize: 13.5, color: "rgba(251,243,227,0.7)", margin: "8px 0 16px", lineHeight: 1.5 }}>
+              {s.line}
+            </p>
+            <span className="u-story-ribbon">Read this tale →</span>
+          </div>
+        ))}
+      </FannedCards>
     </section>
   );
 }

@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { DeleteMyDataLink } from "@/components/delete-data-link";
-import { ReaderNav } from "@/components/reader-nav";
+import { FloatingNav } from "@/components/floating-nav";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type Chapter = {
@@ -171,7 +171,7 @@ export default function StoryReaderPage() {
     const failed = story?.status === "failed";
     return (
       <>
-        <ReaderNav
+        <FloatingNav variant="reader"
           crumbs={[
             { label: "Dashboard", href: "/dashboard" },
             { label: failed ? "Something went wrong" : "Conjuring your story…" },
@@ -241,7 +241,7 @@ export default function StoryReaderPage() {
 
   return (
     <>
-      <ReaderNav
+      <FloatingNav variant="reader"
         crumbs={[
           { label: "Dashboard", href: "/dashboard" },
           { label: "Shelf", href: "/shelf" },

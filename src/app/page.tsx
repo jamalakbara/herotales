@@ -1,25 +1,25 @@
-import { Nav } from "@/components/nav";
+import { FloatingNav } from "@/components/floating-nav";
 import { Hero } from "@/components/hero";
+import { Statement } from "@/components/statement";
+import { FeatureTrack } from "@/components/feature-track";
 import { Blueprints } from "@/components/blueprints";
-import { HowItWorks } from "@/components/how-it-works";
-import { Features } from "@/components/features";
-import { Quote } from "@/components/quote";
 import { Pricing } from "@/components/pricing";
-import { Cta } from "@/components/cta";
+import { Faq } from "@/components/faq";
 import { Footer } from "@/components/footer";
 
 export default function LandingPage() {
   return (
     <>
-      <Nav />
+      <FloatingNav variant="marketing" />
       <main>
         <Hero />
+        <Statement />
+        <FeatureTrack />
         <Blueprints />
-        <HowItWorks />
-        <Features />
-        <Quote />
-        <Pricing />
-        <Cta />
+        <section id="pricing">
+          <Pricing />
+        </section>
+        <Faq />
       </main>
       <Footer />
     </>

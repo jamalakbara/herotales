@@ -1,8 +1,10 @@
 # TellTales — Design System
 
-**Version:** 1.0
+**Version:** 2.0 — umano re-skin
 **Source of truth:** `src/app/globals.css` (global tokens + landing/app classes) and `src/app/(auth)/auth-form.module.css` (auth-only CSS Module).
-**Aesthetic:** Warm "storybook" — cream paper, dark ink outlines, hard offset shadows (neo-brutalist), playful serif + script display type, gentle floating/twinkle motion.
+**Aesthetic:** Modern studio — flat off-white surfaces, **bold orange (`#FF692E`)**, near-black display, **soft blurred elevation** (no borders), Playfair Display headings + Inter UI, momentum smooth-scroll and scroll-linked motion. Modelled 1:1 on umanodesign.studio, expressed with TellTales content.
+
+> **v2 note:** The original v1 "storybook" system (cream paper, hard ink offset shadows, Young Serif/Caprasimo/Nunito) was replaced by this umano skin. The **CSS variable names were kept** (`--cream`, `--ink`, `--moon`, `--berry`, `--font-young-serif`, …) and repointed to umano values, so existing classes carried over. Where this doc still describes hard-shadow/border behaviour for legacy inline-styled app surfaces, those are residual and being migrated to the soft-shadow tokens below.
 
 This document describes the design system as it actually exists in the codebase. Treat it as the reference when building or reviewing UI. See `.claude/rules/design-system.md` for the enforcement rules.
 
@@ -23,35 +25,41 @@ This document describes the design system as it actually exists in the codebase.
 
 Defined twice, intentionally: as Tailwind v4 `@theme` colors (`--color-*`, usable as `bg-moon` etc.) **and** as raw CSS variables on `:root` (`--moon`, used directly in `globals.css`). Keep both in sync when adding a color.
 
+Token **names are the legacy ones**, repointed to umano values (so old classes still work). Kept in sync as Tailwind v4 `@theme` colors (`--color-*`) and `:root` vars (`--*`).
+
 | Role | `@theme` name | `:root` var | Hex |
 | --- | --- | --- | --- |
-| Page background (paper) | `--color-cream` | `--cream` | `#FBF3E3` |
-| Raised paper / input fill | `--color-cream-deep` | `--cream-deep` | `#F4E8CE` |
-| Dashed dividers / rules | `--color-paper-line` | `--paper-line` | `#E8D9B5` |
-| Primary text / borders / shadows | `--color-ink` | `--ink` | `#1C1540` |
-| Secondary text | `--color-ink-soft` | `--ink-soft` | `#3B2E6B` |
-| Brand dark surface | `--color-twilight` | `--twilight` | `#2B1E5C` |
-| Deepest surface | `--color-twilight-deep` | `--twilight-deep` | `#1A1140` |
-| Primary accent (gold) | `--color-moon` | `--moon` | `#F5B841` |
-| Gold pressed | `--color-moon-deep` | `--moon-deep` | `#E39A1F` |
-| Primary CTA (pink/red) | `--color-berry` | `--berry` | `#E8556B` |
-| Berry pressed | `--color-berry-deep` | `--berry-deep` | `#C43957` |
-| Success / positive | `--color-sage` | `--sage` | `#7FA88A` |
-| Soft accent (lavender) | `--color-lilac` | `--lilac` | `#B79FD6` |
+| Page background (off-white) | `--color-cream` | `--cream` | `#FAFAFA` |
+| Raised surface / nav pill | `--color-cream-deep` | `--cream-deep` | `#F0F0F0` |
+| Dividers / rules | `--color-paper-line` | `--paper-line` | `#E4E4E4` |
+| Primary text (near-black) | `--color-ink` | `--ink` | `#141013` |
+| Secondary text (grey) | `--color-ink-soft` | `--ink-soft` | `#5A5F6B` |
+| Dark surface (stories/FAQ) | `--color-twilight` | `--twilight` | `#141217` |
+| Deepest surface | `--color-twilight-deep` | `--twilight-deep` | `#0C0B0F` |
+| Primary accent (orange) | `--color-moon` | `--moon` | `#FF692E` |
+| Orange pressed | `--color-moon-deep` | `--moon-deep` | `#E24E12` |
+| Primary CTA (orange) | `--color-berry` | `--berry` | `#FF692E` |
+| CTA pressed | `--color-berry-deep` | `--berry-deep` | `#E24E12` |
+| (folded → orange) | `--color-sage` | `--sage` | `#FF692E` |
+| (folded → light grey) | `--color-lilac` | `--lilac` | `#E4E4E4` |
+
+Plus umano elevation tokens on `:root`: `--u-orange: #FF692E`, `--u-card-shadow: 0 12px 32px rgba(0,0,0,.10)`, `--u-card-shadow-lg: 0 16px 48px rgba(0,0,0,.14)`, `--u-radius: 16px`.
 
 **Usage rules**
-- Text on cream: `--ink` (primary), `--ink-soft` (secondary). Text on `--twilight`/`--berry`: `--cream`, with dimmed variants `rgba(251,243,227,0.75–0.88)`.
-- Borders and shadows are **always** `--ink`. Do not introduce grey borders or blurred drop shadows.
-- Accent rotation for repeated card sets (blueprints, steps, avatars) cycles: moon → berry → sage → lilac → twilight. Follow this order via `:nth-child`.
+- Palette is essentially **orange + near-black + white + grey**. Orange is the only accent (CTAs, active links, kickers, checks). Text on orange = near-black `#140906`; text on dark surfaces = white / `rgba(251,243,227,.7–.82)`.
+- Elevation is **soft blurred shadow, no border** (`--u-card-shadow` / `-lg`). The hero is flat orange; the page is flat `#FAFAFA` (no grain/glow).
+- CTA buttons: black pill on light/orange backgrounds, orange pill for the primary "convert" action. Radius `43px`.
 
 ---
 
 ## 3. Elevation & borders
 
-- **Border:** `2px` (compact cards, inputs), `2.5px` (large hero surfaces, form cards). Thin variants `1.5px` for eyebrows/small chips.
-- **Radius scale:** `999px` (pills/buttons/chips) · `26–32px` (large panels: blueprints, quote, CTA, portrait) · `18–24px` (cards, form card, steps) · `12–16px` (inputs, small tiles) · `8–14px` (book spines).
-- **Hard shadow scale** (`Xpx Xpx 0 var(--ink)`): `3px` buttons/small pills · `4px` compact cards/chips · `5–6px` features/plans · `8px` form cards · `10px` hero/big panels (blueprints, quote, CTA, story-preview).
-- Shadow grows on hover (`+1px`) and collapses on active (`1px`). Never use `box-shadow` with a blur radius for elevation. Inset soft shadows (`--shadow-soft`, `inset 2px 2px 0 rgba(28,21,64,0.05)`) are only for input wells.
+- **No borders.** Surfaces are borderless; separation comes from soft shadow + background contrast.
+- **Soft shadow scale:** cards use `var(--u-card-shadow)` (`0 12px 32px rgba(0,0,0,.10)`); elevated/floating surfaces (hero mock, notification, footer, featured plan) use `var(--u-card-shadow-lg)` (`0 16px 48px rgba(0,0,0,.14)`). Nav pill uses a whisper `0 10px 30px rgba(0,0,0,.08)`.
+- **Radius scale:** `43px`/`55px` (pill buttons / nav pill) · `24–28px` (big cards, footer, dark sections) · `14–18px` (cards, media, mock) · `44px` hero bottom corners.
+- **Interaction:** buttons lift `translateY(-1px)` on hover (no shadow-grow), no hard press. Scroll drives the primary motion, not hover.
+
+> Legacy note: some app-page surfaces still carry inline `Npx Npx 0 var(--ink)` hard shadows + `2–2.5px` borders from v1; with `--ink` now near-black they read as thin black outlines. Migrate these to the soft tokens above when touched.
 
 ---
 
@@ -59,13 +67,15 @@ Defined twice, intentionally: as Tailwind v4 `@theme` colors (`--color-*`, usabl
 
 Fonts loaded in `src/app/layout.tsx` via `next/font/google`, exposed as CSS variables:
 
+Variable names are the legacy ones, repointed to the umano type system (`AM Le Cygne` is proprietary → **Playfair Display**, umano's own declared fallback).
+
 | Variable | Font | Role |
 | --- | --- | --- |
-| `--font-young-serif` | Young Serif (400) | Display headings: `h1`, section/step/card titles, prices. Class `.display`. |
-| `--font-caprasimo` | Caprasimo (400) | Script accents: logo, kickers, badges, numbers, "highlight" words. Class `.script`. |
-| `--font-nunito` | Nunito (400–800) | Body + all UI text, buttons, inputs. Default `body` font. |
+| `--font-young-serif` | Playfair Display (400/700/900) | Display headings: `h1`, section/step/card titles, prices. Class `.display`. |
+| `--font-caprasimo` | Playfair Display italic (600/700) | Italic display accents: "highlight" words, kickers. Class `.script`. |
+| `--font-nunito` | Inter (400–800) | Body + all UI text, buttons, inputs, logo wordmark. Default `body` font. |
 
-- Base body: `17px` / line-height `1.55`, weight varies 400–800.
+- Base body: `16px`, Inter. Headings are Playfair with tight tracking (`-0.03em`); umano h1 ≈ `72/78`, big display h2 ≈ `115/109`.
 - Heading sizes are fluid: `clamp(48px, 5.8vw, 92px)` hero, `clamp(40px, 4.2vw, 64px)` section, `clamp(38–40px, 4–4.4vw, 54–60px)` page/form titles.
 - **Accent word pattern:** a highlighted word uses `--font-caprasimo`, `--berry` color, and a `--moon` marker bar drawn with `::after` rotated `-1deg` behind the text (`z-index:-1`). See `h1.hero-title .highlight`.
 - Kickers: Caprasimo, `--berry`, small, rotated `-1.5deg` to `-2deg`.
@@ -114,8 +124,13 @@ Shared React primitive for the "story book spine" card on the dashboard shelf, t
 - Chip pickers (`.age-chip`, `.pron-chip`, `.tag`, `.bp-opt`, `.voice-opt`, `.length-opt`, `.suggest-chip`): cream-deep resting, hover translate, `.active` fills with an accent (moon/berry/sage/twilight) + hard shadow. Selection = filled accent + shadow, never just a color text change.
 - `.tag-input`: pill-shaped inline text input inside `.tag-picker` for the "+ add your own" flow. Cream fill, `2px` ink, `999px` radius, Nunito 700, hard `2px` ink offset shadow at rest; focus → berry border + grown `3px` shadow (matches other inputs). Committed custom details render as `.tag.active` chips.
 
-### Nav — `.nav` / `.logo` / `.logo-mark`
-`1400px`, space-between. Logo is Caprasimo text + a `.logo-mark` (twilight circle, moon inner dot, `3px` moon shadow). App pages use `.nav-crumbs` breadcrumb + `.progress-pill` status.
+### Nav — `<FloatingNav>` (`src/components/floating-nav.tsx`)
+One fixed, centered **pill** nav for the whole app (replaces the old `Nav` / `DashboardNav` / `ReaderNav` — do not reintroduce those). Cream fill, `2px` ink border, `999px` radius, `5px` hard offset shadow (`.fnav-pill`); condenses to a `4px` shadow past `60px` scroll. Logo reuses `.logo` + `.logo-mark`. Three variants via one prop:
+- `variant="marketing"` — landing. Section links (`.fnav-link`, active = `--berry`) driven by an `IntersectionObserver` over `#how / #stories / #pricing / #faq`; links are hidden over the hero and expand once scrolled (`.fnav-collapse`). CTA = `.btn-berry`.
+- `variant="app"` — dashboard/shelf/keepsake/heroes. Home/Shelf/New/Keepsake links (active = current route) + `+ New story` CTA + Clerk user menu (`.fnav-avatar` → `.fnav-menu`).
+- `variant="reader"` — story create/read. `.nav-crumbs` breadcrumb trail + optional right-hand `action` slot.
+
+Because the nav is fixed, `body` carries `padding-top: 84px`; the landing hero tucks back under it with `margin-top: -84px`.
 
 ### Big panels
 `.blueprints`, `.quote-section`, `.cta-strip` share the pattern: rounded `32px`, colored surface (twilight/berry), `2.5px` ink, `10px` shadow, dotted-starfield `::before`, decorative circles.
@@ -133,6 +148,23 @@ Global page texture: `body::before` (three soft radial color glows) + `body::aft
 
 Named animation loops (keep names; reuse rather than redefine): `float` (6s ambient bob, `--r` rotation var), `twinkle`/`spTwinkle` (star pulse), `moonDrift`, `shoot` (shooting star), `rise` (sparkle float-up), `fillIn`, `playPulse`, `pulseDot`, `spFloat`. All ambient loops are 2.4–8s and **must** be disabled under `prefers-reduced-motion: reduce`.
 
+### Scroll & entrance motion — Framer Motion primitives (`src/components/motion/`)
+
+The landing composition is modelled on a scroll-driven agency layout, rendered in TellTales tokens (this is **layout/motion only — palette, fonts, and the hard-offset-shadow elevation are unchanged**). Scroll effects use **`framer-motion`** (dependency). Reusable client primitives — always prefer these over hand-rolling scroll logic:
+
+- `<Reveal>` — fade + slide-up entrance, plays **on mount** (mount-based, not scroll-observer-gated, so it can't stick under React StrictMode's dev double-mount). Takes `delay` / `index` (stagger) / `y`.
+- `<ScrollHighlightText text=…>` — big Young Serif statement whose words fill `--paper-line → --ink` as it scrolls through the viewport (`useScroll` + `useTransform`).
+- `<HorizontalScroll>` — pins a section and translates its track on X as you scroll Y; falls back to a normal horizontal-scroll row under reduced motion.
+- `<FannedCards>` — cards fan out into a tilted spread on scroll (the dark "story lessons" section).
+- `<Accordion items=…>` — single-open FAQ with `+/−` toggle and animated height (`.faq-*` classes).
+- `<SmoothScroll>` — **Lenis** momentum smooth-scroll wrapping the whole app (`src/app/layout.tsx`). Drives native scroll position so all `useScroll` effects keep working; disabled under reduced motion. Lenis CSS lives at the bottom of `globals.css`.
+
+**Every** primitive reads `useReducedMotion()` and collapses to a static, fully-visible state under `prefers-reduced-motion: reduce`. Deps: `framer-motion`, `lenis`.
+
+### Umano landing section classes (`globals.css`)
+
+`.u-hero` (full-bleed `--twilight` panel, rounded bottom, tucked under the nav, with a floating `.u-notify` "tale is ready" card + `.u-hero-book` mock), `.u-statement` (scroll-highlight block), `.u-hcard` (horizontal feature card: rounded media + title + desc), `.u-stories` / `.u-story-card` / `.u-story-ribbon` (dark fanned stories), `.u-faq` / `.faq-row` (dark accordion), `.u-footer` (berry brand card + cream links card + giant faded `.u-footer-watermark`). All keep the signature `2–2.5px` ink border + hard offset shadow.
+
 ---
 
 ## 8. Iconography & imagery
@@ -140,6 +172,7 @@ Named animation loops (keep names; reuse rather than redefine): `float` (6s ambi
 - Icons are inline SVG or CSS shapes (clip-path stars, pseudo-element crescents/triangles), not an icon font. Play triangles are CSS borders.
 - Remote images allowed only from Supabase Storage (`*.supabase.co/storage/v1/object/**`) and `res.cloudinary.com` (see `next.config.ts`). Use `next/image`; add new hosts to `remotePatterns` before use.
 - Generated chapter art aspect ratio is `16/10` (`.sp-illustration`).
+- **Ambient video** (e.g. hero card story loop, `.u-hero-scene-video`): plain `<video autoplay muted loop playsInline poster>` cover-fitting its box. Under `prefers-reduced-motion` a `!reduce` guard swaps the `<video>` for a static `<img>` poster (same class) so there's no ambient motion. Note: Tailwind preflight forces `video { height: auto }`, so the fill rule needs `height: 100% !important` — `inset: 0` alone won't stretch a replaced element.
 
 ---
 
@@ -150,6 +183,8 @@ Named animation loops (keep names; reuse rather than redefine): `float` (6s ambi
 | Tokens + landing + Create Story + Reader + Dashboard/Shelf/Keepsake | `src/app/globals.css` | Global kebab-case classes |
 | Auth (`/sign-in`, `/sign-up`) | `src/app/(auth)/auth-form.module.css` | CSS Module, camelCase |
 | OAuth transit (`/sso-callback`) | `src/app/sso-callback/sso-callback.module.css` | CSS Module, camelCase |
+| Scroll / entrance motion | `src/components/motion/*` (Framer Motion) | Client primitives; reduced-motion aware |
+| Floating pill nav | `src/components/floating-nav.tsx` | Single nav, 3 variants (marketing/app/reader) |
 | Tailwind utilities | via `@import "tailwindcss"` + `@theme` | Available but the codebase leans on hand-written classes |
 
 Tailwind v4 is available and `@theme` exposes the palette as utilities, but the existing UI is built almost entirely from hand-authored semantic classes. Prefer extending the existing class vocabulary over scattering utilities, unless a component is genuinely new and one-off.

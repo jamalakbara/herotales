@@ -1,36 +1,44 @@
 @import "tailwindcss";
 
+/* umano palette — orange #FF692E on off-white, near-black surfaces, grey UI.
+   Token names are kept from the original system so every existing class picks
+   up the re-skin; accent tokens (moon/berry/sage) fold onto umano orange. */
 @theme {
-  --color-cream: #FBF3E3;
-  --color-cream-deep: #F4E8CE;
-  --color-paper-line: #E8D9B5;
-  --color-ink: #1C1540;
-  --color-ink-soft: #3B2E6B;
-  --color-twilight: #2B1E5C;
-  --color-twilight-deep: #1A1140;
-  --color-moon: #F5B841;
-  --color-moon-deep: #E39A1F;
-  --color-berry: #E8556B;
-  --color-berry-deep: #C43957;
-  --color-sage: #7FA88A;
-  --color-lilac: #B79FD6;
+  --color-cream: #FAFAFA;
+  --color-cream-deep: #F0F0F0;
+  --color-paper-line: #E4E4E4;
+  --color-ink: #141013;
+  --color-ink-soft: #5A5F6B;
+  --color-twilight: #141217;
+  --color-twilight-deep: #0C0B0F;
+  --color-moon: #FF692E;
+  --color-moon-deep: #E24E12;
+  --color-berry: #FF692E;
+  --color-berry-deep: #E24E12;
+  --color-sage: #FF692E;
+  --color-lilac: #E4E4E4;
 }
 
 :root {
-  --cream: #FBF3E3;
-  --cream-deep: #F4E8CE;
-  --paper-line: #E8D9B5;
-  --ink: #1C1540;
-  --ink-soft: #3B2E6B;
-  --twilight: #2B1E5C;
-  --twilight-deep: #1A1140;
-  --moon: #F5B841;
-  --moon-deep: #E39A1F;
-  --berry: #E8556B;
-  --berry-deep: #C43957;
-  --sage: #7FA88A;
-  --lilac: #B79FD6;
-  --shadow-soft: 0 2px 0 rgba(28, 21, 64, 0.08);
+  --cream: #FAFAFA;
+  --cream-deep: #F0F0F0;
+  --paper-line: #E4E4E4;
+  --ink: #141013;
+  --ink-soft: #5A5F6B;
+  --twilight: #141217;
+  --twilight-deep: #0C0B0F;
+  --moon: #FF692E;
+  --moon-deep: #E24E12;
+  --berry: #FF692E;
+  --berry-deep: #E24E12;
+  --sage: #FF692E;
+  --lilac: #E4E4E4;
+  --shadow-soft: 0 12px 32px rgba(0,0,0,0.12);
+  /* umano soft elevation */
+  --u-orange: #FF692E;
+  --u-card-shadow: 0 12px 32px rgba(0,0,0,0.10);
+  --u-card-shadow-lg: 0 16px 48px rgba(0,0,0,0.14);
+  --u-radius: 16px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -44,7 +52,6 @@ html, body {
   -webkit-font-smoothing: antialiased;
 }
 body { overflow-x: clip; }
-html { overflow-x: clip; }
 
 body::before {
   content: '';
@@ -2661,3 +2668,583 @@ h1.story-title .script-em {
   .dash-shelf-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 14px !important; padding: 18px 14px 24px !important; }
   .dash-kids-row { grid-template-columns: 1fr !important; }
 }
+
+/* =====================================================================
+   UMANO REDESIGN — floating pill nav, section rhythm, motion surfaces.
+   New composition patterns rendered in the existing TellTales tokens.
+   ===================================================================== */
+
+body { padding-top: 84px; }
+
+/* ---------- FLOATING PILL NAV ---------- */
+.fnav-shell {
+  position: fixed;
+  top: 16px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  z-index: 200;
+  padding: 0 20px;
+  pointer-events: none;
+}
+.fnav-pill {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+  max-width: 1080px;
+  padding: 11px 12px 11px 22px;
+  background: var(--cream);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  box-shadow: 5px 5px 0 var(--ink);
+  transition: max-width 0.4s cubic-bezier(0.22,1,0.36,1),
+              padding 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+}
+.fnav-condensed { max-width: 940px; box-shadow: 4px 4px 0 var(--ink); }
+.fnav-logo { font-size: 22px; flex: 0 0 auto; }
+.fnav-logo .logo-mark { width: 32px; height: 32px; box-shadow: 2px 2px 0 var(--moon); }
+.fnav-logo .logo-mark::before { width: 17px; height: 17px; }
+
+.fnav-links {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  margin: 0 auto;
+  font-weight: 700;
+  font-size: 14.5px;
+}
+.fnav-link { color: var(--ink-soft); transition: color 0.15s ease; white-space: nowrap; }
+.fnav-link:hover { color: var(--berry); }
+.fnav-link-active { color: var(--berry); }
+
+/* Marketing links stay hidden over the hero, expand once scrolled. */
+.fnav-collapse {
+  opacity: 0;
+  max-width: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transition: opacity 0.3s ease, max-width 0.45s cubic-bezier(0.22,1,0.36,1);
+}
+.fnav-condensed .fnav-collapse {
+  opacity: 1;
+  max-width: 640px;
+  pointer-events: auto;
+}
+
+.fnav-cta { flex: 0 0 auto; padding: 10px 18px; font-size: 13.5px; }
+.fnav-right { display: flex; align-items: center; gap: 12px; flex: 0 0 auto; }
+.fnav-crumbs { margin: 0 auto; font-size: 13px; }
+
+.fnav-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--berry); color: var(--cream);
+  border: 2px solid var(--ink); box-shadow: 3px 3px 0 var(--ink);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-caprasimo), serif; font-size: 16px;
+  cursor: pointer; padding: 0;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.fnav-avatar:hover { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 var(--ink); }
+.fnav-menu {
+  position: absolute; top: 48px; right: 0; min-width: 220px;
+  background: var(--cream); border: 2px solid var(--ink);
+  border-radius: 14px; box-shadow: 5px 5px 0 var(--ink);
+  padding: 12px; z-index: 50;
+}
+.fnav-menu-label { font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 4px; }
+.fnav-menu-email { font-size: 13.5px; font-weight: 700; color: var(--twilight); margin-bottom: 12px; word-break: break-all; }
+.fnav-menu-signout {
+  width: 100%; padding: 9px 14px; border: 1.5px solid var(--ink);
+  border-radius: 999px; background: var(--moon); color: var(--ink);
+  font-weight: 800; font-size: 13px; cursor: pointer; box-shadow: 2px 2px 0 var(--ink);
+}
+.fnav-menu-signout:disabled { cursor: wait; opacity: 0.6; }
+
+@media (max-width: 720px) {
+  .fnav-links, .fnav-crumbs { display: none; }
+  .fnav-pill { max-width: 100%; justify-content: space-between; }
+}
+
+/* ---------- UMANO SECTION: full-bleed statement ---------- */
+.u-statement {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 140px 48px;
+}
+.u-statement p {
+  font-family: var(--font-young-serif), serif;
+  font-size: clamp(30px, 4.4vw, 62px);
+  line-height: 1.14;
+  letter-spacing: -0.02em;
+}
+
+/* ---------- UMANO SECTION: horizontal feature cards ---------- */
+.u-hcard {
+  flex: 0 0 auto;
+  width: 420px;
+  max-width: 78vw;
+}
+.u-hcard-media {
+  height: 300px;
+  border-radius: 24px;
+  border: 2px solid var(--ink);
+  box-shadow: 6px 6px 0 var(--ink);
+  background: var(--cream-deep);
+  overflow: hidden;
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+}
+.u-hcard-title {
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 22px;
+  font-family: var(--font-young-serif), serif;
+  font-size: 23px; color: var(--twilight); letter-spacing: -0.01em;
+}
+.u-hcard-desc { margin-top: 10px; font-size: 15.5px; line-height: 1.55; color: var(--ink-soft); max-width: 380px; }
+.u-track-head {
+  max-width: 1400px; margin: 0 auto; padding: 120px 48px 0;
+}
+
+/* ---------- UMANO SECTION: dark client stories (fanned) ---------- */
+.u-stories {
+  background: var(--twilight);
+  border-radius: 34px;
+  margin: 60px 20px;
+  padding: 90px 40px 110px;
+  position: relative;
+  overflow: hidden;
+  color: var(--cream);
+}
+.u-stories-head {
+  text-align: center;
+  font-family: var(--font-young-serif), serif;
+  font-size: clamp(40px, 5vw, 78px);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  color: var(--cream);
+  max-width: 900px;
+  margin: 0 auto 12px;
+}
+.u-story-card {
+  width: 250px;
+  background: var(--twilight-deep);
+  border: 2px solid var(--ink);
+  border-radius: 22px;
+  box-shadow: 8px 8px 0 var(--ink);
+  padding: 20px;
+  min-height: 330px;
+  display: flex;
+  flex-direction: column;
+}
+.u-story-ribbon {
+  margin-top: auto;
+  display: inline-flex; align-items: center; gap: 6px;
+  align-self: flex-start;
+  padding: 9px 16px;
+  background: var(--berry);
+  color: var(--cream);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  box-shadow: 3px 3px 0 var(--ink);
+  font-weight: 800; font-size: 13px;
+}
+
+/* ---------- UMANO SECTION: FAQ accordion ---------- */
+.u-faq {
+  background: var(--twilight);
+  border-radius: 34px;
+  margin: 60px 20px;
+  padding: 80px clamp(24px, 6vw, 96px);
+  color: var(--cream);
+}
+.u-faq-head {
+  font-family: var(--font-young-serif), serif;
+  font-size: clamp(34px, 4vw, 58px);
+  letter-spacing: -0.02em;
+  color: var(--cream);
+  margin-bottom: 36px;
+}
+.faq-row {
+  border-bottom: 1.5px solid rgba(251,243,227,0.18);
+  padding: 6px 0;
+}
+.faq-q {
+  width: 100%;
+  display: flex; align-items: center; gap: 16px;
+  padding: 22px 4px;
+  background: transparent; border: none; cursor: pointer;
+  text-align: left;
+  font-family: var(--font-nunito), sans-serif;
+  font-weight: 800; font-size: 19px;
+  color: var(--cream);
+  transition: color 0.18s ease;
+}
+.faq-row-open .faq-q { color: var(--moon); }
+.faq-toggle {
+  width: 30px; height: 30px; flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: center;
+  border: 1.5px solid rgba(251,243,227,0.5);
+  border-radius: 50%;
+  font-size: 20px; line-height: 1;
+  color: currentColor;
+}
+.faq-row-open .faq-toggle { border-color: var(--moon); }
+.faq-a { padding: 0 4px 24px 46px; font-size: 15.5px; line-height: 1.6; color: rgba(251,243,227,0.78); max-width: 760px; }
+
+/* ---------- UMANO SECTION: split footer ---------- */
+.u-footer { position: relative; padding: 40px 20px 0; overflow: hidden; }
+.u-footer-grid {
+  max-width: 1400px; margin: 0 auto;
+  display: grid; grid-template-columns: 0.7fr 1.3fr; gap: 20px;
+  position: relative; z-index: 2;
+}
+.u-footer-brand {
+  background: var(--berry);
+  border: 2.5px solid var(--ink);
+  border-radius: 28px;
+  box-shadow: 8px 8px 0 var(--ink);
+  padding: 30px;
+  min-height: 300px;
+  display: flex; flex-direction: column; justify-content: space-between;
+  color: var(--cream);
+}
+.u-footer-brand-tag { font-family: var(--font-young-serif), serif; font-size: 26px; line-height: 1.15; }
+.u-footer-links {
+  background: var(--cream);
+  border: 2.5px solid var(--ink);
+  border-radius: 28px;
+  box-shadow: 8px 8px 0 var(--ink);
+  padding: 34px 34px 26px;
+  position: relative;
+}
+.u-footer-col-h { font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 16px; }
+.u-footer-link { display: block; font-weight: 800; font-size: 16px; color: var(--twilight); margin-bottom: 12px; }
+.u-footer-link:hover { color: var(--berry); }
+.u-footer-watermark {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  font-family: var(--font-caprasimo), serif;
+  font-size: clamp(40px, 12vw, 190px);
+  line-height: 1;
+  color: rgba(28,21,64,0.05);
+  margin-top: -20px;
+  user-select: none;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .u-footer-grid { grid-template-columns: 1fr; }
+  .u-stories, .u-faq { margin: 40px 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fnav-pill { transition: none; }
+}
+
+/* ---------- UMANO HERO — pinned scroll-scrub ---------- */
+.u-hero-pin {
+  position: relative;
+  height: 260vh;              /* scroll room for the scrub timeline */
+  margin-top: -84px;          /* tuck under the floating nav */
+}
+.u-hero-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  background: #FAFAFA;        /* page bg revealed as the panel insets */
+  overflow: hidden;
+}
+/* Orange panel: full-bleed + square at rest, insets + rounds on scroll */
+.u-hero-panel {
+  position: absolute;
+  inset: 0;
+  background: #FF692E;
+  transform-origin: center center;
+  z-index: 0;
+  overflow: hidden;
+}
+
+/* Bedtime decor inside the panel (behind the card) */
+.u-hero-decor { position: absolute; inset: 0; pointer-events: none; }
+.u-hero-meadow { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 32vh; min-height: 200px; display: block; }
+.u-hero-bgstar {
+  position: absolute; width: 5px; height: 5px; border-radius: 50%;
+  background: #C4430F; opacity: 0.5;
+  animation: twinkle 3.4s ease-in-out infinite;
+}
+.u-hero-bgstar:nth-child(2n) { animation-duration: 4.2s; animation-delay: 0.8s; }
+.u-hero-bgstar:nth-child(3n) { width: 4px; height: 4px; opacity: 0.4; animation-delay: 1.6s; }
+.u-hero-firefly {
+  position: absolute; width: 10px; height: 10px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,244,214,1) 0%, rgba(255,206,128,0.7) 45%, rgba(255,206,128,0) 72%);
+  box-shadow: 0 0 14px 5px rgba(255,214,150,0.55);
+  animation-name: fireflyDrift; animation-timing-function: ease-in-out; animation-iteration-count: infinite;
+}
+@keyframes fireflyDrift {
+  0%, 100% { transform: translate(0, 0); opacity: 0.35; }
+  50% { transform: translate(8px, -22px); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .u-hero-bgstar, .u-hero-firefly { animation: none !important; }
+}
+
+/* Headline block — centred, high, generous breathing room (scroll-0 layout) */
+.u-hero-head {
+  position: absolute;
+  top: 108px; left: 0; right: 0;
+  margin: 0 auto;
+  width: min(900px, 92vw);
+  text-align: center;
+  z-index: 3;
+}
+.u-hero-head .eyebrow { justify-content: center; margin-bottom: 22px; color: rgba(20,9,6,0.72) !important; }
+h1.u-hero-title {
+  color: #140906;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  font-size: clamp(38px, 4.8vw, 76px);
+  line-height: 1.0;
+  margin-bottom: 20px;
+}
+h1.u-hero-title .highlight { color: #fff; font-family: var(--font-young-serif), serif; font-style: italic; }
+h1.u-hero-title .highlight::after { display: none; }
+.u-hero-sub {
+  color: rgba(20,9,6,0.82);
+  max-width: 560px; margin: 0 auto 26px;
+  font-size: clamp(16px, 1.4vw, 20px);
+}
+.u-hero-ctas { display: flex; gap: 14px; justify-content: center; }
+.u-hero-ghost { background: transparent; color: #140906; border: 1.5px solid rgba(20,9,6,0.4) !important; box-shadow: none; }
+.u-hero-ghost:hover { background: rgba(20,9,6,0.06); }
+
+/* Rising story card ("device") */
+.u-hero-stage {
+  position: absolute;
+  left: 50%; bottom: 0;
+  width: 360px; margin-left: -180px;
+  transform-origin: center center;
+  z-index: 2;
+}
+.u-notify {
+  position: absolute; top: -26px; right: -46px; z-index: 4;
+  display: flex; align-items: center; gap: 12px;
+  background: #fff; border-radius: 18px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.18);
+  padding: 12px 18px 12px 12px; max-width: 268px;
+  cursor: default;
+  transition: box-shadow 0.32s ease;
+  animation: notifyFloat 5.2s ease-in-out infinite;
+}
+.u-notify:hover {
+  animation: notifyLift 0.36s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  box-shadow: 0 26px 56px rgba(60, 20, 0, 0.24) !important;
+}
+@keyframes notifyFloat {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(-7px) rotate(-0.6deg); }
+}
+@keyframes notifyLift {
+  to { transform: translateY(-8px) rotate(-1.6deg); }
+}
+.u-notify-mark {
+  width: 42px; height: 42px; flex: 0 0 auto;
+  border-radius: 12px; background: var(--u-orange); color: #fff;
+  display: flex; align-items: center; justify-content: center; font-size: 20px;
+  animation: notifyMarkPulse 3.6s ease-in-out infinite;
+}
+.u-notify:hover .u-notify-mark {
+  animation: notifyMarkSpin 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+@keyframes notifyMarkPulse {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  50%      { transform: scale(1.07) rotate(6deg); }
+}
+@keyframes notifyMarkSpin {
+  to { transform: scale(1.1) rotate(90deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .u-notify, .u-notify:hover,
+  .u-notify-mark, .u-notify:hover .u-notify-mark { animation: none; }
+  .u-notify { transition: none; }
+}
+.u-notify-kicker { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-soft); }
+.u-notify-title { font-weight: 800; font-size: 16px; color: #140906; }
+
+.u-hero-book {
+  width: 360px;
+  background: #fff;
+  border-radius: 24px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.22);
+  padding: 26px;
+}
+.u-hero-book-label { font-family: var(--font-young-serif), serif; font-style: italic; color: var(--u-orange); font-size: 16px; }
+.u-hero-book-title { font-family: var(--font-young-serif), serif; font-size: 30px; color: #140906; letter-spacing: -0.01em; margin: 6px 0 18px; line-height: 1.12; }
+.u-hero-book-title .script { color: var(--u-orange); font-style: italic; }
+.u-hero-book-scene {
+  position: relative; height: 190px; border-radius: 16px;
+  background: #141013; overflow: hidden;
+}
+.u-hero-scene-layer { position: absolute; inset: 0; }
+/* Story loop (or its static poster under reduced-motion) — fills the scene box */
+.u-hero-scene-video { position: absolute; inset: 0; width: 100%; height: 100% !important; object-fit: cover; display: block; }
+/* scene B = daytime — distinct light scene for the swap */
+.u-hero-scene-b { background: linear-gradient(165deg, #FFD7A6 0%, #FFB27A 55%, #FF8A57 100%); overflow: hidden; }
+.u-hero-sun { position: absolute; top: 26px; right: 34px; width: 54px; height: 54px; border-radius: 50%; background: #FFF3D6; box-shadow: 0 0 34px rgba(255,255,255,0.7); }
+.u-hero-hill { position: absolute; bottom: -60px; left: -20px; right: -20px; height: 130px; border-radius: 50% 50% 0 0; background: #E24E12; }
+.u-hero-book-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; font-size: 14px; font-weight: 700; color: var(--ink-soft); }
+.u-hero-book-star { color: var(--u-orange); font-size: 20px; }
+
+@media (max-width: 720px) {
+  .u-hero-head { top: 110px; }
+  .u-hero-stage { width: 300px; margin-left: -150px; }
+  .u-hero-book { width: 300px; }
+  .u-notify { right: -10px; max-width: 220px; }
+}
+
+/* =====================================================================
+   UMANO 1:1 SKIN — flat surfaces, borderless soft-shadow elevation,
+   Inter/Playfair type. Overrides the original hard-offset-shadow system.
+   ===================================================================== */
+
+html, body { font-size: 16px; }
+body { background: #FAFAFA; }
+/* umano is a flat surface — drop the paper grain + colour glows */
+body::before, body::after { content: none !important; display: none !important; }
+
+/* Buttons → umano pill (black default, orange CTA), no border/hard shadow */
+.btn {
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 43px !important;
+  background: var(--ink);
+  color: #fff;
+  font-family: var(--font-nunito), sans-serif;
+  font-weight: 600 !important;
+  font-size: 16px;
+  padding: 11px 22px;
+  transition: transform 0.2s ease, background 0.2s ease, opacity 0.2s ease !important;
+}
+.btn:hover { transform: translateY(-1px) !important; box-shadow: none !important; background: #000; }
+.btn:active { transform: translateY(0) !important; box-shadow: none !important; }
+.btn-berry { background: var(--u-orange) !important; color: #fff !important; }
+.btn-berry:hover { background: var(--moon-deep) !important; }
+.btn-twilight { background: var(--ink) !important; color: #fff !important; }
+.btn-ghost { background: transparent !important; color: var(--ink) !important; }
+.btn-ghost:hover { background: rgba(0,0,0,0.05) !important; }
+.btn-lg { padding: 14px 28px; font-size: 17px; }
+
+/* Logo → umano wordmark (Inter bold) + orange dot mark, no hard shadow */
+.logo { font-family: var(--font-nunito), sans-serif !important; font-weight: 800 !important; color: var(--ink) !important; letter-spacing: -0.02em; }
+.logo-mark { background: var(--u-orange) !important; box-shadow: none !important; }
+.logo-mark::before { background: #fff !important; box-shadow: none !important; }
+
+/* Floating nav pill → umano grey pill, borderless, whisper shadow */
+.fnav-pill {
+  background: #F0F0F0 !important;
+  border: none !important;
+  border-radius: 55px !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08) !important;
+}
+.fnav-condensed { box-shadow: 0 10px 34px rgba(0,0,0,0.10) !important; }
+.fnav-link { font-family: var(--font-nunito), sans-serif; font-weight: 600; color: var(--ink-soft); }
+.fnav-link:hover, .fnav-link-active { color: var(--u-orange); }
+.fnav-avatar { border: none !important; box-shadow: none !important; background: var(--u-orange) !important; font-family: var(--font-nunito), sans-serif !important; font-weight: 700 !important; }
+.fnav-menu { border: none !important; box-shadow: var(--u-card-shadow) !important; border-radius: 16px !important; }
+.fnav-menu-signout { border: none !important; box-shadow: none !important; background: var(--ink) !important; color: #fff !important; }
+
+/* Eyebrow / kicker → umano small grey uppercase, borderless */
+.eyebrow {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  color: var(--ink-soft) !important;
+  font-family: var(--font-nunito), sans-serif !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.14em !important;
+  font-size: 12px !important;
+}
+
+/* Headings → Playfair, tighter tracking like umano */
+.display, h1.hero-title, .section-title { letter-spacing: -0.03em; }
+
+/* ---- Hero → umano flat orange (base rule edited in place above) ---- */
+.u-hero-copy .eyebrow { color: rgba(20,9,6,0.72) !important; }
+h1.u-hero-title { color: #140906 !important; font-weight: 700; letter-spacing: -0.03em; }
+h1.u-hero-title .highlight { color: #fff !important; font-family: var(--font-young-serif), serif !important; font-style: italic; }
+h1.u-hero-title .highlight::after { display: none !important; }
+h1.u-hero-title .sparkle { color: #fff !important; }
+.u-hero-sub { color: rgba(20,9,6,0.82) !important; }
+.u-hero-ghost { border: 1.5px solid rgba(20,9,6,0.38) !important; color: #140906 !important; background: transparent !important; }
+.u-hero-ghost:hover { background: rgba(20,9,6,0.06) !important; }
+.u-hero-proof { color: rgba(20,9,6,0.82) !important; }
+.u-hero-proof .avatars > div { border: 2px solid #fff !important; }
+.u-notify { border: none !important; border-radius: 16px !important; box-shadow: var(--u-card-shadow-lg) !important; }
+.u-notify-mark { border: none !important; background: var(--u-orange) !important; }
+.u-hero-book {
+  border: none !important;
+  border-radius: 18px !important;
+  box-shadow:
+    0 1px 1px rgba(60, 20, 0, 0.06),
+    0 4px 8px rgba(60, 20, 0, 0.07),
+    0 12px 24px rgba(60, 20, 0, 0.09),
+    0 28px 56px rgba(60, 20, 0, 0.12) !important;
+}
+.u-hero-book-scene { border: none !important; }
+.u-hero-book-title .script { color: var(--u-orange) !important; }
+
+/* ---- Statement ---- */
+.u-statement p { letter-spacing: -0.03em; font-weight: 700; }
+
+/* ---- Horizontal feature cards → borderless soft ---- */
+.u-hcard-media { border: none !important; box-shadow: var(--u-card-shadow) !important; border-radius: 16px !important; background: #fff !important; }
+.u-hcard-title { font-family: var(--font-nunito), sans-serif !important; font-weight: 700 !important; letter-spacing: -0.01em; }
+
+/* ---- Dark stories + FAQ → umano near-black, big radius ---- */
+.u-stories, .u-faq { border-radius: 28px; background: var(--twilight) !important; }
+.u-stories-head, .u-faq-head { letter-spacing: -0.03em; }
+.u-story-card { border: none !important; box-shadow: var(--u-card-shadow-lg) !important; border-radius: 16px !important; background: #1f1d24 !important; }
+.u-story-ribbon { border: none !important; box-shadow: none !important; background: var(--u-orange) !important; }
+.faq-q { font-family: var(--font-nunito), sans-serif !important; font-weight: 700 !important; }
+.faq-row-open .faq-q { color: var(--u-orange) !important; }
+.faq-row-open .faq-toggle { border-color: var(--u-orange) !important; }
+
+/* ---- Footer → umano cards, borderless soft ---- */
+.u-footer-brand { border: none !important; box-shadow: var(--u-card-shadow) !important; background: var(--u-orange) !important; border-radius: 24px; }
+.u-footer-links { border: none !important; box-shadow: var(--u-card-shadow) !important; border-radius: 24px; }
+.u-footer-brand-tag { font-weight: 700; letter-spacing: -0.01em; }
+.u-footer-link { font-family: var(--font-nunito), sans-serif !important; font-weight: 600 !important; }
+.u-footer-watermark { color: rgba(20,16,19,0.05) !important; font-family: var(--font-young-serif), serif !important; font-style: italic; }
+.u-footer-links .btn-twilight { background: var(--ink) !important; }
+
+/* ---- Section headings → umano ---- */
+.section-kicker { color: var(--u-orange) !important; font-family: var(--font-nunito), sans-serif !important; font-weight: 700 !important; text-transform: uppercase; letter-spacing: 0.14em !important; font-size: 12px !important; }
+.section-title { letter-spacing: -0.03em !important; color: #140906 !important; }
+.section-sub { color: var(--ink-soft) !important; }
+
+/* ---- Pricing → borderless soft-shadow umano cards ---- */
+.plan {
+  border: none !important;
+  box-shadow: var(--u-card-shadow) !important;
+  border-radius: 20px !important;
+  background: #fff !important;
+}
+.plan.featured { background: var(--twilight) !important; box-shadow: var(--u-card-shadow-lg) !important; }
+.plan.featured .plan-name, .plan.featured .plan-price, .plan.featured .plan-tag, .plan.featured .plan-feat { color: #fff !important; }
+.plan-name { font-family: var(--font-nunito), sans-serif !important; font-weight: 700 !important; color: var(--ink-soft) !important; text-transform: none; }
+.plan-price { font-family: var(--font-young-serif), serif !important; color: #140906 !important; }
+.plan.featured .plan-price { color: #fff !important; }
+.plan-badge { background: var(--u-orange) !important; color: #fff !important; border: none !important; box-shadow: none !important; }
+.plan-feat::before { color: var(--u-orange) !important; }
+.plan-cta { width: 100%; justify-content: center; }
+
+/* ---- Lenis smooth scroll (umano momentum feel) ---- */
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+.lenis.lenis-stopped { overflow: hidden; }
+.lenis.lenis-smooth iframe { pointer-events: none; }

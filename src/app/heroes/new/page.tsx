@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { DashboardNav } from "@/components/dashboard-nav";
+import { FloatingNav } from "@/components/floating-nav";
 import { DeleteMyDataLink } from "@/components/delete-data-link";
 
 type ExistingChild = {
@@ -213,7 +213,7 @@ export default function AddHeroPage() {
 
   return (
     <>
-      <DashboardNav />
+      <FloatingNav variant="app" />
       <main style={{ maxWidth: 1300, margin: "0 auto", padding: "0 48px 80px", position: "relative", zIndex: 2 }}>
         {/* CRUMB */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, fontWeight: 700, color: "var(--ink-soft)", marginBottom: 18 }}>

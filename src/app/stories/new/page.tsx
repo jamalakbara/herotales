@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { DeleteMyDataLink } from "@/components/delete-data-link";
-import { ReaderNav } from "@/components/reader-nav";
+import { FloatingNav } from "@/components/floating-nav";
 import { Suspense, useEffect, useMemo, useState } from "react";
 
 type ExistingChild = {
@@ -261,7 +261,7 @@ function CreateStoryPage() {
 
   return (
     <>
-      <ReaderNav
+      <FloatingNav variant="reader"
         crumbs={[
           { label: "Home", href: "/dashboard" },
           { label: "Shelf", href: "/shelf" },

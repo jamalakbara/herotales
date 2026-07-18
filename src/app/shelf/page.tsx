@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useMemo, useState, CSSProperties } from "react";
-import { DashboardNav } from "@/components/dashboard-nav";
+import { FloatingNav } from "@/components/floating-nav";
 import { DeleteMyDataLink } from "@/components/delete-data-link";
 import { BookCover, coverAccent, accentColors, type CoverAccent } from "@/components/book-cover";
 
@@ -198,7 +198,7 @@ export default function ShelfPage() {
 
   return (
     <>
-      <DashboardNav />
+      <FloatingNav variant="app" />
       <main style={{ maxWidth: 1400, margin: "0 auto", padding: "10px 48px 80px", position: "relative", zIndex: 2 }}>
 
         <div style={{ marginBottom: 32, display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 24, flexWrap: "wrap" }}>

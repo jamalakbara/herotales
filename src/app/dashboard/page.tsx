@@ -1,9 +1,10 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { DashboardNav } from "@/components/dashboard-nav";
+import { FloatingNav } from "@/components/floating-nav";
 import { DeleteMyDataLink } from "@/components/delete-data-link";
 import { BookCover, coverAccent } from "@/components/book-cover";
+import { Reveal } from "@/components/motion/Reveal";
 
 type APIChild = {
   id: string;
@@ -169,7 +170,7 @@ export default function DashboardPage() {
 
   return (
     <>
-      <DashboardNav />
+      <FloatingNav variant="app" />
       <main className="dash-page" style={{ maxWidth: 1400, margin: "0 auto", padding: "10px 48px 80px", position: "relative", zIndex: 2 }}>
 
         {loadError && (
@@ -179,7 +180,7 @@ export default function DashboardPage() {
         )}
 
         {/* GREETING */}
-        <div className="dash-greet" style={{ display: "grid", gridTemplateColumns: "1.15fr 0.85fr", gap: 36, marginBottom: 48, alignItems: "stretch" }}>
+        <Reveal className="dash-greet" style={{ display: "grid", gridTemplateColumns: "1.15fr 0.85fr", gap: 36, marginBottom: 48, alignItems: "stretch" }}>
           <div style={{ background: "var(--cream)", border: "2.5px solid var(--ink)", borderRadius: 28, boxShadow: "8px 8px 0 var(--ink)", padding: "40px 44px", position: "relative", overflow: "hidden" }}>
             <span style={{ position: "absolute", top: 20, right: 32, fontFamily: "var(--font-caprasimo), serif", fontSize: 64, color: "var(--moon)", transform: "rotate(14deg)", opacity: 0.85, pointerEvents: "none" }}>✦</span>
             <div style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--berry)", fontSize: 16, transform: "rotate(-1.5deg)", display: "inline-block", marginBottom: 10 }}>{getGreetingTime()}</div>
@@ -227,7 +228,7 @@ export default function DashboardPage() {
               </Link>
             </div>
           </div>
-        </div>
+        </Reveal>
 
         {/* KIDS SECTION HEADER */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 20, flexWrap: "wrap", gap: 14 }}>

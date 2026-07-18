@@ -1,43 +1,61 @@
+import Link from "next/link";
+
 export function Footer() {
   return (
-    <footer>
-      <div className="foot-grid">
-        <div>
-          <div className="logo">
+    <footer className="u-footer">
+      <div className="u-footer-grid">
+        <div className="u-footer-brand">
+          <div className="logo" style={{ color: "var(--cream)" }}>
             <div className="logo-mark" />
             TellTales
           </div>
-          <p className="foot-tag">
-            Personalized bedtime stories where your child is always the hero.
-            Made with care in a small studio.
-          </p>
+          <div className="u-footer-brand-tag">
+            Bedtime stories where
+            <br />
+            your child is the hero.
+          </div>
         </div>
-        <div className="foot-col">
-          <h5>Product</h5>
-          <a href="#">How it works</a>
-          <a href="#">Value Blueprints</a>
-          <a href="#">Keepsake books</a>
-          <a href="#">Gift cards</a>
-        </div>
-        <div className="foot-col">
-          <h5>For grown-ups</h5>
-          <a href="#">Pricing</a>
-          <a href="#">For educators</a>
-          <a href="#">For grandparents</a>
-          <a href="#">Help center</a>
-        </div>
-        <div className="foot-col">
-          <h5>The small print</h5>
-          <a href="#">Privacy (COPPA)</a>
-          <a href="#">Terms</a>
-          <a href="#">Delete my data</a>
-          <a href="#">Contact</a>
+
+        <div className="u-footer-links">
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+            <div>
+              <div className="u-footer-col-h">Product</div>
+              <a className="u-footer-link" href="#how">How it works</a>
+              <a className="u-footer-link" href="#stories">Story lessons</a>
+              <a className="u-footer-link" href="#pricing">Pricing</a>
+              <a className="u-footer-link" href="#faq">FAQ</a>
+            </div>
+            <div>
+              <div className="u-footer-col-h">Company</div>
+              <Link className="u-footer-link" href="/dashboard">Sign in</Link>
+              <a className="u-footer-link" href="#">Privacy (COPPA)</a>
+              <a className="u-footer-link" href="#">Terms</a>
+              <a className="u-footer-link" href="#">Contact</a>
+            </div>
+          </div>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginTop: 40,
+              paddingTop: 20,
+              borderTop: "1.5px dashed var(--paper-line)",
+              flexWrap: "wrap",
+              gap: 14,
+            }}
+          >
+            <div style={{ fontSize: 13, color: "var(--ink-soft)", fontWeight: 700 }}>
+              © 2026 TellTales. Sweet dreams guaranteed.
+            </div>
+            <Link href="/stories/new" className="btn btn-twilight">
+              Start free tale →
+            </Link>
+          </div>
         </div>
       </div>
-      <div className="foot-bottom">
-        <div>© 2026 TellTales. Sweet dreams guaranteed.</div>
-        <div>Made with warmth + a nightlight ✦</div>
-      </div>
+
+      <div className="u-footer-watermark">hello@telltales.studio</div>
     </footer>
   );
 }

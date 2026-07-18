@@ -1,94 +1,186 @@
-export function Hero() {
+"use client";
+
+import Link from "next/link";
+import { useRef } from "react";
+import {
+  motion,
+  useScroll,
+  useTransform,
+  useReducedMotion,
+  cubicBezier,
+} from "framer-motion";
+
+const easeOut = cubicBezier(0.22, 1, 0.36, 1);
+
+// Sparse, tone-on-tone bedtime decor for the lower orange: a wheat-meadow
+// silhouette the card rises out of, drifting lantern "fireflies", faint stars.
+const STARS = [
+  { top: "16%", left: "12%" },
+  { top: "22%", left: "82%" },
+  { top: "30%", left: "28%" },
+  { top: "13%", left: "58%" },
+  { top: "36%", left: "70%" },
+  { top: "26%", left: "44%" },
+  { top: "19%", left: "34%" },
+];
+const FIREFLIES = [
+  { left: "17%", bottom: "30%", delay: "0s", dur: "7s" },
+  { left: "30%", bottom: "20%", delay: "1.4s", dur: "8s" },
+  { left: "69%", bottom: "26%", delay: "2.1s", dur: "7.5s" },
+  { left: "82%", bottom: "18%", delay: "0.6s", dur: "8.5s" },
+  { left: "52%", bottom: "12%", delay: "1.8s", dur: "9s" },
+];
+const WHEAT = [80, 190, 300, 470, 620, 790, 940, 1080, 1210, 1340];
+
+function HeroDecor() {
   return (
-    <section className="hero">
-      <div className="hero-copy">
-        <span className="eyebrow">
-          <span className="dot" />
-          Bedtime, reinvented
-        </span>
-        <h1 className="hero-title">
-          Tonight, your little one is the{" "}
-          <span className="highlight">hero</span>{" "}
-          <span className="sparkle">✦</span> of their own storybook.
-        </h1>
-        <p className="hero-sub">
-          TellTales spins a fresh 5-chapter adventure around your child — their
-          name, their face, their bravery — and narrates it in a warm voice
-          that makes bedtime feel like magic.
-        </p>
-        <div className="hero-ctas">
-          <a href="/stories/new" className="btn btn-lg btn-berry">
-            Make tonight&apos;s story →
-          </a>
-          <a href="#" className="btn btn-lg btn-ghost">
-            Listen to a sample
-          </a>
-        </div>
-        <div className="hero-proof">
-          <div className="avatars">
-            <div>A</div>
-            <div>M</div>
-            <div>K</div>
-            <div>+</div>
+    <div className="u-hero-decor" aria-hidden>
+      {STARS.map((s, i) => (
+        <span key={i} className="u-hero-bgstar" style={{ top: s.top, left: s.left }} />
+      ))}
+
+      <svg className="u-hero-meadow" viewBox="0 0 1440 260" preserveAspectRatio="none">
+        {/* back hill */}
+        <path d="M0,130 C360,72 1080,82 1440,118 L1440,260 L0,260 Z" fill="#E85A25" />
+        {/* wheat stalks rising from the crest */}
+        <g fill="none" stroke="#C4430F" strokeWidth="3" strokeLinecap="round">
+          {WHEAT.map((x, i) => (
+            <use key={i} href="#u-wheat" transform={`translate(${x}, ${150 - (i % 3) * 6}) scale(${0.85 + (i % 4) * 0.12})`} />
+          ))}
+        </g>
+        {/* front hill (covers stalk bases) */}
+        <path d="M0,176 C400,138 1040,142 1440,182 L1440,260 L0,260 Z" fill="#C4430F" />
+        <defs>
+          <g id="u-wheat">
+            <path d="M0,0 C-3,-22 3,-42 0,-62" />
+            <path d="M0,-62 l-7,-6 M0,-55 l-7,-4 M0,-48 l-7,-3" />
+            <path d="M0,-62 l7,-6 M0,-55 l7,-4 M0,-48 l7,-3" />
+          </g>
+        </defs>
+      </svg>
+
+      {FIREFLIES.map((f, i) => (
+        <span
+          key={i}
+          className="u-hero-firefly"
+          style={{ left: f.left, bottom: f.bottom, animationDelay: f.delay, animationDuration: f.dur }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Pinned, scroll-scrubbed hero (umano pattern). A tall container pins its inner
+ * panel; as you scroll: the headline exits upward, the story card rises from the
+ * bottom and scales up to centre, its scene swaps night → day, and the orange
+ * panel (full-bleed + square at rest) contracts into an inset rounded panel,
+ * revealing the off-white page around it. Static under reduced motion.
+ */
+export function Hero() {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const reduce = useReducedMotion();
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start start", "end end"],
+  });
+
+  // Headline exits up fast (physical exit, not opacity-dependent).
+  const textY = useTransform(scrollYProgress, [0, 0.26], [0, -520]);
+  const textOpacity = useTransform(scrollYProgress, [0, 0.22], [1, 0]);
+  // Card: peeks from bottom + small → rises to centre + grows (eased settle).
+  const cardY = useTransform(scrollYProgress, [0, 1], [360, -76], { ease: easeOut });
+  const cardScale = useTransform(scrollYProgress, [0, 1], [0.85, 1.02], { ease: easeOut });
+  // Orange panel: full-bleed + square → inset + rounded.
+  const panelScale = useTransform(scrollYProgress, [0, 0.55], [1, 0.955], { ease: easeOut });
+  const panelRadius = useTransform(scrollYProgress, [0, 0.5], [0, 44]);
+
+  return (
+    <div ref={ref} className="u-hero-pin">
+      <div className="u-hero-sticky">
+        {/* Orange panel backdrop — insets + rounds on scroll; holds bedtime decor */}
+        <motion.div
+          className="u-hero-panel"
+          style={reduce ? undefined : { scale: panelScale, borderRadius: panelRadius }}
+        >
+          <HeroDecor />
+        </motion.div>
+
+        {/* Headline block */}
+        <motion.div
+          className="u-hero-head"
+          style={reduce ? undefined : { y: textY, opacity: textOpacity }}
+        >
+          <span className="eyebrow">
+            <span className="dot" />
+            Bedtime, reinvented
+          </span>
+          <h1 className="hero-title u-hero-title">
+            Tonight, your little one is the{" "}
+            <span className="highlight">hero</span> of their own storybook.
+          </h1>
+          <p className="hero-sub u-hero-sub">
+            A fresh five-chapter adventure around your child — their name, their
+            face, their bravery — illustrated and narrated in a warm voice.
+          </p>
+          <div className="hero-ctas u-hero-ctas">
+            <Link href="/stories/new" className="btn btn-lg">
+              Make tonight&apos;s story →
+            </Link>
+            <a href="#how" className="btn btn-lg u-hero-ghost">
+              See how it works
+            </a>
           </div>
-          <div>
+        </motion.div>
+
+        {/* Rising story card (our "device") */}
+        <motion.div
+          className="u-hero-stage"
+          style={reduce ? { y: -76, scale: 1 } : { y: cardY, scale: cardScale }}
+        >
+          <div className="u-notify">
+            <div className="u-notify-mark">✦</div>
             <div>
-              <span className="stars">★★★★★</span> 4.9 from 2,400+ families
+              <div className="u-notify-kicker">Tuck-in time</div>
+              <div className="u-notify-title">Tonight&apos;s tale is ready</div>
             </div>
           </div>
-        </div>
-      </div>
 
-      <div className="storybook-stage" aria-hidden="true">
-        <div className="float decor-1 star-decor" />
-        <div className="float decor-2 moon-decor" />
-        <div className="float decor-3 cloud-decor" />
-        <div
-          className="float decor-4 star-decor"
-          style={{ background: "var(--berry)", width: 26, height: 26 }}
-        />
-        <div
-          className="float decor-5 star-decor"
-          style={{ background: "var(--sage)" }}
-        />
-
-        <div className="book book-1">
-          <div>
-            <div className="book-label">Chapter one</div>
-            <div className="book-title">
-              Maya and the <span className="script-inline">Brave Lantern</span>
+          <div className="u-hero-book">
+            <div className="u-hero-book-label">Chapter one</div>
+            <div className="u-hero-book-title">
+              Maya &amp; the <span className="script">Brave Lantern</span>
+            </div>
+            <div className="u-hero-book-scene">
+              {reduce ? (
+                // Static poster frame — no ambient motion under reduced-motion
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  className="u-hero-scene-video"
+                  src="https://res.cloudinary.com/dh0spkwh3/image/upload/v1784378180/lantern-poster_oztu72.png"
+                  alt=""
+                  aria-hidden
+                />
+              ) : (
+                <video
+                  className="u-hero-scene-video"
+                  src="https://res.cloudinary.com/dh0spkwh3/video/upload/v1784378165/lantern-night_fcuv8q.mp4"
+                  poster="https://res.cloudinary.com/dh0spkwh3/image/upload/v1784378180/lantern-poster_oztu72.png"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  aria-hidden
+                />
+              )}
+            </div>
+            <div className="u-hero-book-meta">
+              <span>Bravery · Ages 4–6</span>
+              <span className="u-hero-book-star">★</span>
             </div>
           </div>
-          <div className="book-meta">
-            <span>Bravery · Ages 4-6</span>
-            <div className="book-star">★</div>
-          </div>
-        </div>
-        <div className="book book-2">
-          <div>
-            <div className="book-label">Tonight&apos;s tale</div>
-            <div className="book-title">
-              Leo &amp; the <span className="script-inline">Patient Seed</span>
-            </div>
-          </div>
-          <div className="book-meta">
-            <span>Patience · 12 min read</span>
-            <div className="book-star">☾</div>
-          </div>
-        </div>
-        <div className="book book-3">
-          <div>
-            <div className="book-label">New adventure</div>
-            <div className="book-title">
-              Noor &amp; the <span className="script-inline">Honest Fox</span>
-            </div>
-          </div>
-          <div className="book-meta">
-            <span>Honesty · 5 chapters</span>
-            <div className="book-star">✦</div>
-          </div>
-        </div>
+        </motion.div>
       </div>
-    </section>
+    </div>
   );
 }

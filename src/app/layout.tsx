@@ -1,26 +1,31 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
-import { Young_Serif, Caprasimo, Nunito } from "next/font/google";
+import { Inter, Playfair_Display } from "next/font/google";
+import { SmoothScroll } from "@/components/motion/SmoothScroll";
 import "./globals.css";
 
-const youngSerif = Young_Serif({
+// umano type system: Playfair Display = display headings (proprietary "AM Le
+// Cygne" substitute — umano's own declared fallback); Inter = body/UI + accents.
+// The CSS variable names are kept so existing class references pick up the swap.
+const playfair = Playfair_Display({
   subsets: ["latin"],
-  weight: "400",
+  weight: ["400", "700", "900"],
   variable: "--font-young-serif",
   display: "swap",
 });
 
-const caprasimo = Caprasimo({
-  subsets: ["latin"],
-  weight: "400",
-  variable: "--font-caprasimo",
-  display: "swap",
-});
-
-const nunito = Nunito({
+const inter = Inter({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
   variable: "--font-nunito",
+  display: "swap",
+});
+
+const playfairAccent = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["600", "700"],
+  style: ["italic"],
+  variable: "--font-caprasimo",
   display: "swap",
 });
 
@@ -39,9 +44,11 @@ export default function RootLayout({
     <ClerkProvider>
       <html
         lang="en"
-        className={`${youngSerif.variable} ${caprasimo.variable} ${nunito.variable}`}
+        className={`${playfair.variable} ${playfairAccent.variable} ${inter.variable}`}
       >
-        <body>{children}</body>
+        <body>
+          <SmoothScroll>{children}</SmoothScroll>
+        </body>
       </html>
     </ClerkProvider>
   );

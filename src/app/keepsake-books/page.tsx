@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useState, useEffect, useMemo, CSSProperties } from "react";
-import { DashboardNav } from "@/components/dashboard-nav";
+import { FloatingNav } from "@/components/floating-nav";
 import { DeleteMyDataLink } from "@/components/delete-data-link";
 import { BookCover, coverAccent, type CoverAccent } from "@/components/book-cover";
 
@@ -112,7 +112,7 @@ export default function KeepsakeBooksPage() {
 
   return (
     <>
-      <DashboardNav />
+      <FloatingNav variant="app" />
       <main style={{ maxWidth: 1400, margin: "0 auto", padding: "10px 48px 80px", position: "relative", zIndex: 2 }}>
 
         {/* HERO */}
