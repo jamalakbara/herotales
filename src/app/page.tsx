@@ -11,17 +11,18 @@ export default function LandingPage() {
   return (
     <>
       <FloatingNav variant="marketing" />
-      <main>
+      <main className="u-main">
         <Hero />
         <Statement />
         <FeatureTrack />
         <Blueprints />
-        <section id="pricing">
-          <Pricing />
-        </section>
+        <Pricing />
         <Faq />
       </main>
-      <Footer />
+      {/* Fixed behind the content — revealed as the page scrolls past the FAQ. */}
+      <div className="u-footer-reveal">
+        <Footer />
+      </div>
     </>
   );
 }

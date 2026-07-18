@@ -1,6 +1,7 @@
 export function Pricing() {
   return (
-    <section id="pricing">
+    <section id="pricing" className="u-dark-section">
+      <div className="u-dark-inner">
       <span className="section-kicker">Pick your shelf</span>
       <h2 className="section-title">Simple pricing. Unlimited bedtimes.</h2>
       <p className="section-sub">
@@ -59,6 +60,7 @@ export function Pricing() {
           </ul>
           <a href="#" className="btn plan-cta">Choose Constellation</a>
         </div>
+      </div>
       </div>
     </section>
   );

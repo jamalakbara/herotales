@@ -18,6 +18,7 @@ Create `.env.local` at the repo root with the following keys.
 | `BYTEPLUS_API_KEY` | `src/lib/byteplus.ts` (default image provider, via `vertexai.ts`) | BytePlus ModelArk (Seedream) for chapter art. If unset, every image call falls back to DALL-E. |
 | `BYTEPLUS_BASE_URL` | `src/lib/byteplus.ts` | Optional. ModelArk API base. Default `https://ark.ap-southeast.bytepluses.com/api/v3`. |
 | `BYTEPLUS_IMAGE_MODEL` | `src/lib/byteplus.ts` | Optional. Seedream model id. Default `seedream-4-0-250828` (confirm the exact id in the BytePlus console). |
+| `BYTEPLUS_VIDEO_MODEL` | `src/lib/byteplus.ts` (`generateBytePlusVideo`) | Optional. Seedance (video) model id for the async task API. Default `seedance-1-0-pro-250528`. Used by `scripts/gen-card-videos.ts` to build the landing "How it works" card loops. |
 | `OPENAI_API_KEY` | `src/lib/openai.ts` (fallback provider, via `vertexai.ts`) | Fallback for both stages. Account must have access to `gpt-4o` (text) and `dall-e-3` (images). |
 | `INNGEST_EVENT_KEY` | `src/lib/inngest/client.ts` | From Inngest Cloud → Event keys. Optional locally if running `inngest-cli dev`. |
 | `INNGEST_SIGNING_KEY` | `src/app/api/inngest/route.ts` (`serve`) | Required in production; `inngest-cli dev` works without it. |

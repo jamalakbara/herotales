@@ -2797,6 +2797,11 @@ body { padding-top: 84px; }
   position: relative;
   display: flex; align-items: center; justify-content: center;
 }
+.u-hcard-video {
+  position: absolute; inset: 0;
+  width: 100%; height: 100% !important; /* Tailwind preflight forces video{height:auto} */
+  object-fit: cover; display: block;
+}
 .u-hcard-title {
   display: flex; align-items: center; gap: 10px;
   margin-top: 22px;
@@ -2808,15 +2813,80 @@ body { padding-top: 84px; }
   max-width: 1400px; margin: 0 auto; padding: 120px 48px 0;
 }
 
-/* ---------- UMANO SECTION: dark client stories (fanned) ---------- */
-.u-stories {
-  background: var(--twilight);
-  border-radius: 34px;
-  margin: 60px 20px;
-  padding: 90px 40px 110px;
+/* ---------- UMANO SECTION: pinned feature row → zoom hand-off ---------- */
+.u-fzoom {
+  height: 300vh;             /* scroll room: pan + zoom + veil (no dead tail) */
   position: relative;
+  max-width: none;           /* break out of the global `section` gutter/padding */
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+.u-fzoom-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
   overflow: hidden;
+  background: var(--cream);
+  display: flex;
+  flex-direction: column;      /* heading sits ABOVE the card row — no overlap */
+  justify-content: center;
+  gap: 40px;
+}
+/* Heading + first card sit at the same gutter as every other `section`
+   (max-width 1400 centred + 48 padding), so the eyebrow/title line up across
+   the page. width:100% stops the flex column from shrinking the head to its
+   text width. The sticky/veil stay full-bleed so the black reaches the edges. */
+.u-fzoom-head {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 48px;
+  z-index: 0;
+  transition: none;   /* motion drives opacity directly — no easing lag */
+}
+.u-fzoom-track {
+  display: flex;
+  gap: 28px;
+  padding-left: max(48px, calc((100vw - 1400px) / 2 + 48px));
+  align-items: flex-start;
+  will-change: transform;
+  position: relative;
+  z-index: 2;          /* the zooming card covers the (absolute) head */
+}
+/* The final card is the zoom target. Left unpositioned so its media's
+   offsetParent stays the sticky (cumulative offsetLeft measurement); being last
+   in the DOM it already paints above its off-screen neighbours. */
+.u-fzoom-media {
+  transform-origin: center center;
+  will-change: transform;
+  position: relative;
+  z-index: 1;   /* the zooming media covers its own caption below it */
+}
+.u-fzoom-cap { transition: none; }   /* motion drives opacity/translate — no easing lag */
+.u-fzoom-veil {
+  position: absolute;
+  inset: 0;
+  background: var(--twilight-deep);
+  pointer-events: none;
+  z-index: 6;
+}
+
+/* ---------- UMANO SECTION: dark client stories (fanned) ---------- */
+/* Full-bleed dark so the zoom bridge fills the screen and the fan lands on the
+   same dusk backdrop — no rounded-card seam mid-transition. */
+.u-stories {
+  background: var(--twilight-deep);
+  position: relative;
   color: var(--cream);
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;                    /* full-bleed black — seamless from the zoom */
+}
+.u-stories-intro {
+  padding: 64px 24px 0;
+  text-align: center;
 }
 .u-stories-head {
   text-align: center;
@@ -2828,37 +2898,123 @@ body { padding-top: 84px; }
   max-width: 900px;
   margin: 0 auto 12px;
 }
+.u-stories-sub {
+  text-align: center;
+  color: rgba(251, 243, 227, 0.78);
+  max-width: 560px;
+  margin: 0 auto;
+  font-size: 16px;
+}
+.u-stories-fan {
+  padding: 0 40px 120px;
+  margin-top: -110px;   /* fan rises to overlap the heading (umano spread) */
+  overflow-x: clip;
+}
 .u-story-card {
-  width: 250px;
+  width: 264px;
   background: var(--twilight-deep);
   border: 2px solid var(--ink);
   border-radius: 22px;
   box-shadow: 8px 8px 0 var(--ink);
-  padding: 20px;
-  min-height: 330px;
+  padding: 14px;
   display: flex;
   flex-direction: column;
 }
-.u-story-ribbon {
-  margin-top: auto;
-  display: inline-flex; align-items: center; gap: 6px;
-  align-self: flex-start;
-  padding: 9px 16px;
-  background: var(--berry);
+/* Whole card is the media tile now; caption rides on top of it so it stays
+   legible on partly-overlapped cards in the fan. */
+.u-story-media {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  aspect-ratio: 3 / 4;
+}
+.u-story-cap {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 40px 16px 16px;
+  background: linear-gradient(
+    to top,
+    rgba(15, 13, 20, 0.94) 8%,
+    rgba(15, 13, 20, 0.72) 48%,
+    transparent
+  );
+  pointer-events: none;
+}
+.u-story-cap-name {
+  font-family: var(--font-young-serif), serif;
+  font-size: 22px;
   color: var(--cream);
-  border: 2px solid var(--ink);
-  border-radius: 999px;
-  box-shadow: 3px 3px 0 var(--ink);
-  font-weight: 800; font-size: 13px;
+}
+.u-story-cap-line {
+  font-size: 13px;
+  color: rgba(251, 243, 227, 0.82);
+  margin: 6px 0 0;
+  line-height: 1.45;
+}
+
+/* ---------- Unified dark run: stories → pricing → FAQ ---------- */
+/* Full-bleed --twilight-deep (no side gutters); only the FAQ rounds its bottom
+   so the block lifts off the footer. Inner wrapper keeps content at 1400. */
+.u-dark-section {
+  background: var(--twilight-deep);
+  max-width: none;
+  width: 100%;
+  margin: 0;                      /* full-bleed — no side gutters */
+  padding: 96px 0;
+  color: var(--cream);
+}
+.u-dark-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 48px;
+}
+/* Headings/sub sit on dark now → light text (beats the global umano overrides). */
+.u-dark-section .section-title { color: var(--cream) !important; }
+.u-dark-section .section-sub { color: rgba(251, 243, 227, 0.75) !important; }
+
+/* Footer reveal: content scrolls up over a footer pinned behind it (umano). */
+.u-main {
+  position: relative;
+  z-index: 1;
+  background: var(--cream);
+  margin-bottom: var(--footer-h, 584px);
+}
+.u-footer-reveal {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 0;
+}
+@media (max-width: 900px) {
+  .u-main { margin-bottom: var(--footer-h-mobile, 850px); } /* footer stacks taller */
 }
 
 /* ---------- UMANO SECTION: FAQ accordion ---------- */
+/* Scale + radius are scroll-driven in faq.tsx (hero-style contraction on reveal). */
 .u-faq {
-  background: var(--twilight);
-  border-radius: 34px;
-  margin: 60px 20px;
-  padding: 80px clamp(24px, 6vw, 96px);
   color: var(--cream);
+  will-change: transform;
+}
+.u-faq-inner { max-width: 980px; }
+/* Hero-style pin: a full-viewport dark panel scales down in place → the whole
+   rounded card stays in view (cream on all sides), then holds while the footer
+   reveals beneath. */
+.u-faq-pin { position: relative; height: 150vh; }
+.u-faq-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  overflow: hidden;
+}
+.u-faq-panel {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-origin: center center;
+  will-change: transform;
 }
 .u-faq-head {
   font-family: var(--font-young-serif), serif;
@@ -2895,7 +3051,10 @@ body { padding-top: 84px; }
 .faq-a { padding: 0 4px 24px 46px; font-size: 15.5px; line-height: 1.6; color: rgba(251,243,227,0.78); max-width: 760px; }
 
 /* ---------- UMANO SECTION: split footer ---------- */
-.u-footer { position: relative; padding: 40px 20px 0; overflow: hidden; }
+/* Top breathing room = the light band the narrowing FAQ panel overlaps during
+   the reveal; content sits below it so it's never clipped, and the band blends
+   with the panel's cream side gutters. */
+.u-footer { position: relative; padding: 64px 20px 0; overflow: hidden; }
 .u-footer-grid {
   max-width: 1400px; margin: 0 auto;
   display: grid; grid-template-columns: 0.7fr 1.3fr; gap: 20px;
@@ -2939,7 +3098,8 @@ body { padding-top: 84px; }
 
 @media (max-width: 900px) {
   .u-footer-grid { grid-template-columns: 1fr; }
-  .u-stories, .u-faq { margin: 40px 12px; }
+  .u-faq { margin: 40px 12px; }
+  .u-stories-fan { padding: 0 16px 70px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -3201,14 +3361,16 @@ h1.u-hero-title .sparkle { color: #fff !important; }
 .u-statement p { letter-spacing: -0.03em; font-weight: 700; }
 
 /* ---- Horizontal feature cards → borderless soft ---- */
-.u-hcard-media { border: none !important; box-shadow: var(--u-card-shadow) !important; border-radius: 16px !important; background: #fff !important; }
+.u-hcard-media { border: none !important; box-shadow: var(--u-card-shadow) !important; }
+/* Sibling cards fill white with fixed radius; the zoom tile drives its own bg
+   (white → dusk) and radius (16 → 0) via motion, so keep those un-!important. */
+.u-hcard-media:not(.u-fzoom-media) { border-radius: 16px !important; background: #fff !important; }
+.u-fzoom-media { border-radius: 16px; background: #fff; }
 .u-hcard-title { font-family: var(--font-nunito), sans-serif !important; font-weight: 700 !important; letter-spacing: -0.01em; }
 
-/* ---- Dark stories + FAQ → umano near-black, big radius ---- */
-.u-stories, .u-faq { border-radius: 28px; background: var(--twilight) !important; }
+/* ---- Dark run: stories → pricing → FAQ all full-bleed --twilight-deep ---- */
 .u-stories-head, .u-faq-head { letter-spacing: -0.03em; }
 .u-story-card { border: none !important; box-shadow: var(--u-card-shadow-lg) !important; border-radius: 16px !important; background: #1f1d24 !important; }
-.u-story-ribbon { border: none !important; box-shadow: none !important; background: var(--u-orange) !important; }
 .faq-q { font-family: var(--font-nunito), sans-serif !important; font-weight: 700 !important; }
 .faq-row-open .faq-q { color: var(--u-orange) !important; }
 .faq-row-open .faq-toggle { border-color: var(--u-orange) !important; }
