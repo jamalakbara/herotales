@@ -2,85 +2,18 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState, CSSProperties } from "react";
 import { AppFooter } from "@/components/app-footer";
-import { BookCover, coverAccent, accentColors, type CoverAccent } from "@/components/book-cover";
+import { BookCard, NewTaleCard } from "@/components/book-card";
+import { accentColors } from "@/components/book-cover";
 import { FloatingNav } from "@/components/floating-nav";
 import { AmbientDecor } from "@/components/motion/AmbientDecor";
 import { Reveal } from "@/components/motion/Reveal";
 import { Skeleton, SkeletonBookItem } from "@/components/skeleton";
+import { pickName, storyToBook, type BookView, type StoryListItem } from "@/lib/story-view";
 
 type APIKid = { id: string; nickname: string; tales: number; favorites: number };
-type APIStory = {
-  id: string;
-  child_id: string;
-  blueprint: string;
-  status: "pending" | "generating" | "ready" | "failed";
-  progress: number;
-  title: string | null;
-  favorite: boolean;
-  created_at: string;
-  children: { nickname: string } | { nickname: string }[] | null;
-};
-const THEME_STAR: Record<string, string> = { Bravery: "★", Honesty: "✦", Patience: "⟲", Kindness: "♡", Persistence: "↑" };
-function splitTitleWords(t: string) {
-  const words = t.split(" ");
-  if (words.length <= 3) return { line1: t, line2: "" };
-  const mid = Math.ceil(words.length / 2);
-  return { line1: words.slice(0, mid).join(" "), line2: words.slice(mid).join(" ") };
-}
-function timeAgo(iso: string) {
-  const days = Math.round((Date.now() - new Date(iso).getTime()) / 86400000);
-  if (days <= 0) return "Today";
-  if (days === 1) return "Yesterday";
-  if (days < 7) return `${days} days ago`;
-  if (days < 30) return `${Math.round(days / 7)} weeks ago`;
-  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
-}
-function pickName(c: APIStory["children"]) {
-  if (!c) return "";
-  return Array.isArray(c) ? c[0]?.nickname ?? "" : c.nickname;
-}
-function toBook(s: APIStory, i: number, opts?: { badgeForced?: string; badgeCls?: string }): Book {
-  const t = s.title ?? "Untitled tale";
-  const { line1, line2 } = splitTitleWords(t);
-  const badgeText = opts?.badgeForced ?? (s.status !== "ready" ? "In progress" : s.favorite ? "Favorite ♡" : undefined);
-  const badgeKey = opts?.badgeCls ?? (s.status !== "ready" ? "berry" : undefined);
-  const badgeAccent: "berry" | "sage" | "moon" = badgeKey === "berry" ? "berry" : badgeKey === "sage" ? "sage" : "moon";
-  return {
-    accent: coverAccent(i),
-    badge: badgeText ? { text: badgeText, accent: badgeAccent } : undefined,
-    label: s.status === "ready" ? "5 chapters" : `Conjuring · ${s.progress}%`,
-    title: line1,
-    script: line2,
-    theme: s.blueprint,
-    star: THEME_STAR[s.blueprint] ?? "✦",
-    infoTitle: t,
-    forKid: pickName(s.children),
-    when: timeAgo(s.created_at),
-    href: `/stories/${s.id}`,
-  };
-}
 
-type Book = { accent: CoverAccent; badge?: { text: string; accent: "berry" | "sage" | "moon" }; label: string; title: string; script: string; theme: string; star: string; infoTitle: string; forKid: string; when?: string; href: string };
-
-function BookCard({ b, index }: { b: Book; index: number }) {
-  const styleVars = { "--i": index } as CSSProperties;
-  return (
-    <Link href={b.href} className="dash-book-card dash-book-card-anim" style={{ ...styleVars, textDecoration: "none", display: "block", position: "relative" }}>
-      <BookCover size="md" animated accent={b.accent} badge={b.badge} label={b.label} title={b.title} script={b.script} theme={b.theme} star={b.star} />
-      <div>
-        <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 14, color: "var(--twilight)", lineHeight: 1.15, marginBottom: 2 }}>{b.infoTitle}</div>
-        <div style={{ fontSize: 11.5, color: "var(--ink-soft)", fontWeight: 600, display: "flex", gap: 5, alignItems: "center", flexWrap: "wrap" }}>
-          <span style={{ color: "var(--berry)", fontWeight: 800 }}>{b.forKid}</span>
-          {b.when && <><span style={{ opacity: 0.4 }}>·</span><span>{b.when}</span></>}
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-function ShelfSection({ label, count, books }: { label: string; count: string; books: Book[] }) {
+function ShelfSection({ label, count, books }: { label: string; count: string; books: BookView[] }) {
   const craftIdx = books.length;
-  const craftStyle = { "--i": craftIdx } as CSSProperties;
   return (
     <Reveal inView>
       <div className="dash-shelf-label-anim" style={{ fontFamily: "var(--font-caprasimo), serif", fontSize: 18, color: "var(--twilight)", marginTop: 28, marginBottom: 14, display: "flex", alignItems: "baseline", gap: 12 }}>
@@ -88,22 +21,14 @@ function ShelfSection({ label, count, books }: { label: string; count: string; b
       </div>
       <div className="dash-shelf-plank-anim" style={{ height: 14, background: "var(--ink)", borderRadius: 3, marginBottom: -2 }} />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "24px 20px", padding: "28px 22px 40px", background: "var(--cream-deep)", borderRadius: "4px 4px 24px 24px", boxShadow: "var(--u-card-shadow)", marginBottom: 26 }}>
-        {books.map((b, i) => <BookCard key={i} b={b} index={i} />)}
-        {label === "Earlier this month" && (
-          <Link href="/stories/new" className="dash-book-card dash-book-card-anim" style={{ ...craftStyle, textDecoration: "none", display: "block", position: "relative" }}>
-            <div className="dash-new-cover-anim" style={{ aspectRatio: "5/6.4", borderRadius: "6px 12px 12px 6px", border: "2.5px dashed var(--paper-line)", background: "#fff", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", color: "var(--twilight)", textAlign: "center", marginBottom: 10 }}>
-              <div className="dash-plus-anim" style={{ width: 42, height: 42, borderRadius: "50%", background: "var(--u-orange)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 24, color: "#fff", marginBottom: 10 }}>+</div>
-              <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 16 }}>Craft a new tale</div>
-              <div style={{ fontSize: 11, color: "var(--ink-soft)", fontWeight: 600, marginTop: 4, padding: "0 12px", lineHeight: 1.35 }}>~40 seconds to conjure.</div>
-            </div>
-          </Link>
-        )}
+        {books.map((b, i) => <BookCard key={b.id} book={b} size="md" index={i} />)}
+        {label === "Earlier this month" && <NewTaleCard href="/stories/new" size="md" index={craftIdx} />}
       </div>
     </Reveal>
   );
 }
 
-function BookRow({ b, index }: { b: Book; index: number }) {
+function BookRow({ b, index }: { b: BookView; index: number }) {
   const styleVars = { "--i": index } as CSSProperties;
   const cover = accentColors(b.accent);
   return (
@@ -138,7 +63,7 @@ export default function ShelfPage() {
   const [search, setSearch] = useState("");
 
   const [kids, setKids] = useState<APIKid[]>([]);
-  const [stories, setStories] = useState<APIStory[]>([]);
+  const [stories, setStories] = useState<StoryListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [nowMs] = useState<number>(() => Date.now());
@@ -149,7 +74,7 @@ export default function ShelfPage() {
       fetch("/api/dashboard", { cache: "no-store" }).then((r) => r.ok ? r.json() : Promise.reject(new Error(`Dashboard ${r.status}`))),
       fetch("/api/stories?limit=100", { cache: "no-store" }).then((r) => r.ok ? r.json() : Promise.reject(new Error(`Stories ${r.status}`))),
     ])
-      .then(([dash, list]: [{ kids: APIKid[] }, { stories: APIStory[] }]) => {
+      .then(([dash, list]: [{ kids: APIKid[] }, { stories: StoryListItem[] }]) => {
         if (cancelled) return;
         setKids(dash.kids ?? []);
         setStories(list.stories ?? []);
@@ -198,10 +123,10 @@ export default function ShelfPage() {
     const olderList = filtered.filter((s) => new Date(s.created_at).getTime() < cutoff && !s.favorite);
     const sorted = [...filtered].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     return {
-      recentBooks: recentList.map((s, i) => toBook(s, i)) as Book[],
-      favBooks: favList.map((s, i) => toBook(s, i, { badgeForced: "♡", badgeCls: "" })) as Book[],
-      monthBooks: olderList.map((s, i) => toBook(s, i)) as Book[],
-      listBooks: sorted.map((s, i) => toBook(s, i)) as Book[],
+      recentBooks: recentList.map((s, i) => storyToBook(s, i)),
+      favBooks: favList.map((s, i) => storyToBook(s, i, { badge: { text: "♡", accent: "moon" } })),
+      monthBooks: olderList.map((s, i) => storyToBook(s, i)),
+      listBooks: sorted.map((s, i) => storyToBook(s, i)),
     };
   }, [filtered, nowMs]);
 

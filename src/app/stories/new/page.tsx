@@ -7,6 +7,7 @@ import { AppFooter } from "@/components/app-footer";
 import { FloatingNav } from "@/components/floating-nav";
 import { Reveal } from "@/components/motion/Reveal";
 import { Skeleton } from "@/components/skeleton";
+import { timeAgo } from "@/lib/story-view";
 import { Suspense, useEffect, useMemo, useState } from "react";
 
 type ExistingChild = {
@@ -25,22 +26,6 @@ type ShelfStory = {
   blueprint: string;
   created_at: string;
 };
-
-function timeAgo(iso: string): string {
-  const then = new Date(iso).getTime();
-  const diff = Date.now() - then;
-  const mins = Math.round(diff / 60000);
-  if (mins < 1) return "Just now";
-  if (mins < 60) return `${mins} min ago`;
-  const hrs = Math.round(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.round(hrs / 24);
-  if (days < 7) return `${days} day${days === 1 ? "" : "s"} ago`;
-  const wks = Math.round(days / 7);
-  if (wks < 4) return `${wks} week${wks === 1 ? "" : "s"} ago`;
-  const months = Math.round(days / 30);
-  return `${months} month${months === 1 ? "" : "s"} ago`;
-}
 
 const BLUEPRINTS = [
   { name: "Bravery", icon: "★", desc: "Facing the dark", hook: "Brave Lantern" },

@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useState, useEffect, useMemo, CSSProperties } from "react";
 import { AppFooter } from "@/components/app-footer";
-import { BookCover, coverAccent, type CoverAccent } from "@/components/book-cover";
+import { BookCard } from "@/components/book-card";
 import { FloatingNav } from "@/components/floating-nav";
 import { AmbientDecor } from "@/components/motion/AmbientDecor";
 import { FannedCards } from "@/components/motion/FannedCards";
@@ -10,33 +10,7 @@ import { PinnedPanel } from "@/components/motion/PinnedPanel";
 import { PlanCard, type PlanCardProps } from "@/components/plan-card";
 import { Reveal } from "@/components/motion/Reveal";
 import { SkeletonBookItem } from "@/components/skeleton";
-
-type APIStory = {
-  id: string;
-  blueprint: string;
-  status: string;
-  title: string | null;
-  created_at: string;
-  children?: { nickname: string } | null;
-};
-
-type StoryCard = {
-  id: string;
-  accent: CoverAccent;
-  label: string;
-  title: string;
-  script: string;
-  theme: string;
-  forKid: string;
-  infoTitle: string;
-};
-
-function splitTitle(t: string): [string, string] {
-  const words = t.trim().split(/\s+/);
-  if (words.length <= 2) return [words.join(" "), ""];
-  const mid = Math.ceil(words.length / 2);
-  return [words.slice(0, mid).join(" "), words.slice(mid).join(" ")];
-}
+import { storyToBook, type BookView, type StoryListItem } from "@/lib/story-view";
 
 const features = [
   { icon: "⌾", title: "Linen-spined hardcover", sub: "Sturdy 8.5 × 8.5\" square, foil-pressed title, built for small hands and bedtime re-reads." },
@@ -111,7 +85,7 @@ export default function KeepsakeBooksPage() {
   const [selectedStory, setSelectedStory] = useState(0);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [featuredPlan, setFeaturedPlan] = useState(1);
-  const [apiStories, setApiStories] = useState<APIStory[]>([]);
+  const [apiStories, setApiStories] = useState<StoryListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -136,23 +110,10 @@ export default function KeepsakeBooksPage() {
     };
   }, []);
 
-  const stories: StoryCard[] = useMemo(() => {
-    return apiStories.slice(0, 5).map((s, i) => {
-      const fullTitle = s.title ?? "Untitled tale";
-      const [title, script] = splitTitle(fullTitle);
-      const kid = s.children?.nickname ?? "—";
-      return {
-        id: s.id,
-        accent: coverAccent(i),
-        label: "5 chapters · complete",
-        title,
-        script,
-        theme: s.blueprint,
-        forKid: kid,
-        infoTitle: fullTitle,
-      };
-    });
-  }, [apiStories]);
+  const stories: BookView[] = useMemo(
+    () => apiStories.slice(0, 5).map((s, i) => storyToBook(s, i)),
+    [apiStories],
+  );
 
   return (
     <>
@@ -261,31 +222,9 @@ export default function KeepsakeBooksPage() {
           </div>
         ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 18, background: "var(--cream-deep)", borderRadius: 20, boxShadow: "var(--u-card-shadow)", padding: 22, marginBottom: 56 }}>
-          {stories.map((s, i) => {
-            const styleVars = { "--i": i } as CSSProperties;
-            return (
-              <div key={s.id} onClick={() => setSelectedStory(i)} className="kp-pick kp-stagger" style={{ ...styleVars, position: "relative" }}>
-                <BookCover
-                  size="sm"
-                  coverClassName="kp-pick-cov"
-                  accent={s.accent}
-                  selected={selectedStory === i}
-                  label={s.label}
-                  title={s.title}
-                  script={s.script}
-                  theme={s.theme}
-                  footerRight={s.forKid}
-                  overlay={selectedStory === i ? (
-                    <div className="kp-pick-check" style={{ position: "absolute", top: -10, right: -10, width: 34, height: 34, borderRadius: "50%", background: "var(--u-orange)", boxShadow: "0 8px 24px rgba(255,105,46,0.35)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 16, color: "#fff", zIndex: 3 }}>✓</div>
-                  ) : undefined}
-                />
-                <div>
-                  <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 13.5, color: "var(--twilight)", lineHeight: 1.2 }}>{s.infoTitle}</div>
-                  <div style={{ fontSize: 11, color: "var(--ink-soft)", fontWeight: 600, marginTop: 2 }}>For {s.forKid} · {s.theme}</div>
-                </div>
-              </div>
-            );
-          })}
+          {stories.map((s, i) => (
+            <BookCard key={s.id} book={s} size="sm" index={i} onClick={() => setSelectedStory(i)} selected={selectedStory === i} />
+          ))}
         </div>
         )}
         </Reveal>

@@ -122,11 +122,18 @@ Cream-deep pill, `1.5px` ink border, uppercase, with a berry `.dot` that has a s
 - `.form-card` / `.formCard`: cream, `2.5px` ink, `8–10px` shadow — the primary form container.
 
 ### Book cover — `<BookCover>` (`src/components/book-cover.tsx`)
-Shared React primitive for the "story book spine" card on the dashboard shelf, the full shelf, and the keepsake picker — the single source of truth for that markup (previously copy-pasted three ways). Presentational: pages own the wrapper (`Link` / selectable `div`) + the info block below.
+Shared React primitive for the "story book spine" card on the dashboard shelf, the full shelf, and the keepsake picker — the single source of truth for that markup (previously copy-pasted three ways). Presentational: the wrapper + info block live in `<BookCard>` (below) — pages don't hand-roll them.
 - **Cover box:** `aspectRatio 5/6.4`, radius `6px 12px 12px 6px`, `2.5px` ink border, hard offset shadow, left spine hairline, `overflow: hidden`. Layout = uppercase kicker `label` + Young-Serif `title` + Caprasimo `script` accent, then a bottom row (`theme` left; `star` glyph in a circle, or `footerRight` text, on the right).
 - **Accents:** `CoverAccent` (`berry / twilight / sage / moon / lilac / cream`) maps to bg + fg + light/dark; light covers flip spine, star-circle bg, and script colour to ink. Rotate positional colours with `coverAccent(i)` over `COVER_ACCENTS` (single ordering — do not redefine per page). `accentColors(accent)` returns `{background,color}` for mini spine thumbnails (shelf list rows).
 - **Sizes:** `lg` (dashboard), `md` (shelf, animated), `sm` (keepsake — no star, tighter). `size` drives padding, font sizes, star size, base shadow.
 - **Props:** `badge` `{text, accent}` (auto colour), `selected` (moon `3px` border + grown shadow), `overlay` (absolute node, e.g. selection check), `animated` (opt-in shelf hover twinkle/wiggle/shadow-grow via `dash-bc-*-anim`; off = static, e.g. dashboard), `coverClassName` (e.g. `kp-pick-cov` hover shadow), `className`/`style` (wrapper).
+
+### Book card — `<BookCard>` / `<NewTaleCard>` (`src/components/book-card.tsx`)
+The full grid item: `<BookCover>` + the caption below (Young-Serif title line, then `For {hero} · {value} · {timeAgo}` meta) + the page-level wrapper. **Never inline the wrapper/caption markup on a page** — dashboard, shelf, and keepsake all render this component.
+- **Modes:** default = `Link` to `book.href` (`.dash-book-card .dash-book-card-anim` — hover lift + rotate, cover shadow-grow, star twinkle, badge wiggle, and `--i` staggered entry are **always on**; pass `index` for the stagger position). `onClick` + `selected` = keepsake picker mode: selectable `div` (`.kp-pick .kp-stagger`, cover `.kp-pick-cov`), orange `✓` overlay (`.kp-pick-check`) when selected, hero name as `footerRight` instead of the star.
+- **Sizes:** `lg` / `md` / `sm` — drives both the cover size and the caption font scale.
+- **View model:** takes a `BookView` from `storyToBook(story, index)` (`src/lib/story-view.ts`) — the single mapping from an API story row (`StoryListItem`) to cover props + caption fields (unified kicker `Complete · 5 chapters` / `Conjuring · N%`, badge rules, `themeStar`, `splitTitle`, `pickName`, `timeAgo`). Don't re-derive these per page.
+- `<NewTaleCard href size index?>` — the dashed "Craft a new tale" tile at the end of a book grid. Same `.dash-book-card*` wrapper physics as `BookCard`; its `.dash-new-cover` hovers to a soft grey (`--cream-deep`) + hard shadow-grow — never an orange fill (would swallow the orange `+` disc in the umano skin).
 
 ### Inputs & selectable chips (umano skin — re-skinned in the APP PAGES globals section)
 - `.txt-input` / `.hook` / `.tag-input`: grey (`--cream-deep`) fill, **transparent border, no inset shadow**; focus → `2px` orange border + white fill.

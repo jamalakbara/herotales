@@ -2299,15 +2299,15 @@ h1.story-title .script-em {
 /* Book cards */
 .dash-book-card {
   cursor: pointer; position: relative; text-decoration: none; display: block;
-  transition: transform 0.15s ease;
+  transition: transform 0.22s cubic-bezier(.22,1,.36,1);
 }
-.dash-book-card:hover { transform: translateY(-4px); }
+.dash-book-card:hover { transform: translateY(-6px) rotate(-0.6deg); }
 
-/* New-story tile cover */
-.dash-new-cover {
-  transition: background 0.15s ease;
-}
-.dash-new-cover:hover { background: var(--moon) !important; }
+/* New-story tile cover — hover bg stays a soft grey (an orange fill would
+   swallow the orange "+" disc in the umano skin) */
+.dash-new-cover { transition: background 0.22s ease, transform 0.22s ease, box-shadow 0.22s ease; }
+.dash-new-cover:hover { background: var(--cream-deep) !important; box-shadow: 5px 5px 0 var(--ink); }
+.dash-new-cover:hover .dash-plus-anim { transform: rotate(90deg) scale(1.08); }
 
 /* Kid profile cards */
 .dash-kid-card {
@@ -2437,9 +2437,6 @@ h1.story-title .script-em {
 }
 .dash-stat-link:hover { text-decoration: underline; }
 
-/* Shelf "craft new" new tile link */
-.dash-new-tile { cursor: pointer; text-decoration: none; display: block; }
-
 /* Ord buttons */
 .dash-ord-btn {
   padding: 7px 14px; border: 1.5px solid var(--ink); border-radius: 999px;
@@ -2485,13 +2482,13 @@ h1.story-title .script-em {
   transform-origin: 18% 50%;
 }
 .dash-book-card-anim {
-  animation: bookRise 0.62s cubic-bezier(.22,1,.36,1) both;
+  /* fill-mode must stay `backwards`: `both` keeps the 100% keyframe transform
+     applied after the animation ends, which overrides the :hover lift */
+  animation: bookRise 0.62s cubic-bezier(.22,1,.36,1) backwards;
   animation-delay: calc(var(--i, 0) * 70ms + 120ms);
   transform-origin: 50% 100%;
   will-change: transform, opacity;
 }
-.dash-book-card { transition: transform 0.22s cubic-bezier(.22,1,.36,1); }
-.dash-book-card:hover { transform: translateY(-6px) rotate(-0.6deg); }
 .dash-book-cover-anim { transition: box-shadow 0.22s ease, transform 0.22s ease; }
 .dash-book-card:hover .dash-book-cover-anim { box-shadow: 7px 8px 0 var(--ink); }
 .dash-book-card:hover .dash-bc-star-anim { animation: starTwinkle 0.9s ease-in-out infinite; }
@@ -2519,9 +2516,6 @@ h1.story-title .script-em {
 
 .dash-view-btn { transition: background 0.18s ease, color 0.18s ease; }
 
-.dash-new-cover-anim { transition: background 0.22s ease, transform 0.22s ease, box-shadow 0.22s ease; }
-.dash-new-cover-anim:hover { background: var(--moon) !important; box-shadow: 5px 5px 0 var(--ink); }
-.dash-new-cover-anim:hover .dash-plus-anim { transform: rotate(90deg) scale(1.08); }
 .dash-plus-anim { transition: transform 0.3s cubic-bezier(.22,1,.36,1); animation: craftPulse 2.6s ease-in-out infinite; }
 
 .dash-shelf-top-btn { transition: transform 0.15s ease, box-shadow 0.15s ease; }
@@ -2564,7 +2558,9 @@ h1.story-title .script-em {
   animation-delay: var(--d, 0s);
 }
 
-.kp-stagger { animation: kpFadeRise 0.55s cubic-bezier(.22,1,.36,1) both; animation-delay: calc(var(--i, 0) * 70ms + 60ms); }
+/* fill-mode `backwards` (not `both`) so the finished animation doesn't pin
+   transform and kill the .kp-pick:hover lift */
+.kp-stagger { animation: kpFadeRise 0.55s cubic-bezier(.22,1,.36,1) backwards; animation-delay: calc(var(--i, 0) * 70ms + 60ms); }
 
 .kp-feat { transition: transform 0.2s ease, box-shadow 0.2s ease; }
 .kp-feat:hover { transform: translateY(-4px); box-shadow: 6px 6px 0 var(--ink) !important; }
@@ -3615,8 +3611,6 @@ html.lenis, html.lenis body { height: auto; }
 .dash-ord-btn { border: none; background: var(--cream-deep); }
 .dash-ord-btn-prim { background: var(--ink) !important; color: #fff !important; }
 .dash-stat-link { color: var(--u-orange); }
-/* orange fill on hover made the orange "+" disc vanish — use a soft grey */
-.dash-new-cover:hover { background: var(--cream-deep) !important; }
 
 /* ---- Keepsake books → umano skin ---- */
 /* Full-bleed pinned hero (PinnedPanel): dark panel scales/rounds like the

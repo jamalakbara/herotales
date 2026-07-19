@@ -2,11 +2,12 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AppFooter } from "@/components/app-footer";
-import { BookCover, coverAccent } from "@/components/book-cover";
+import { BookCard, NewTaleCard } from "@/components/book-card";
 import { FloatingNav } from "@/components/floating-nav";
 import { AmbientDecor } from "@/components/motion/AmbientDecor";
 import { Reveal } from "@/components/motion/Reveal";
 import { SkeletonBookItem, SkeletonKidCard } from "@/components/skeleton";
+import { pickName, storyToBook, timeAgo, type StoryListItem } from "@/lib/story-view";
 
 type APIChild = {
   id: string;
@@ -18,25 +19,11 @@ type APIChild = {
   tales: number;
   favorites: number;
 };
-type APIStory = {
-  id: string;
-  child_id: string;
-  blueprint: string;
-  length: string;
-  voice: string | null;
-  status: "pending" | "generating" | "ready" | "failed";
-  progress: number;
-  title: string | null;
-  favorite: boolean;
-  created_at: string;
-  completed_at: string | null;
-  children: { nickname: string } | { nickname: string }[] | null;
-};
 type APIDashboard = {
   profile: { display_name: string | null; email: string; streak_nights: number; last_read_date: string | null } | null;
   quota: { quota: number; used: number; remaining: number; periodStart: string };
   kids: APIChild[];
-  recent_stories: APIStory[];
+  recent_stories: StoryListItem[];
 };
 
 const ALL_BLUEPRINTS = ["Bravery", "Honesty", "Patience", "Kindness", "Persistence"];
@@ -50,45 +37,10 @@ function getGreetingTime(): string {
   });
 }
 
-const THEME_STAR: Record<string, string> = {
-  Bravery: "★",
-  Honesty: "✦",
-  Patience: "⟲",
-  Kindness: "♡",
-  Persistence: "↑",
-};
 // --berry/--sage/--moon all fold to orange in the umano skin — rotate
 // through distinct surfaces instead so avatars stay tellable apart.
 const KID_AVATAR_BG = ["var(--u-orange)", "var(--twilight)", "var(--lilac)", "var(--cream-deep)"];
 const KID_AVATAR_FG = ["#fff", "#fff", "var(--twilight)", "var(--twilight)"];
-
-function timeAgo(iso: string): string {
-  const then = new Date(iso).getTime();
-  const diff = Date.now() - then;
-  const mins = Math.round(diff / 60000);
-  if (mins < 1) return "Just now";
-  if (mins < 60) return `${mins} min ago`;
-  const hrs = Math.round(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.round(hrs / 24);
-  if (days < 7) return `${days} day${days === 1 ? "" : "s"} ago`;
-  const wks = Math.round(days / 7);
-  if (wks < 4) return `${wks} week${wks === 1 ? "" : "s"} ago`;
-  const months = Math.round(days / 30);
-  return `${months} month${months === 1 ? "" : "s"} ago`;
-}
-
-function splitTitle(title: string): { line1: string; line2: string } {
-  const words = title.split(" ");
-  if (words.length <= 3) return { line1: title, line2: "" };
-  const mid = Math.ceil(words.length / 2);
-  return { line1: words.slice(0, mid).join(" "), line2: words.slice(mid).join(" ") };
-}
-
-function pickName(s: APIStory["children"]): string {
-  if (!s) return "";
-  return Array.isArray(s) ? s[0]?.nickname ?? "" : s.nickname;
-}
 
 const filters = ["All", "Favorites ♡", "Bravery", "Kindness", "Patience", "Sort: Recent ▾"];
 
@@ -151,27 +103,7 @@ export default function DashboardPage() {
     printed: 0,
   }));
 
-  const booksView = filteredStories.map((s, i) => {
-    const t = s.title ?? `Chapter ${s.progress}%`;
-    const { line1, line2 } = splitTitle(t);
-    const badge: { text: string; accent: "berry" | "moon" } | undefined =
-      s.status !== "ready" ? { text: "In progress", accent: "berry" }
-        : s.favorite ? { text: "Favorite ♡", accent: "moon" } : undefined;
-    return {
-      id: s.id,
-      accent: coverAccent(i),
-      badge,
-      label: s.status === "ready" ? "Complete · 5 chapters" : `Conjuring · ${s.progress}%`,
-      title: line1,
-      script: line2,
-      theme: s.blueprint,
-      star: THEME_STAR[s.blueprint] ?? "✦",
-      infoTitle: t,
-      forKid: pickName(s.children),
-      when: timeAgo(s.created_at),
-      href: `/stories/${s.id}`,
-    };
-  });
+  const booksView = filteredStories.map((s, i) => storyToBook(s, i));
 
   return (
     <>
@@ -315,27 +247,9 @@ export default function DashboardPage() {
         <div style={{ height: 14, background: "var(--ink)", borderRadius: 3, marginBottom: -2, boxShadow: "0 3px 0 rgba(28,21,64,0.4)" }} />
         <div className="dash-shelf-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 24, padding: "24px 20px 36px", background: "var(--cream-deep)", borderRadius: "4px 4px 24px 24px", boxShadow: "var(--u-card-shadow)", marginBottom: 56 }}>
           {loading && Array.from({ length: 3 }).map((_, i) => <SkeletonBookItem key={i} />)}
-          {booksView.map(b => (
-            <Link key={b.id} href={b.href} className="dash-book-card">
-              <BookCover size="lg" accent={b.accent} badge={b.badge} label={b.label} title={b.title} script={b.script} theme={b.theme} star={b.star} />
-              <div>
-                <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 15.5, color: "var(--twilight)", lineHeight: 1.15, marginBottom: 2 }}>{b.infoTitle}</div>
-                <div style={{ fontSize: 12, color: "var(--ink-soft)", fontWeight: 600, display: "flex", gap: 6, alignItems: "center" }}>
-                  <span style={{ color: "var(--berry)", fontWeight: 800 }}>For {b.forKid}</span>
-                  <span style={{ opacity: 0.4 }}>·</span><span>{b.theme}</span>
-                  <span style={{ opacity: 0.4 }}>·</span><span>{b.when}</span>
-                </div>
-              </div>
-            </Link>
-          ))}
+          {booksView.map((b, i) => <BookCard key={b.id} book={b} size="lg" index={i} />)}
           {/* New story tile */}
-          <Link href={newStoryHref} className="dash-new-tile">
-            <div className="dash-new-cover" style={{ aspectRatio: "5/6.4", borderRadius: "6px 12px 12px 6px", border: "2.5px dashed var(--paper-line)", background: "#fff", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", color: "var(--twilight)", textAlign: "center", marginBottom: 12 }}>
-              <div style={{ width: 48, height: 48, borderRadius: "50%", background: "var(--u-orange)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 28, color: "#fff", marginBottom: 14 }}>+</div>
-              <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 18 }}>Craft a new tale</div>
-              <div style={{ fontSize: 12, color: "var(--ink-soft)", fontWeight: 600, marginTop: 4, padding: "0 16px", lineHeight: 1.35 }}>Takes about 3 minutes. ~40 seconds to conjure.</div>
-            </div>
-          </Link>
+          <NewTaleCard href={newStoryHref} size="lg" index={booksView.length} />
         </div>
         </Reveal>
 
