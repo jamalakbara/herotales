@@ -1,10 +1,12 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { FloatingNav } from "@/components/floating-nav";
-import { DeleteMyDataLink } from "@/components/delete-data-link";
+import { AppFooter } from "@/components/app-footer";
 import { BookCover, coverAccent } from "@/components/book-cover";
+import { FloatingNav } from "@/components/floating-nav";
+import { AmbientDecor } from "@/components/motion/AmbientDecor";
 import { Reveal } from "@/components/motion/Reveal";
+import { SkeletonBookItem, SkeletonKidCard } from "@/components/skeleton";
 
 type APIChild = {
   id: string;
@@ -55,8 +57,10 @@ const THEME_STAR: Record<string, string> = {
   Kindness: "♡",
   Persistence: "↑",
 };
-const KID_AVATAR_BG = ["var(--berry)", "var(--lilac)", "var(--sage)", "var(--moon)"];
-const KID_AVATAR_FG = ["var(--cream)", "var(--twilight)", "var(--cream)", "var(--twilight)"];
+// --berry/--sage/--moon all fold to orange in the umano skin — rotate
+// through distinct surfaces instead so avatars stay tellable apart.
+const KID_AVATAR_BG = ["var(--u-orange)", "var(--twilight)", "var(--lilac)", "var(--cream-deep)"];
+const KID_AVATAR_FG = ["#fff", "#fff", "var(--twilight)", "var(--twilight)"];
 
 function timeAgo(iso: string): string {
   const then = new Date(iso).getTime();
@@ -112,6 +116,7 @@ export default function DashboardPage() {
     };
   }, []);
 
+  const loading = !data && !loadError;
   const kids = data?.kids ?? [];
   const recent = data?.recent_stories ?? [];
   const profile = data?.profile;
@@ -181,7 +186,7 @@ export default function DashboardPage() {
 
         {/* GREETING */}
         <Reveal className="dash-greet" style={{ display: "grid", gridTemplateColumns: "1.15fr 0.85fr", gap: 36, marginBottom: 48, alignItems: "stretch" }}>
-          <div style={{ background: "var(--cream)", border: "2.5px solid var(--ink)", borderRadius: 28, boxShadow: "8px 8px 0 var(--ink)", padding: "40px 44px", position: "relative", overflow: "hidden" }}>
+          <div className="u-card-lg" style={{ padding: "40px 44px", position: "relative", overflow: "hidden" }}>
             <span style={{ position: "absolute", top: 20, right: 32, fontFamily: "var(--font-caprasimo), serif", fontSize: 64, color: "var(--moon)", transform: "rotate(14deg)", opacity: 0.85, pointerEvents: "none" }}>✦</span>
             <div style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--berry)", fontSize: 16, transform: "rotate(-1.5deg)", display: "inline-block", marginBottom: 10 }}>{getGreetingTime()}</div>
             <h1 style={{ fontFamily: "var(--font-young-serif), serif", fontSize: "clamp(36px, 3.6vw, 50px)", lineHeight: 1.02, letterSpacing: "-0.02em", color: "var(--twilight)", maxWidth: 560, marginBottom: 14 }}>
@@ -195,14 +200,26 @@ export default function DashboardPage() {
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               <Link href={newStoryHref} className="dash-btn dash-btn-berry">Start tonight&apos;s story →</Link>
               {inProgress && (
-                <Link href={`/stories/${inProgress.id}`} className="dash-btn dash-btn-ghost" style={{ border: "1.5px solid var(--ink)" }}>Re-read last night&apos;s</Link>
+                <Link href={`/stories/${inProgress.id}`} className="dash-btn dash-btn-ghost">Re-read last night&apos;s</Link>
               )}
             </div>
           </div>
 
-          <div style={{ background: "var(--twilight)", color: "var(--cream)", border: "2.5px solid var(--ink)", borderRadius: 28, boxShadow: "8px 8px 0 var(--ink)", padding: 32, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-            <div style={{ position: "absolute", top: -40, right: -40, width: 160, height: 160, background: "var(--moon)", borderRadius: "50%", opacity: 0.18, pointerEvents: "none" }} />
-            <div>
+          <div className="u-panel-dark" style={{ borderRadius: 28, padding: 32, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+            <AmbientDecor
+              variant="dark"
+              stars={[
+                { top: "14%", left: "12%" },
+                { top: "24%", left: "72%" },
+                { top: "46%", left: "38%" },
+                { top: "12%", left: "50%" },
+              ]}
+              fireflies={[
+                { left: "80%", bottom: "18%", delay: "0s", dur: "8s" },
+                { left: "14%", bottom: "30%", delay: "1.4s", dur: "7s" },
+              ]}
+            />
+            <div style={{ position: "relative", zIndex: 1 }}>
               <div style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--moon)", fontSize: 15, marginBottom: 8 }}>
                 {inProgress ? "Pick up where you left off" : "Tonight's first chapter"}
               </div>
@@ -215,8 +232,8 @@ export default function DashboardPage() {
                   : "Pick a hero and a value — your library starts tonight."}
               </div>
             </div>
-            <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-              <div className="dash-play-icon" style={{ width: 56, height: 56, borderRadius: 14, background: "var(--berry)", border: "2px solid var(--cream)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--cream)", fontFamily: "var(--font-caprasimo), serif", fontSize: 22, flexShrink: 0 }}>▶</div>
+            <div style={{ display: "flex", gap: 14, alignItems: "center", position: "relative", zIndex: 1 }}>
+              <div className="dash-play-icon" style={{ width: 56, height: 56, borderRadius: 14, background: "var(--u-orange)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontFamily: "var(--font-caprasimo), serif", fontSize: 22, flexShrink: 0 }}>▶</div>
               <div style={{ flex: 1, minWidth: 0, fontSize: 12, opacity: 0.7 }}>
                 <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 18, color: "var(--cream)", opacity: 1, marginBottom: 2 }}>
                   {inProgress ? inProgress.blueprint : "5-chapter bedtime adventure"}
@@ -231,6 +248,7 @@ export default function DashboardPage() {
         </Reveal>
 
         {/* KIDS SECTION HEADER */}
+        <Reveal inView>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 20, flexWrap: "wrap", gap: 14 }}>
           <div>
             <h2 style={{ fontFamily: "var(--font-young-serif), serif", fontSize: "clamp(24px, 2.4vw, 30px)", color: "var(--twilight)", letterSpacing: "-0.01em" }}>
@@ -243,10 +261,11 @@ export default function DashboardPage() {
 
         {/* KIDS ROW */}
         <div className="dash-kids-row" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 56 }}>
+          {loading && Array.from({ length: 3 }).map((_, i) => <SkeletonKidCard key={i} />)}
           {kidsView.map((kid, i) => (
-            <div key={kid.id} className="dash-kid-card" onClick={() => setActiveKid(i)} style={{ background: activeKid === i ? "var(--moon)" : "var(--cream)", border: "2.5px solid var(--ink)", borderRadius: 20, boxShadow: "5px 5px 0 var(--ink)", padding: 22 }}>
+            <div key={kid.id} className="dash-kid-card" onClick={() => setActiveKid(i)} style={{ background: activeKid === i ? "var(--u-orange)" : "#fff", borderRadius: 20, boxShadow: activeKid === i ? "var(--u-card-shadow-lg)" : "var(--u-card-shadow)", padding: 22 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 16 }}>
-                <div style={{ width: 54, height: 54, borderRadius: 16, border: "2px solid var(--ink)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 24, background: kid.avBg, color: kid.avCol, flexShrink: 0 }}>{kid.name[0]}</div>
+                <div style={{ width: 54, height: 54, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 24, background: kid.avBg, color: kid.avCol, flexShrink: 0 }}>{kid.name[0]}</div>
                 <div>
                   <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 20, color: "var(--twilight)", lineHeight: 1.05 }}>{kid.name}</div>
                   <div style={{ fontSize: 12, color: "var(--ink-soft)", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", marginTop: 2 }}>{kid.age}</div>
@@ -259,14 +278,16 @@ export default function DashboardPage() {
               </div>
             </div>
           ))}
-          <Link href="/heroes/new" className="dash-kid-add" style={{ background: "transparent", border: "2.5px dashed var(--ink)", borderRadius: 20, boxShadow: "none", padding: "22px 16px", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", textAlign: "center", color: "var(--ink-soft)", textDecoration: "none" }}>
-            <div style={{ width: 54, height: 54, borderRadius: 16, border: "2px dashed var(--ink)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30, fontWeight: 400, background: "var(--cream-deep)", color: "var(--ink-soft)" }}>+</div>
+          <Link href="/heroes/new" className="dash-kid-add" style={{ background: "transparent", border: "2.5px dashed var(--paper-line)", borderRadius: 20, boxShadow: "none", padding: "22px 16px", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", textAlign: "center", color: "var(--ink-soft)", textDecoration: "none" }}>
+            <div style={{ width: 54, height: 54, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30, fontWeight: 400, background: "var(--cream-deep)", color: "var(--ink-soft)" }}>+</div>
             <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 18, color: "var(--twilight)", marginTop: 12 }}>Add another hero</div>
             <div style={{ fontSize: 12, color: "var(--ink-soft)", marginTop: 4, fontWeight: 600 }}>Up to 3 on your Lantern plan</div>
           </Link>
         </div>
+        </Reveal>
 
         {/* SHELF HEADER */}
+        <Reveal inView>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, gap: 16, flexWrap: "wrap" }}>
           <div>
             <h2 style={{ fontFamily: "var(--font-young-serif), serif", fontSize: "clamp(24px, 2.4vw, 30px)", color: "var(--twilight)", letterSpacing: "-0.01em" }}>
@@ -284,7 +305,7 @@ export default function DashboardPage() {
                 key={f}
                 onClick={() => { if (!f.startsWith("Sort:")) setActiveFilter(f); }}
                 className={`dash-filter-chip ${activeFilter === f ? "dash-filter-chip-active" : ""}`}
-                style={{ padding: "8px 14px", background: activeFilter === f ? "var(--twilight)" : "var(--cream-deep)", border: "1.5px solid var(--ink)", borderRadius: 999, fontWeight: 700, fontSize: 13, color: activeFilter === f ? "var(--cream)" : "var(--twilight)" }}
+                style={{ padding: "8px 14px", background: "var(--cream-deep)", border: "none", borderRadius: 999, fontWeight: 700, fontSize: 13, color: "var(--twilight)", cursor: "pointer" }}
               >{f}</button>
             ))}
           </div>
@@ -292,7 +313,8 @@ export default function DashboardPage() {
 
         {/* SHELF PLANK + BOOKS */}
         <div style={{ height: 14, background: "var(--ink)", borderRadius: 3, marginBottom: -2, boxShadow: "0 3px 0 rgba(28,21,64,0.4)" }} />
-        <div className="dash-shelf-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 24, padding: "24px 20px 36px", background: "var(--cream-deep)", border: "2.5px solid var(--ink)", borderRadius: "4px 4px 24px 24px", borderTop: "none", boxShadow: "5px 8px 0 var(--ink)", marginBottom: 56 }}>
+        <div className="dash-shelf-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 24, padding: "24px 20px 36px", background: "var(--cream-deep)", borderRadius: "4px 4px 24px 24px", boxShadow: "var(--u-card-shadow)", marginBottom: 56 }}>
+          {loading && Array.from({ length: 3 }).map((_, i) => <SkeletonBookItem key={i} />)}
           {booksView.map(b => (
             <Link key={b.id} href={b.href} className="dash-book-card">
               <BookCover size="lg" accent={b.accent} badge={b.badge} label={b.label} title={b.title} script={b.script} theme={b.theme} star={b.star} />
@@ -308,33 +330,35 @@ export default function DashboardPage() {
           ))}
           {/* New story tile */}
           <Link href={newStoryHref} className="dash-new-tile">
-            <div className="dash-new-cover" style={{ aspectRatio: "5/6.4", borderRadius: "6px 12px 12px 6px", border: "2.5px dashed var(--ink)", background: "var(--cream)", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", color: "var(--twilight)", textAlign: "center", marginBottom: 12 }}>
-              <div style={{ width: 48, height: 48, borderRadius: "50%", background: "var(--moon)", border: "2px solid var(--ink)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 28, color: "var(--twilight)", marginBottom: 14 }}>+</div>
+            <div className="dash-new-cover" style={{ aspectRatio: "5/6.4", borderRadius: "6px 12px 12px 6px", border: "2.5px dashed var(--paper-line)", background: "#fff", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", color: "var(--twilight)", textAlign: "center", marginBottom: 12 }}>
+              <div style={{ width: 48, height: 48, borderRadius: "50%", background: "var(--u-orange)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 28, color: "#fff", marginBottom: 14 }}>+</div>
               <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 18 }}>Craft a new tale</div>
               <div style={{ fontSize: 12, color: "var(--ink-soft)", fontWeight: 600, marginTop: 4, padding: "0 16px", lineHeight: 1.35 }}>Takes about 3 minutes. ~40 seconds to conjure.</div>
             </div>
           </Link>
         </div>
+        </Reveal>
 
         {/* STATS ROW */}
+        <Reveal inView>
         <div className="dash-stats-row" style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr 1fr", gap: 20, marginBottom: 56 }}>
           {/* Streak */}
-          <div style={{ background: "var(--moon)", border: "2.5px solid var(--ink)", borderRadius: 22, boxShadow: "6px 6px 0 var(--ink)", padding: "24px 26px" }}>
-            <div style={{ fontFamily: "var(--font-caprasimo), serif", fontSize: 13, color: "var(--berry)", marginBottom: 6 }}>Bedtime streak</div>
-            <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 46, color: "var(--twilight)", lineHeight: 1, letterSpacing: "-0.02em", display: "flex", alignItems: "baseline", gap: 8 }}>
-              {profile?.streak_nights ?? 0}<span style={{ fontSize: 14, fontWeight: 700, fontFamily: "var(--font-nunito), sans-serif", color: "var(--ink-soft)" }}>{(profile?.streak_nights ?? 0) === 1 ? "night so far" : "nights in a row"}</span>
+          <div style={{ background: "var(--u-orange)", borderRadius: 22, boxShadow: "var(--u-card-shadow-lg)", padding: "24px 26px" }}>
+            <div style={{ fontFamily: "var(--font-caprasimo), serif", fontSize: 13, color: "rgba(20,9,6,0.72)", marginBottom: 6 }}>Bedtime streak</div>
+            <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 46, color: "#140906", lineHeight: 1, letterSpacing: "-0.02em", display: "flex", alignItems: "baseline", gap: 8 }}>
+              {profile?.streak_nights ?? 0}<span style={{ fontSize: 14, fontWeight: 700, fontFamily: "var(--font-nunito), sans-serif", color: "rgba(20,9,6,0.7)" }}>{(profile?.streak_nights ?? 0) === 1 ? "night so far" : "nights in a row"}</span>
             </div>
             <div style={{ marginTop: 14, display: "flex", gap: 4 }}>
               {["M","T","W","T","F","S"].map((d, i) => (
-                <div key={i} style={{ flex: 1, height: 26, borderRadius: 4, background: "var(--twilight)", border: "1.5px solid var(--ink)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 11, color: "var(--moon)" }}>{d}</div>
+                <div key={i} style={{ flex: 1, height: 26, borderRadius: 4, background: "var(--twilight)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 11, color: "var(--u-orange)" }}>{d}</div>
               ))}
-              <div style={{ flex: 1, height: 26, borderRadius: 4, background: "var(--berry)", border: "1.5px solid var(--ink)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 11, color: "var(--cream)" }}>S</div>
+              <div style={{ flex: 1, height: 26, borderRadius: 4, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 11, color: "var(--u-orange)" }}>S</div>
             </div>
-            <div style={{ fontSize: 13, color: "var(--ink-soft)", fontWeight: 600, marginTop: 8, maxWidth: 280, lineHeight: 1.4 }}>Tonight keeps it going — your little ones are learning that stories show up, every single night.</div>
+            <div style={{ fontSize: 13, color: "rgba(20,9,6,0.72)", fontWeight: 600, marginTop: 8, maxWidth: 280, lineHeight: 1.4 }}>Tonight keeps it going — your little ones are learning that stories show up, every single night.</div>
           </div>
           {/* Usage */}
-          <div style={{ background: "var(--cream)", border: "2.5px solid var(--ink)", borderRadius: 22, boxShadow: "6px 6px 0 var(--ink)", padding: "24px 26px" }}>
-            <div style={{ fontFamily: "var(--font-caprasimo), serif", fontSize: 13, color: "var(--berry)", marginBottom: 6 }}>This month</div>
+          <div className="u-card" style={{ borderRadius: 22, padding: "24px 26px" }}>
+            <div style={{ fontFamily: "var(--font-caprasimo), serif", fontSize: 13, color: "var(--u-orange)", marginBottom: 6 }}>This month</div>
             <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 46, color: "var(--twilight)", lineHeight: 1, letterSpacing: "-0.02em", display: "flex", alignItems: "baseline", gap: 8 }}>
               {quota?.used ?? 0}<span style={{ fontSize: 14, fontWeight: 700, fontFamily: "var(--font-nunito), sans-serif", color: "var(--ink-soft)" }}>of {quota?.quota ?? 0} stories used</span>
             </div>
@@ -344,26 +368,28 @@ export default function DashboardPage() {
             <span className="dash-stat-link" style={{ marginTop: 12, display: "inline-block", opacity: 0.6 }} title="Upgrades arrive in a future update">Upgrades coming soon →</span>
           </div>
           {/* Keepsake */}
-          <div style={{ background: "var(--sage)", color: "var(--cream)", border: "2.5px solid var(--ink)", borderRadius: 22, boxShadow: "6px 6px 0 var(--ink)", padding: "24px 26px" }}>
-            <div style={{ fontFamily: "var(--font-caprasimo), serif", fontSize: 13, color: "var(--moon)", marginBottom: 6 }}>Keepsake book</div>
-            <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 28, color: "var(--cream)", lineHeight: 1.2, marginTop: 8 }}>Coming soon</div>
+          <div className="u-panel-dark" style={{ borderRadius: 22, padding: "24px 26px" }}>
+            <div style={{ fontFamily: "var(--font-caprasimo), serif", fontSize: 13, color: "var(--u-orange)", marginBottom: 6 }}>Keepsake book</div>
+            <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 28, color: "#fff", lineHeight: 1.2, marginTop: 8 }}>Coming soon</div>
             <div style={{ fontSize: 13, fontWeight: 600, opacity: 0.75, marginTop: 8, lineHeight: 1.4, maxWidth: 240 }}>
               Turn your stories into a printed keepsake book — available soon.
             </div>
-            <Link href="/keepsake-books" className="dash-stat-link" style={{ color: "var(--moon)", marginTop: 14, display: "inline-block" }}>Learn more →</Link>
+            <Link href="/keepsake-books" className="dash-stat-link" style={{ color: "var(--u-orange)", marginTop: 14, display: "inline-block" }}>Learn more →</Link>
           </div>
         </div>
+        </Reveal>
 
         {/* BLUEPRINT NUDGE */}
         {activeKidObj && (
-        <div style={{ background: "var(--berry)", color: "var(--cream)", border: "2.5px solid var(--ink)", borderRadius: 28, boxShadow: "8px 8px 0 var(--ink)", padding: "36px 40px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 28, flexWrap: "wrap", position: "relative", overflow: "hidden", marginBottom: 40 }}>
-          <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, background: "var(--moon)", borderRadius: "50%", opacity: 0.2, pointerEvents: "none" }} />
+        <Reveal inView>
+        <div style={{ background: "var(--u-orange)", color: "#140906", borderRadius: 28, boxShadow: "var(--u-card-shadow-lg)", padding: "36px 40px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 28, flexWrap: "wrap", position: "relative", overflow: "hidden", marginBottom: 40 }}>
+          <AmbientDecor variant="orange" fireflies={[]} />
           <div style={{ position: "relative", maxWidth: 560 }}>
-            <div style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--moon)", fontSize: 14, marginBottom: 6 }}>Gentle nudge</div>
+            <div style={{ fontFamily: "var(--font-caprasimo), serif", color: "rgba(20,9,6,0.72)", fontSize: 14, marginBottom: 6 }}>Gentle nudge</div>
             {nudgeBlueprint ? (
               <>
                 <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 28, lineHeight: 1.1, marginBottom: 8 }}>
-                  {activeKidObj.nickname} hasn&apos;t tried <em>{nudgeBlueprint}</em> yet.
+                  {activeKidObj.nickname} hasn&apos;t tried <em style={{ color: "#fff" }}>{nudgeBlueprint}</em> yet.
                 </div>
                 <div style={{ fontSize: 14.5, opacity: 0.88, lineHeight: 1.5 }}>
                   Want to spin a {nudgeBlueprint} tale tonight?
@@ -384,26 +410,20 @@ export default function DashboardPage() {
             {ALL_BLUEPRINTS.filter((b) => !usedBlueprints.has(b)).slice(0, 3).map((label) => {
               const icons: Record<string, string> = { Bravery: "★", Honesty: "✓", Patience: "⟲", Kindness: "♡", Persistence: "↑" };
               return (
-                <Link key={label} href={newStoryHref} className="dash-bpc" style={{ padding: "12px 14px", background: "var(--cream)", color: "var(--twilight)", border: "2px solid var(--ink)", borderRadius: 14, fontFamily: "var(--font-young-serif), serif", fontSize: 13, textAlign: "center", minWidth: 84 }}>
-                  <span style={{ display: "block", fontFamily: "var(--font-caprasimo), serif", fontSize: 20, color: "var(--berry)", marginBottom: 4 }}>{icons[label]}</span>
+                <Link key={label} href={newStoryHref} className="dash-bpc" style={{ padding: "12px 14px", background: "#fff", color: "var(--twilight)", borderRadius: 14, boxShadow: "var(--u-card-shadow)", fontFamily: "var(--font-young-serif), serif", fontSize: 13, textAlign: "center", minWidth: 84 }}>
+                  <span style={{ display: "block", fontFamily: "var(--font-caprasimo), serif", fontSize: 20, color: "var(--u-orange)", marginBottom: 4 }}>{icons[label]}</span>
                   {label}
                 </Link>
               );
             })}
           </div>
         </div>
+        </Reveal>
         )}
 
       </main>
 
-      <footer style={{ maxWidth: 1400, margin: "40px auto 0", padding: "24px 48px", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12, color: "var(--ink-soft)", fontWeight: 600, borderTop: "2px dashed var(--paper-line)", position: "relative", zIndex: 2 }}>
-        <div>© 2026 TellTales · Sweet dreams guaranteed.</div>
-        <div>
-          <Link href="#" className="dash-nav-link" style={{ marginLeft: 20 }}>Privacy (COPPA)</Link>
-          <DeleteMyDataLink style={{ marginLeft: 20 }} />
-          <Link href="#" className="dash-nav-link" style={{ marginLeft: 20 }}>Help</Link>
-        </div>
-      </footer>
+      <AppFooter />
     </>
   );
 }

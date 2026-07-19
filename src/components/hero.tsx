@@ -9,12 +9,14 @@ import {
   useReducedMotion,
   cubicBezier,
 } from "framer-motion";
+import { AmbientDecor, type DecorStar, type DecorFirefly } from "./motion/AmbientDecor";
+import { LoopVideo } from "./motion/LoopVideo";
 
 const easeOut = cubicBezier(0.22, 1, 0.36, 1);
 
 // Sparse, tone-on-tone bedtime decor for the lower orange: a wheat-meadow
 // silhouette the card rises out of, drifting lantern "fireflies", faint stars.
-const STARS = [
+const STARS: DecorStar[] = [
   { top: "16%", left: "12%" },
   { top: "22%", left: "82%" },
   { top: "30%", left: "28%" },
@@ -23,52 +25,13 @@ const STARS = [
   { top: "26%", left: "44%" },
   { top: "19%", left: "34%" },
 ];
-const FIREFLIES = [
+const FIREFLIES: DecorFirefly[] = [
   { left: "17%", bottom: "30%", delay: "0s", dur: "7s" },
   { left: "30%", bottom: "20%", delay: "1.4s", dur: "8s" },
   { left: "69%", bottom: "26%", delay: "2.1s", dur: "7.5s" },
   { left: "82%", bottom: "18%", delay: "0.6s", dur: "8.5s" },
   { left: "52%", bottom: "12%", delay: "1.8s", dur: "9s" },
 ];
-const WHEAT = [80, 190, 300, 470, 620, 790, 940, 1080, 1210, 1340];
-
-function HeroDecor() {
-  return (
-    <div className="u-hero-decor" aria-hidden>
-      {STARS.map((s, i) => (
-        <span key={i} className="u-hero-bgstar" style={{ top: s.top, left: s.left }} />
-      ))}
-
-      <svg className="u-hero-meadow" viewBox="0 0 1440 260" preserveAspectRatio="none">
-        {/* back hill */}
-        <path d="M0,130 C360,72 1080,82 1440,118 L1440,260 L0,260 Z" fill="#E85A25" />
-        {/* wheat stalks rising from the crest */}
-        <g fill="none" stroke="#C4430F" strokeWidth="3" strokeLinecap="round">
-          {WHEAT.map((x, i) => (
-            <use key={i} href="#u-wheat" transform={`translate(${x}, ${150 - (i % 3) * 6}) scale(${0.85 + (i % 4) * 0.12})`} />
-          ))}
-        </g>
-        {/* front hill (covers stalk bases) */}
-        <path d="M0,176 C400,138 1040,142 1440,182 L1440,260 L0,260 Z" fill="#C4430F" />
-        <defs>
-          <g id="u-wheat">
-            <path d="M0,0 C-3,-22 3,-42 0,-62" />
-            <path d="M0,-62 l-7,-6 M0,-55 l-7,-4 M0,-48 l-7,-3" />
-            <path d="M0,-62 l7,-6 M0,-55 l7,-4 M0,-48 l7,-3" />
-          </g>
-        </defs>
-      </svg>
-
-      {FIREFLIES.map((f, i) => (
-        <span
-          key={i}
-          className="u-hero-firefly"
-          style={{ left: f.left, bottom: f.bottom, animationDelay: f.delay, animationDuration: f.dur }}
-        />
-      ))}
-    </div>
-  );
-}
 
 /**
  * Pinned, scroll-scrubbed hero (umano pattern). A tall container pins its inner
@@ -103,7 +66,7 @@ export function Hero() {
           className="u-hero-panel"
           style={reduce ? undefined : { scale: panelScale, borderRadius: panelRadius }}
         >
-          <HeroDecor />
+          <AmbientDecor variant="orange" meadow stars={STARS} fireflies={FIREFLIES} />
         </motion.div>
 
         {/* Headline block */}
@@ -152,27 +115,11 @@ export function Hero() {
               Maya &amp; the <span className="script">Brave Lantern</span>
             </div>
             <div className="u-hero-book-scene">
-              {reduce ? (
-                // Static poster frame — no ambient motion under reduced-motion
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  className="u-hero-scene-video"
-                  src="https://res.cloudinary.com/dh0spkwh3/image/upload/v1784378180/lantern-poster_oztu72.png"
-                  alt=""
-                  aria-hidden
-                />
-              ) : (
-                <video
-                  className="u-hero-scene-video"
-                  src="https://res.cloudinary.com/dh0spkwh3/video/upload/v1784378165/lantern-night_fcuv8q.mp4"
-                  poster="https://res.cloudinary.com/dh0spkwh3/image/upload/v1784378180/lantern-poster_oztu72.png"
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  aria-hidden
-                />
-              )}
+              <LoopVideo
+                className="u-hero-scene-video"
+                video="https://res.cloudinary.com/dh0spkwh3/video/upload/v1784378165/lantern-night_fcuv8q.mp4"
+                poster="https://res.cloudinary.com/dh0spkwh3/image/upload/v1784378180/lantern-poster_oztu72.png"
+              />
             </div>
             <div className="u-hero-book-meta">
               <span>Bravery · Ages 4–6</span>

@@ -53,29 +53,6 @@ html, body {
 }
 body { overflow-x: clip; }
 
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image:
-    radial-gradient(circle at 20% 10%, rgba(183, 159, 214, 0.12), transparent 40%),
-    radial-gradient(circle at 80% 60%, rgba(245, 184, 65, 0.10), transparent 45%),
-    radial-gradient(circle at 50% 100%, rgba(232, 85, 107, 0.08), transparent 50%);
-  pointer-events: none;
-  z-index: 0;
-}
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image:
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.11 0 0 0 0 0.08 0 0 0 0 0.25 0 0 0 0.06 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
-  opacity: 0.55;
-  pointer-events: none;
-  z-index: 1;
-  mix-blend-mode: multiply;
-}
-
 main, header, footer { position: relative; z-index: 2; }
 
 .display { font-family: var(--font-young-serif), serif; font-weight: 400; letter-spacing: -0.01em; }
@@ -2565,7 +2542,6 @@ h1.story-title .script-em {
 
 /* ===== Keepsake Books page animations ===== */
 @keyframes kpBookBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
-@keyframes kpBlobDrift { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(10px, -12px) scale(1.05); } }
 @keyframes kpFadeRise { 0% { transform: translateY(22px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
 @keyframes kpSlideIn { 0% { transform: translateX(-16px); opacity: 0; } 100% { transform: translateX(0); opacity: 1; } }
 @keyframes kpCheckPop { 0% { transform: scale(0) rotate(-20deg); } 60% { transform: scale(1.25) rotate(12deg); } 100% { transform: scale(1) rotate(0); } }
@@ -2581,25 +2557,11 @@ h1.story-title .script-em {
 .kp-hero-fade-d2 { animation-delay: 180ms; }
 .kp-hero-fade-d3 { animation-delay: 280ms; }
 
-.kp-blob { animation: kpBlobDrift 9s ease-in-out infinite; }
-.kp-blob-2 { animation: kpBlobDrift 11s ease-in-out -4s infinite; }
-
-.kp-book-wrap {
-  position: absolute;
-  transition: transform 0.35s cubic-bezier(.22,1,.36,1);
-}
-.kp-book-wrap:hover { z-index: 10 !important; }
+/* Hero book mocks — fan/hover now handled by <FannedCards>; bob stays ambient */
 .kp-book-inner {
   width: 220px; height: 280px;
   animation: kpBookBob 7s ease-in-out infinite;
   animation-delay: var(--d, 0s);
-  transition: transform 0.3s cubic-bezier(.22,1,.36,1), box-shadow 0.3s ease;
-  transform-origin: 50% 100%;
-}
-.kp-book-wrap:hover .kp-book-inner {
-  animation-play-state: paused;
-  transform: translateY(-10px) scale(1.04);
-  box-shadow: 12px 12px 0 var(--ink) !important;
 }
 
 .kp-stagger { animation: kpFadeRise 0.55s cubic-bezier(.22,1,.36,1) both; animation-delay: calc(var(--i, 0) * 70ms + 60ms); }
@@ -2615,20 +2577,12 @@ h1.story-title .script-em {
 .kp-pick:hover .kp-pick-cov { box-shadow: 6px 7px 0 var(--ink); }
 .kp-pick-check { animation: kpCheckPop 0.42s cubic-bezier(.22,1,.36,1); }
 
-.kp-price-card { cursor: pointer; transition: transform 0.24s cubic-bezier(.22,1,.36,1), box-shadow 0.24s ease; }
-.kp-price-card:hover { transform: translateY(-6px); box-shadow: 8px 9px 0 var(--ink) !important; }
-.kp-price-featured { transform: translateY(-8px); }
-.kp-price-featured:hover { transform: translateY(-12px) !important; }
-.kp-price-cta { transition: transform 0.15s ease, box-shadow 0.15s ease; }
-.kp-price-cta:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--ink) !important; }
-.kp-price-cta:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink) !important; }
-
 .kp-order-row { animation: kpSlideIn 0.5s cubic-bezier(.22,1,.36,1) both; animation-delay: calc(var(--i, 0) * 90ms + 200ms); transition: background 0.18s ease; }
 .kp-order-row:hover { background: var(--cream-deep); }
 .kp-status-dot { animation: kpStatusPulse 1.8s ease-in-out infinite; }
-.kp-ord-btn { transition: transform 0.12s ease, background 0.15s ease, box-shadow 0.15s ease; }
-.kp-ord-btn:hover { transform: translate(-1px, -1px); box-shadow: 2px 2px 0 var(--ink); }
-.kp-ord-btn:active { transform: translate(1px, 1px); box-shadow: none; }
+.kp-ord-btn { transition: transform 0.12s ease, background 0.15s ease; }
+.kp-ord-btn:hover { transform: translateY(-1px); }
+.kp-ord-btn:active { transform: translateY(0); }
 
 .kp-faq-item { cursor: pointer; }
 .kp-faq-answer {
@@ -2642,17 +2596,14 @@ h1.story-title .script-em {
 .kp-faq-toggle { transition: transform 0.28s cubic-bezier(.22,1,.36,1); display: inline-block; }
 .kp-faq-open .kp-faq-toggle { transform: rotate(45deg); }
 
-.kp-cta { transition: transform 0.15s ease, box-shadow 0.15s ease; }
-.kp-cta:hover { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--ink) !important; }
-.kp-cta:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink) !important; }
-.kp-cta-ghost { transition: background 0.18s ease; }
-.kp-cta-ghost:hover { background: rgba(251,243,227,0.08); }
+.kp-cta { transition: transform 0.15s ease, background 0.15s ease; }
+.kp-cta:hover { transform: translateY(-1px); }
+.kp-cta:active { transform: translateY(0); }
 
 @media (prefers-reduced-motion: reduce) {
-  .kp-hero-kicker, .kp-hero-fade, .kp-blob, .kp-blob-2,
+  .kp-hero-kicker, .kp-hero-fade,
   .kp-book-inner, .kp-stagger, .kp-order-row, .kp-pick-check, .kp-status-dot { animation: none !important; }
-  .kp-pick:hover, .kp-price-card:hover, .kp-feat:hover { transform: translateY(-2px) !important; }
-  .kp-book-wrap:hover .kp-book-inner { transform: none; }
+  .kp-pick:hover, .kp-feat:hover { transform: translateY(-2px) !important; }
 }
 
 @media (max-width: 1100px) {
@@ -2995,11 +2946,10 @@ body { padding-top: 84px; }
   will-change: transform;
 }
 .u-faq-inner { max-width: 980px; }
-/* Hero-style pin: a full-viewport dark panel scales down in place → the whole
-   rounded card stays in view (cream on all sides), then holds while the footer
-   reveals beneath. */
-.u-faq-pin { position: relative; height: 150vh; }
-.u-faq-sticky {
+/* Hero-style pin (shared by PinnedPanel): a full-viewport panel scales down
+   in place → the whole rounded card stays in view, then holds. */
+.u-pin { position: relative; }
+.u-pin-sticky {
   position: sticky;
   top: 0;
   height: 100vh;
@@ -3129,28 +3079,11 @@ body { padding-top: 84px; }
   overflow: hidden;
 }
 
-/* Bedtime decor inside the panel (behind the card) */
-.u-hero-decor { position: absolute; inset: 0; pointer-events: none; }
-.u-hero-meadow { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 32vh; min-height: 200px; display: block; }
-.u-hero-bgstar {
-  position: absolute; width: 5px; height: 5px; border-radius: 50%;
-  background: #C4430F; opacity: 0.5;
-  animation: twinkle 3.4s ease-in-out infinite;
-}
-.u-hero-bgstar:nth-child(2n) { animation-duration: 4.2s; animation-delay: 0.8s; }
-.u-hero-bgstar:nth-child(3n) { width: 4px; height: 4px; opacity: 0.4; animation-delay: 1.6s; }
-.u-hero-firefly {
-  position: absolute; width: 10px; height: 10px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(255,244,214,1) 0%, rgba(255,206,128,0.7) 45%, rgba(255,206,128,0) 72%);
-  box-shadow: 0 0 14px 5px rgba(255,214,150,0.55);
-  animation-name: fireflyDrift; animation-timing-function: ease-in-out; animation-iteration-count: infinite;
-}
+/* Bedtime decor inside the panel: see AmbientDecor + the .u-decor classes
+   in the app-skin section at the end of this file. */
 @keyframes fireflyDrift {
   0%, 100% { transform: translate(0, 0); opacity: 0.35; }
   50% { transform: translate(8px, -22px); opacity: 1; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .u-hero-bgstar, .u-hero-firefly { animation: none !important; }
 }
 
 /* Headline block — centred, high, generous breathing room (scroll-0 layout) */
@@ -3273,8 +3206,6 @@ h1.u-hero-title .highlight::after { display: none; }
 
 html, body { font-size: 16px; }
 body { background: #FAFAFA; }
-/* umano is a flat surface — drop the paper grain + colour glows */
-body::before, body::after { content: none !important; display: none !important; }
 
 /* Buttons → umano pill (black default, orange CTA), no border/hard shadow */
 .btn {
@@ -3389,20 +3320,61 @@ h1.u-hero-title .sparkle { color: #fff !important; }
 .section-sub { color: var(--ink-soft) !important; }
 
 /* ---- Pricing → borderless soft-shadow umano cards ---- */
+/* Cards sit inside a .plan-wrap (the <Reveal inView> grid child) so the
+   entrance transform lives on the wrapper and never fights the card's own
+   hover/featured transforms. */
+.plan-wrap { height: 100%; }
 .plan {
   border: none !important;
   box-shadow: var(--u-card-shadow) !important;
   border-radius: 20px !important;
   background: #fff !important;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  transition:
+    transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.plan.featured { background: var(--twilight) !important; box-shadow: var(--u-card-shadow-lg) !important; }
+.plan:hover { transform: translateY(-6px); box-shadow: var(--u-card-shadow-lg) !important; }
+/* Featured plan: --twilight on --twilight-deep vanishes, so it gets the
+   story-card surface, a hairline ring, and a faint orange under-glow. */
+.plan.featured {
+  background: #1f1d24 !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(251, 243, 227, 0.12),
+    0 16px 48px rgba(0, 0, 0, 0.45),
+    0 24px 80px rgba(255, 105, 46, 0.10) !important;
+}
+.plan.featured:hover {
+  transform: translateY(-18px);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 105, 46, 0.45),
+    0 24px 64px rgba(0, 0, 0, 0.5),
+    0 32px 96px rgba(255, 105, 46, 0.16) !important;
+}
 .plan.featured .plan-name, .plan.featured .plan-price, .plan.featured .plan-tag, .plan.featured .plan-feat { color: #fff !important; }
 .plan-name { font-family: var(--font-nunito), sans-serif !important; font-weight: 700 !important; color: var(--ink-soft) !important; text-transform: none; }
+.plan.featured .plan-name { color: var(--u-orange) !important; }
 .plan-price { font-family: var(--font-young-serif), serif !important; color: #140906 !important; }
 .plan.featured .plan-price { color: #fff !important; }
-.plan-badge { background: var(--u-orange) !important; color: #fff !important; border: none !important; box-shadow: none !important; }
-.plan-feat::before { color: var(--u-orange) !important; }
-.plan-cta { width: 100%; justify-content: center; }
+.plan-badge { background: var(--u-orange) !important; color: #fff !important; border: none !important; box-shadow: 0 8px 24px rgba(255, 105, 46, 0.35) !important; transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1); }
+.plan.featured:hover .plan-badge { transform: rotate(-3deg) scale(1.06); }
+/* --sage is repointed to orange in the umano skin, so the base sage-disc +
+   orange-check combo was orange-on-orange (invisible). White check instead. */
+.plan-feat::before { background: var(--u-orange) !important; border: none !important; color: #fff !important; }
+.plan-cta { width: 100%; justify-content: center; margin-top: auto; }
+/* Click-to-feature cards (keepsake bindings): whole card is a select target. */
+.plan-selectable { cursor: pointer; }
+/* Non-berry CTA on the dark featured surface (any keepsake card can become
+   featured) — cream/ink pill would clash, so a translucent white pill. */
+.plan.featured .plan-cta:not(.btn-berry) { background: rgba(255, 255, 255, 0.14) !important; color: #fff !important; }
+@media (prefers-reduced-motion: reduce) {
+  .plan, .plan-badge { transition: none; }
+  .plan:hover, .plan.featured:hover { transform: none; }
+  .plan.featured:hover { transform: translateY(-12px); } /* keep base offset */
+  .plan.featured:hover .plan-badge { transform: rotate(4deg); }
+}
 
 /* ---- Lenis smooth scroll (umano momentum feel) ---- */
 html.lenis, html.lenis body { height: auto; }
@@ -3410,3 +3382,333 @@ html.lenis, html.lenis body { height: auto; }
 .lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
 .lenis.lenis-stopped { overflow: hidden; }
 .lenis.lenis-smooth iframe { pointer-events: none; }
+
+/* =====================================================================
+   APP PAGES — umano skin. Semantic soft-elevation primitives + app-page
+   re-skins. Must stay after the umano override block so it wins the
+   cascade; elevation borders/hard shadows are removed in TSX, not
+   overridden here.
+   ===================================================================== */
+
+/* ---- Surfaces ---- */
+.u-card {
+  background: #fff;
+  border: none;
+  border-radius: 24px;
+  box-shadow: var(--u-card-shadow);
+}
+.u-card-lg {
+  background: #fff;
+  border: none;
+  border-radius: 28px;
+  box-shadow: var(--u-card-shadow-lg);
+}
+.u-panel-dark {
+  position: relative;
+  overflow: hidden;
+  background: var(--twilight);
+  color: #fff;
+  border: none;
+  border-radius: 24px;
+  box-shadow: var(--u-card-shadow-lg);
+}
+
+/* ---- Shared app footer ---- */
+.app-foot {
+  max-width: 1400px;
+  margin: 40px auto 0;
+  padding: 24px 48px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: var(--ink-soft);
+  font-weight: 600;
+  border-top: 2px dashed var(--paper-line);
+  position: relative;
+  z-index: 2;
+}
+.app-foot a { margin-left: 20px; color: inherit; text-decoration: none; }
+.app-foot a:hover { color: var(--ink); }
+
+/* ---- Chips / pills (selection = orange fill, per design system) ---- */
+.u-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border: none;
+  border-radius: 999px;
+  background: var(--cream-deep);
+  color: var(--ink);
+  font-family: var(--font-nunito), sans-serif;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+.u-chip:hover { transform: translateY(-1px); background: #e9e9e9; }
+.u-chip.active { background: var(--u-orange); color: #fff; }
+.u-chip.active:hover { background: var(--moon-deep); }
+
+/* ---- Ambient decor (generalized from the hero panel) ----
+   Tone-on-tone twinkle stars + drifting firefly lanterns, placed inside
+   colored panels. Variant class on the container sets the palette. */
+.u-decor { position: absolute; inset: 0; pointer-events: none; }
+.u-decor-orange {
+  --decor-star: #C4430F;
+  --decor-glow-core: rgba(255, 244, 214, 1);
+  --decor-glow-mid: rgba(255, 206, 128, 0.7);
+  --decor-glow-halo: rgba(255, 214, 150, 0.55);
+}
+.u-decor-dark {
+  --decor-star: rgba(251, 243, 227, 0.85);
+  --decor-glow-core: rgba(255, 244, 214, 0.95);
+  --decor-glow-mid: rgba(255, 206, 128, 0.55);
+  --decor-glow-halo: rgba(255, 214, 150, 0.4);
+}
+.u-bgstar {
+  position: absolute; width: 5px; height: 5px; border-radius: 50%;
+  background: var(--decor-star, #C4430F); opacity: 0.5;
+  animation: twinkle 3.4s ease-in-out infinite;
+}
+.u-bgstar:nth-child(2n) { animation-duration: 4.2s; animation-delay: 0.8s; }
+.u-bgstar:nth-child(3n) { width: 4px; height: 4px; opacity: 0.4; animation-delay: 1.6s; }
+.u-firefly {
+  position: absolute; width: 10px; height: 10px; border-radius: 50%;
+  background: radial-gradient(circle, var(--decor-glow-core, rgba(255,244,214,1)) 0%, var(--decor-glow-mid, rgba(255,206,128,0.7)) 45%, transparent 72%);
+  box-shadow: 0 0 14px 5px var(--decor-glow-halo, rgba(255,214,150,0.55));
+  animation-name: fireflyDrift; animation-timing-function: ease-in-out; animation-iteration-count: infinite;
+}
+.u-meadow { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 32vh; min-height: 200px; display: block; }
+
+/* ---- Story builder (stories/new) → soft skin ---- */
+.form-card { background: #fff; border: none; box-shadow: var(--u-card-shadow); }
+.form-step-num {
+  border: none;
+  background: var(--u-orange);
+  color: #fff;
+  font-family: var(--font-nunito), sans-serif;
+  font-weight: 800;
+}
+.txt-input, .hook {
+  border: 2px solid transparent;
+  background: var(--cream-deep);
+  box-shadow: none;
+}
+.txt-input:focus, .hook:focus { border-color: var(--u-orange); background: #fff; }
+.age-chip { border: none; }
+.age-chip.active { background: var(--u-orange); color: #fff; box-shadow: none; }
+.pron-chip { border: none; }
+.pron-chip.active { background: var(--u-orange); color: #fff; box-shadow: none; }
+.tag-picker .tag { border: none; }
+.tag-picker .tag.active { background: var(--u-orange); color: #fff; box-shadow: none; }
+.tag-picker .tag-input { border: 2px solid transparent; background: var(--cream-deep); box-shadow: none; }
+.tag-picker .tag-input:focus { border-color: var(--u-orange); box-shadow: none; }
+.bp-opt { border: none; transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease; }
+.bp-opt:hover { box-shadow: var(--u-card-shadow); }
+.bp-opt.active { box-shadow: var(--u-card-shadow-lg); }
+.bp-opt .bp-ic { border: none; }
+.bp-opt.active .bp-nm { color: var(--u-orange); }
+.bp-opt .bp-check { border: none; background: var(--u-orange); color: #fff; }
+.suggest-chip { border-color: var(--paper-line); color: var(--ink-soft); }
+.suggest-chip:hover { background: var(--u-orange); color: #fff; border-color: var(--u-orange); }
+.suggest-chip:hover .plus { color: #fff; }
+.voice-opt { border: none; }
+.voice-opt.active { box-shadow: var(--u-card-shadow); }
+.voice-opt.active .v-nm { color: var(--u-orange); }
+.v-wave { border: none; }
+.length-opt { border: none; transition: transform 0.12s ease, background 0.12s ease; }
+.length-opt.active { background: var(--u-orange); box-shadow: none; }
+.length-opt.active .l-t { color: #fff; }
+.length-opt.active .l-m { color: rgba(255,255,255,0.8); }
+.coin { border: none; background: var(--u-orange); color: #fff; }
+.progress-pill { border: none; background: #fff; box-shadow: var(--u-card-shadow); }
+.progress-pill .dots span { border: none; }
+.preview-col { top: 104px; }
+.prev-card { background: #fff; border: none; box-shadow: var(--u-card-shadow); }
+.prev-chip { border: none; background: var(--u-orange); color: #fff; }
+.prev-book { border: none; box-shadow: var(--u-card-shadow-lg); }
+.prev-summary { border: none; }
+.estimator { border: none; box-shadow: var(--u-card-shadow); }
+.estimator .spark { border: none; }
+.recents { border: none; background: #fff; box-shadow: var(--u-card-shadow); }
+
+/* Existing-hero picker card (stories/new): selection = orange ring, matching
+   the keepsake story picker. */
+.kid-pick {
+  padding: 12px 18px;
+  border-radius: 16px;
+  background: var(--cream-deep);
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+.kid-pick:hover { transform: translateY(-1px); }
+.kid-pick.active {
+  background: #fff;
+  box-shadow: inset 0 0 0 2px var(--u-orange), var(--u-card-shadow);
+}
+.kid-pick .kid-pick-name { font-family: var(--font-young-serif), serif; font-size: 17px; color: var(--twilight); }
+.kid-pick .kid-pick-meta { font-size: 12px; color: var(--ink-soft); margin-top: 2px; font-weight: 600; }
+
+/* ---- Story reader → soft skin ---- */
+/* Scroll-linked reading progress hairline (scaleX driven in the page). */
+.read-progress {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--u-orange);
+  transform-origin: 0 50%;
+  z-index: 300;
+}
+.gen-banner { border: none; box-shadow: var(--u-card-shadow); }
+.gen-banner .check { border: none; }
+.illus { border: none; box-shadow: var(--u-card-shadow-lg); }
+.illus .tag-chap { border: none; background: var(--u-orange); color: #fff; }
+.illus .tag-ai { border: none; }
+.illus-thumbs .thumb { border: none; }
+.illus-thumbs .thumb:hover { box-shadow: var(--u-card-shadow); }
+.illus-thumbs .thumb.active { outline: 3px solid var(--u-orange); box-shadow: var(--u-card-shadow); }
+.story-col { background: #fff; border: none; box-shadow: var(--u-card-shadow); }
+.chip { border: none; }
+.chip.berry, .chip.moon { background: var(--u-orange); color: #fff; }
+.icon-btn { border: none; }
+.icon-btn:hover { box-shadow: var(--u-card-shadow); }
+.icon-btn.active { background: var(--u-orange); color: #fff; }
+.audio-bar { border: none; box-shadow: var(--u-card-shadow-lg); }
+.play-btn { border: none; }
+.audio-prog .fill::after { border: none; }
+.speed-pill { border-color: transparent; }
+.nav-chip { border: none; }
+.nav-chip:hover { box-shadow: var(--u-card-shadow); }
+.nav-chip.next { background: var(--u-orange); color: #fff; }
+/* --moon folded to orange: orange-on-orange arrow/accent would vanish */
+.nav-chip.next .big { color: #fff; }
+.chap-counter .now { color: var(--u-orange); }
+.end-actions { position: relative; overflow: hidden; border: none; box-shadow: var(--u-card-shadow-lg); }
+.end-actions .ea-title em { color: #fff; }
+.end-actions > div:not(.u-decor) { position: relative; z-index: 1; }
+
+/* ---- Dashboard / shelf controls → umano pill contract ---- */
+.dash-btn { border: none; box-shadow: none; background: var(--ink); color: #fff; font-weight: 600; }
+.dash-btn:hover { transform: translateY(-1px); box-shadow: none; background: #000; }
+.dash-btn:active { transform: translateY(0); box-shadow: none; }
+.dash-btn-berry { background: var(--u-orange); color: #fff; }
+.dash-btn-berry:hover { background: var(--moon-deep); }
+.dash-btn-ghost { background: transparent; color: var(--ink); }
+.dash-btn-ghost:hover { background: rgba(0,0,0,0.05); }
+.dash-resume-btn { border: none; box-shadow: none; background: var(--u-orange); color: #fff; }
+.dash-resume-btn:hover { transform: translateY(-1px); box-shadow: none; background: var(--moon-deep); }
+.dash-resume-btn:active { transform: translateY(0); box-shadow: none; }
+.dash-kid-card:hover { transform: translateY(-2px); box-shadow: var(--u-card-shadow-lg) !important; }
+.dash-kid-add:hover { background: #fff !important; box-shadow: var(--u-card-shadow) !important; }
+.dash-bpc:hover { box-shadow: var(--u-card-shadow); }
+.dash-kid-tab:hover { box-shadow: var(--u-card-shadow); }
+.dash-list-row:hover { transform: translateY(-2px); box-shadow: var(--u-card-shadow-lg); }
+.dash-list-row:active { transform: none; box-shadow: var(--u-card-shadow); }
+.dash-filter-chip-active, .dash-fc-active {
+  background: var(--u-orange) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+.dash-nav-link:hover { color: var(--u-orange) !important; }
+.dash-ord-btn { border: none; background: var(--cream-deep); }
+.dash-ord-btn-prim { background: var(--ink) !important; color: #fff !important; }
+.dash-stat-link { color: var(--u-orange); }
+/* orange fill on hover made the orange "+" disc vanish — use a soft grey */
+.dash-new-cover:hover { background: var(--cream-deep) !important; }
+
+/* ---- Keepsake books → umano skin ---- */
+/* Full-bleed pinned hero (PinnedPanel): dark panel scales/rounds like the
+   landing FAQ. The tuck pulls it under the 84px body padding / floating nav. */
+.kp-hero-tuck { margin-top: -84px; }
+.kp-hero {
+  position: relative;
+  overflow: hidden;
+  background: var(--twilight-deep);
+  color: var(--cream);
+  width: 100%;
+  padding: 140px 0 96px; /* static / reduced-motion branch */
+}
+.kp-hero.kp-hero-panel {
+  /* absolute fill of the 100vh sticky (same mechanics as .u-hero-panel) —
+     guarantees the dark covers the full first screen at scroll 0 */
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  transform-origin: center center;
+  will-change: transform;
+}
+.kp-hero-sticky { background: #FAFAFA; } /* page bg revealed as the panel insets */
+.kp-hero-inner {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 40px;
+  align-items: center;
+  width: 100%;
+  position: relative;
+  z-index: 1;
+}
+@media (max-width: 960px) {
+  .kp-hero-inner { grid-template-columns: 1fr; }
+  .kp-hero-mocks { display: none; }
+}
+.kp-feat:hover { box-shadow: var(--u-card-shadow-lg) !important; }
+.kp-pick:hover .kp-pick-cov { box-shadow: 6px 7px 0 var(--ink); } /* BookCover keeps its hard-shadow motif */
+
+/* ---------- SKELETON LOADING ----------
+   One primitive + shape variants. Base surface is --cream-deep with a soft
+   white sheen sweeping across; sheen pauses (static surface remains) under
+   reduced motion. Compose via <Skeleton> in src/components/skeleton.tsx. */
+@keyframes skeletonSheen {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+.skeleton {
+  /* paper-line base reads on both the white cards and the cream-deep shelf planks */
+  background: var(--paper-line);
+  background-image: linear-gradient(100deg, var(--paper-line) 40%, #ffffff 50%, var(--paper-line) 60%);
+  background-size: 200% 100%;
+  animation: skeletonSheen 1.6s linear infinite;
+  border-radius: var(--u-radius);
+  pointer-events: none;
+}
+/* fills a positioned media container (video/illustration) while it loads */
+.skeleton-media {
+  position: absolute; inset: 0; border-radius: inherit; z-index: 2;
+  background-color: var(--cream-deep);
+  background-image: linear-gradient(100deg, var(--cream-deep) 40%, #ffffff 50%, var(--cream-deep) 60%);
+}
+.skeleton-text { height: 12px; border-radius: 999px; }
+.skeleton-text.lg { height: 22px; }
+.skeleton-avatar { width: 54px; height: 54px; border-radius: 16px; flex-shrink: 0; }
+.skeleton-pill { height: 50px; width: 150px; border-radius: 999px; }
+/* book-shaped, white so it reads on the cream-deep shelf plank */
+.skeleton-cover {
+  aspect-ratio: 5/6.4; border-radius: 6px 12px 12px 6px;
+  background-color: #fff;
+  background-image: linear-gradient(100deg, #ffffff 40%, var(--cream-deep) 50%, #ffffff 60%);
+  box-shadow: var(--u-card-shadow);
+}
+.skeleton-seat { width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0; }
+
+/* Generation-wait card (reader while story conjures) */
+.wait-card { max-width: 520px; width: 100%; padding: 36px 32px; text-align: center; }
+.wait-track {
+  height: 14px;
+  border-radius: 999px;
+  background: var(--cream-deep);
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.wait-fill { height: 100%; background: var(--u-orange); transition: width 700ms ease-out; }
+
+@media (prefers-reduced-motion: reduce) {
+  .u-bgstar, .u-firefly { animation: none !important; }
+  .u-chip, .kid-pick { transition: none; }
+  .u-chip:hover, .kid-pick:hover { transform: none; }
+  .wait-fill { transition: none; }
+  .skeleton { animation: none; background-image: none; }
+}

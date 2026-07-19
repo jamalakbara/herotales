@@ -3,8 +3,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { DeleteMyDataLink } from "@/components/delete-data-link";
+import { motion, useScroll, useReducedMotion } from "framer-motion";
+import { AppFooter } from "@/components/app-footer";
 import { FloatingNav } from "@/components/floating-nav";
+import { AmbientDecor } from "@/components/motion/AmbientDecor";
+import { Reveal } from "@/components/motion/Reveal";
+import { Skeleton } from "@/components/skeleton";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type Chapter = {
@@ -51,9 +55,12 @@ export default function StoryReaderPage() {
   const params = useParams<{ id: string }>();
   const id = params?.id as string;
   const router = useRouter();
+  const reduce = useReducedMotion();
+  const { scrollYProgress } = useScroll();
 
   const [story, setStory] = useState<StoryRow | null>(null);
   const [images, setImages] = useState<ImageRow[]>([]);
+  const [loadedImgs, setLoadedImgs] = useState<Set<string>>(new Set());
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const [cur, setCur] = useState(0);
@@ -178,18 +185,7 @@ export default function StoryReaderPage() {
           ]}
         />
         <main className="page" style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div
-            style={{
-              maxWidth: 520,
-              width: "100%",
-              background: "var(--cream)",
-              border: "2.5px solid var(--ink)",
-              borderRadius: 24,
-              boxShadow: "8px 8px 0 var(--ink)",
-              padding: "36px 32px",
-              textAlign: "center",
-            }}
-          >
+          <div className="u-card wait-card">
             <div style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--berry)", fontSize: 14, marginBottom: 8 }}>
               {failed ? "We tripped on a stone" : "Tonight's tale"}
             </div>
@@ -198,15 +194,8 @@ export default function StoryReaderPage() {
             </h1>
             {!failed && (
               <>
-                <div style={{ height: 14, borderRadius: 999, background: "var(--cream-deep)", border: "2px solid var(--ink)", overflow: "hidden", marginBottom: 14 }}>
-                  <div
-                    style={{
-                      height: "100%",
-                      width: `${pct}%`,
-                      background: "var(--berry)",
-                      transition: "width 700ms ease-out",
-                    }}
-                  />
+                <div className="wait-track">
+                  <div className="wait-fill" style={{ width: `${pct}%` }} />
                 </div>
                 <div style={{ fontSize: 13.5, color: "var(--ink-soft)", fontWeight: 600 }}>
                   {pct < 30
@@ -221,7 +210,7 @@ export default function StoryReaderPage() {
               <div style={{ fontSize: 13, color: "var(--berry)", fontWeight: 700, marginTop: 12 }}>{story.error}</div>
             )}
             <div style={{ marginTop: 20, display: "flex", gap: 10, justifyContent: "center" }}>
-              <Link href="/dashboard" className="btn btn-ghost" style={{ border: "1.5px solid var(--ink)" }}>
+              <Link href="/dashboard" className="btn btn-ghost">
                 Wait on the dashboard
               </Link>
               {failed && (
@@ -249,8 +238,8 @@ export default function StoryReaderPage() {
         ]}
         action={
           <button
-            className="btn"
-            style={{ padding: "10px 18px", fontSize: 13.5, background: story.favorite ? "var(--berry)" : "var(--cream)", color: story.favorite ? "var(--cream)" : "var(--ink)" }}
+            className={`btn ${story.favorite ? "btn-berry" : "btn-ghost"}`}
+            style={{ padding: "10px 18px", fontSize: 13.5 }}
             onClick={toggleFavorite}
           >
             {story.favorite ? "Saved ♥" : "Save to shelf ♡"}
@@ -258,13 +247,15 @@ export default function StoryReaderPage() {
         }
       />
 
+      {!reduce && <motion.div className="read-progress" style={{ scaleX: scrollYProgress }} aria-hidden />}
+
       <main className="page">
-        <div className="gen-banner">
+        <Reveal className="gen-banner">
           <span className="check">✓</span>
           <span>Your story is ready.</span>
-        </div>
+        </Reveal>
 
-        <div className="progress-row">
+        <Reveal className="progress-row" index={1}>
           <div>
             <span className="page-kicker">Tonight&apos;s tale</span>
             <h1 className="story-title">{heroTitle}</h1>
@@ -277,34 +268,58 @@ export default function StoryReaderPage() {
             </div>
             <span style={{ opacity: 0.7 }}>Read or listen</span>
           </div>
-        </div>
+        </Reveal>
 
         <div className="reader">
           {/* LEFT: ILLUSTRATION */}
-          <div className="illus-col">
+          <Reveal className="illus-col" index={2}>
             <div className="illus" style={{ position: "relative", overflow: "hidden" }}>
               <div className="tag-chap">{chapter?.chip ?? `Chapter ${cur + 1}`}</div>
               <div className="tag-ai">AI · CHARACTER-CONSISTENT</div>
-              {chapterImage ? (
-                <Image
-                  src={chapterImage}
-                  alt={chapter?.title ?? `Chapter ${cur + 1}`}
-                  fill
-                  sizes="(max-width: 900px) 100vw, 600px"
-                  style={{ objectFit: "cover", borderRadius: "inherit" }}
-                  priority={cur === 0}
-                />
-              ) : (
-                <>
-                  <div className="moon-big" />
-                  {STAR_POSITIONS.map((s, i) => (
-                    <div key={i} className="star" style={s} />
-                  ))}
-                  <div className="tree" style={{ left: "12%" }} />
-                  <div className="mountain" />
-                </>
-              )}
-              <div className="caption-strip">{chapter?.caption ?? ""}</div>
+              <motion.div
+                key={cur}
+                style={{ position: "absolute", inset: 0 }}
+                initial={reduce ? false : { opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+              >
+                {chapterImage ? (
+                  <>
+                    <Image
+                      src={chapterImage}
+                      alt={chapter?.title ?? `Chapter ${cur + 1}`}
+                      fill
+                      sizes="(max-width: 900px) 100vw, 600px"
+                      style={{ objectFit: "cover", borderRadius: "inherit" }}
+                      priority={cur === 0}
+                      onLoad={() =>
+                        setLoadedImgs((prev) =>
+                          prev.has(chapterImage) ? prev : new Set(prev).add(chapterImage),
+                        )
+                      }
+                    />
+                    {!loadedImgs.has(chapterImage) && <Skeleton variant="media" />}
+                  </>
+                ) : (
+                  <>
+                    <div className="moon-big" />
+                    {STAR_POSITIONS.map((s, i) => (
+                      <div key={i} className="star" style={s} />
+                    ))}
+                    <div className="tree" style={{ left: "12%" }} />
+                    <div className="mountain" />
+                    <AmbientDecor
+                      variant="dark"
+                      stars={[]}
+                      fireflies={[
+                        { left: "22%", bottom: "26%", delay: "0s", dur: "8s" },
+                        { left: "72%", bottom: "18%", delay: "1.2s", dur: "7s" },
+                      ]}
+                    />
+                  </>
+                )}
+                <div className="caption-strip">{chapter?.caption ?? ""}</div>
+              </motion.div>
             </div>
 
             <div className="illus-thumbs">
@@ -318,10 +333,10 @@ export default function StoryReaderPage() {
                 </div>
               ))}
             </div>
-          </div>
+          </Reveal>
 
           {/* RIGHT: STORY TEXT */}
-          <div className="story-col">
+          <Reveal className="story-col" index={3}>
             <div className="story-head">
               <div className="chip-row">
                 <span className="chip berry">{blueprint}</span>
@@ -344,9 +359,12 @@ export default function StoryReaderPage() {
             <span className="chap-label">{chapter?.label}</span>
             <h2 className="chap-title">{chapter?.title}</h2>
 
-            <div
+            <motion.div
               className="story-text"
               key={cur}
+              initial={reduce ? false : { opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
               dangerouslySetInnerHTML={{
                 __html: (chapter?.paras ?? []).map((p) => `<p>${p}</p>`).join(""),
               }}
@@ -412,11 +430,12 @@ export default function StoryReaderPage() {
                 <span className="big">→</span>
               </div>
             </div>
-          </div>
+          </Reveal>
         </div>
 
         {/* END CTA — keepsake checkout TODO: Stripe (Phase 3) */}
-        <div className="end-actions">
+        <Reveal inView className="end-actions">
+          <AmbientDecor variant="orange" fireflies={[]} />
           <div>
             <div className="ea-title">
               Love this one? <em>Keep it forever.</em>
@@ -426,11 +445,7 @@ export default function StoryReaderPage() {
             </div>
           </div>
           <div className="ea-btns">
-            <button
-              className="btn"
-              style={{ background: "var(--cream)", borderColor: "var(--ink)" }}
-              onClick={toggleFavorite}
-            >
+            <button className="btn" onClick={toggleFavorite}>
               {story.favorite ? "Saved ♥" : "Save to shelf"}
             </button>
             <span
@@ -441,17 +456,10 @@ export default function StoryReaderPage() {
               Order the keepsake book →
             </span>
           </div>
-        </div>
+        </Reveal>
       </main>
 
-      <div className="foot-mini">
-        <div>© 2026 TellTales · Sweet dreams guaranteed.</div>
-        <div>
-          <Link href="#">Privacy (COPPA)</Link>
-          <DeleteMyDataLink style={{ marginLeft: 0 }} />
-          <Link href="#">Help</Link>
-        </div>
-      </div>
+      <AppFooter variant="mini" />
     </>
   );
 }

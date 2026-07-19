@@ -3,8 +3,11 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { AppFooter } from "@/components/app-footer";
 import { FloatingNav } from "@/components/floating-nav";
-import { DeleteMyDataLink } from "@/components/delete-data-link";
+import { AmbientDecor } from "@/components/motion/AmbientDecor";
+import { Reveal } from "@/components/motion/Reveal";
+import { Skeleton } from "@/components/skeleton";
 
 type ExistingChild = {
   id: string;
@@ -57,19 +60,21 @@ const VOICES = [
   { name: "Your own", desc: "Record once · 3 minutes" },
 ];
 
+// --berry/--sage/--moon fold to one orange in the umano skin — the swatch
+// row rotates the distinct surfaces that remain.
 const AVATAR_SWATCHES: { bg: string; color: string }[] = [
-  { bg: "var(--berry)", color: "var(--cream)" },
+  { bg: "var(--u-orange)", color: "#fff" },
   { bg: "var(--lilac)", color: "var(--twilight)" },
-  { bg: "var(--sage)", color: "var(--cream)" },
-  { bg: "var(--moon)", color: "var(--twilight)" },
-  { bg: "var(--twilight)", color: "var(--cream)" },
-  { bg: "var(--berry-deep)", color: "var(--cream)" },
-  { bg: "var(--moon-deep)", color: "var(--twilight)" },
-  { bg: "var(--ink)", color: "var(--cream)" },
+  { bg: "var(--twilight)", color: "#fff" },
+  { bg: "var(--cream-deep)", color: "var(--twilight)" },
+  { bg: "#fff", color: "var(--u-orange)" },
+  { bg: "var(--moon-deep)", color: "#fff" },
+  { bg: "var(--ink)", color: "#fff" },
+  { bg: "#140906", color: "var(--u-orange)" },
 ];
 
-const SEAT_COLORS = ["var(--berry)", "var(--lilac)", "var(--sage)"];
-const SEAT_FG = ["var(--cream)", "var(--twilight)", "var(--cream)"];
+const SEAT_COLORS = ["var(--u-orange)", "var(--lilac)", "var(--twilight)"];
+const SEAT_FG = ["#fff", "var(--twilight)", "#fff"];
 
 export default function AddHeroPage() {
   const router = useRouter();
@@ -88,6 +93,7 @@ export default function AddHeroPage() {
   const [useRealName, setUseRealName] = useState(true);
 
   const [existingKids, setExistingKids] = useState<ExistingChild[]>([]);
+  const [kidsLoading, setKidsLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -95,7 +101,8 @@ export default function AddHeroPage() {
     fetch("/api/children", { cache: "no-store" })
       .then(async (r) => (r.ok ? r.json() : { children: [] }))
       .then((j: { children: ExistingChild[] }) => setExistingKids(j.children ?? []))
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setKidsLoading(false));
   }, []);
 
   const seatLetters = existingKids.slice(0, 3).map((k) => k.nickname[0]?.toUpperCase() ?? "?");
@@ -182,31 +189,30 @@ export default function AddHeroPage() {
   const secH: React.CSSProperties = { fontFamily: "var(--font-young-serif), serif", fontSize: 22, color: "var(--twilight)", letterSpacing: "-0.01em", marginBottom: 4 };
   const secD: React.CSSProperties = { fontSize: 13.5, color: "var(--ink-soft)", fontWeight: 600, marginBottom: 18 };
   const lblStyle: React.CSSProperties = { display: "block", fontSize: 12, fontWeight: 800, color: "var(--ink-soft)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 };
-  const inpStyle: React.CSSProperties = { width: "100%", padding: "12px 16px", background: "var(--cream)", border: "2px solid var(--ink)", borderRadius: 12, fontFamily: "var(--font-nunito), sans-serif", fontWeight: 600, fontSize: 16, color: "var(--twilight)", boxShadow: "3px 3px 0 var(--ink)" };
+  const inpStyle: React.CSSProperties = { width: "100%", padding: "12px 16px", background: "var(--cream-deep)", border: "2px solid transparent", borderRadius: 12, fontFamily: "var(--font-nunito), sans-serif", fontWeight: 600, fontSize: 16, color: "var(--twilight)" };
 
   function chipStyle(on: boolean): React.CSSProperties {
     return {
       padding: "8px 14px",
-      background: on ? "var(--twilight)" : "var(--cream-deep)",
-      border: "1.5px solid var(--ink)",
+      background: on ? "var(--u-orange)" : "var(--cream-deep)",
+      border: "none",
       borderRadius: 999,
       fontWeight: 700,
       fontSize: 13,
-      color: on ? "var(--cream)" : "var(--twilight)",
+      color: on ? "#fff" : "var(--twilight)",
       cursor: "pointer",
       userSelect: "none",
       display: "inline-flex",
       alignItems: "center",
       gap: 6,
-      boxShadow: on ? "2px 2px 0 var(--ink)" : "none",
     };
   }
 
   function tgStyle(on: boolean): React.CSSProperties {
-    return { flexShrink: 0, width: 48, height: 28, background: on ? "var(--moon)" : "var(--cream-deep)", border: "2px solid var(--ink)", borderRadius: 999, position: "relative", cursor: "pointer" };
+    return { flexShrink: 0, width: 48, height: 28, background: on ? "var(--u-orange)" : "var(--cream-deep)", border: "none", borderRadius: 999, position: "relative", cursor: "pointer" };
   }
   function tgKnob(on: boolean): React.CSSProperties {
-    return { position: "absolute", top: 2, left: on ? 22 : 2, width: 20, height: 20, background: on ? "var(--twilight)" : "var(--ink)", borderRadius: "50%", transition: "left 0.15s ease, background 0.15s ease" };
+    return { position: "absolute", top: 4, left: on ? 24 : 4, width: 20, height: 20, background: on ? "#fff" : "var(--ink-soft)", borderRadius: "50%", transition: "left 0.15s ease, background 0.15s ease" };
   }
 
   const av = AVATAR_SWATCHES[avatarIdx];
@@ -225,7 +231,7 @@ export default function AddHeroPage() {
         </div>
 
         {/* HEAD */}
-        <div className="hero-add-head" style={{ display: "grid", gridTemplateColumns: "1.1fr 0.9fr", gap: 36, marginBottom: 40, alignItems: "end" }}>
+        <Reveal className="hero-add-head" style={{ display: "grid", gridTemplateColumns: "1.1fr 0.9fr", gap: 36, marginBottom: 40, alignItems: "end" }}>
           <div>
             <span style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--berry)", fontSize: 16, transform: "rotate(-1.5deg)", display: "inline-block", marginBottom: 8 }}>Sketching a new character</span>
             <h1 style={{ fontFamily: "var(--font-young-serif), serif", fontSize: "clamp(38px, 4vw, 56px)", lineHeight: 1.0, letterSpacing: "-0.02em", color: "var(--twilight)", marginBottom: 14 }}>
@@ -235,23 +241,28 @@ export default function AddHeroPage() {
               Tell us a little about your child and we&apos;ll start every story with them at the heart of it. You can change any of this later — promise.
             </p>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 18px", background: "var(--cream-deep)", border: "2px solid var(--ink)", borderRadius: 18, boxShadow: "4px 4px 0 var(--ink)", fontSize: 13, fontWeight: 700, color: "var(--ink-soft)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 18px", background: "#fff", borderRadius: 18, boxShadow: "var(--u-card-shadow)", fontSize: 13, fontWeight: 700, color: "var(--ink-soft)" }}>
             <span>Lantern plan · Heroes</span>
-            {seatLetters.map((l, i) => (
-              <span key={i} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: 8, border: "1.5px solid var(--ink)", fontFamily: "var(--font-caprasimo), serif", fontSize: 14, color: SEAT_FG[i], background: SEAT_COLORS[i] }}>{l}</span>
+            {kidsLoading && Array.from({ length: 3 }).map((_, i) => <Skeleton key={`s${i}`} variant="seat" />)}
+            {!kidsLoading && seatLetters.map((l, i) => (
+              <span key={i} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: 8, fontFamily: "var(--font-caprasimo), serif", fontSize: 14, color: SEAT_FG[i], background: SEAT_COLORS[i] }}>{l}</span>
             ))}
-            <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: 8, border: "1.5px solid var(--ink)", fontFamily: "var(--font-caprasimo), serif", fontSize: 14, background: "var(--moon)", color: "var(--twilight)", boxShadow: "2px 2px 0 var(--ink)" }}>+</span>
-            {Array.from({ length: Math.max(0, seatsRemaining - 1) }).map((_, i) => (
-              <span key={`e${i}`} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: 8, border: "1.5px dashed var(--ink)", fontFamily: "var(--font-caprasimo), serif", fontSize: 14, color: "var(--twilight)" }}>·</span>
-            ))}
-            <a href="#" style={{ color: "var(--berry)", marginLeft: "auto" }}>Need more? Constellation →</a>
+            {!kidsLoading && (
+              <>
+                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: 8, fontFamily: "var(--font-caprasimo), serif", fontSize: 14, background: "var(--u-orange)", color: "#fff" }}>+</span>
+                {Array.from({ length: Math.max(0, seatsRemaining - 1) }).map((_, i) => (
+                  <span key={`e${i}`} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: 8, border: "1.5px dashed var(--paper-line)", fontFamily: "var(--font-caprasimo), serif", fontSize: 14, color: "var(--twilight)" }}>·</span>
+                ))}
+              </>
+            )}
+            <a href="#" style={{ color: "var(--u-orange)", marginLeft: "auto" }}>Need more? Constellation →</a>
           </div>
-        </div>
+        </Reveal>
 
         {/* GRID */}
         <div className="hero-add-grid" style={{ display: "grid", gridTemplateColumns: "1.25fr 0.95fr", gap: 32, alignItems: "start" }}>
           {/* FORM */}
-          <form onSubmit={(e) => e.preventDefault()} autoComplete="off" style={{ background: "var(--cream)", border: "2.5px solid var(--ink)", borderRadius: 28, boxShadow: "8px 8px 0 var(--ink)", overflow: "hidden" }}>
+          <form onSubmit={(e) => e.preventDefault()} autoComplete="off" className="u-card-lg" style={{ overflow: "hidden" }}>
             {/* 01 BASICS */}
             <section style={sectionStyle}>
               <div style={stepNum}>01</div>
@@ -296,7 +307,7 @@ export default function AddHeroPage() {
                   const on = avatarIdx === i;
                   return (
                     <button type="button" key={i} onClick={() => setAvatarIdx(i)}
-                      style={{ aspectRatio: "1", border: "2px solid var(--ink)", borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 22, cursor: "pointer", color: s.color, background: s.bg, transform: on ? "translateY(-2px)" : undefined, boxShadow: on ? "3px 3px 0 var(--ink)" : "none", position: "relative" }}>
+                      style={{ aspectRatio: "1", border: "none", borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 22, cursor: "pointer", color: s.color, background: s.bg, transform: on ? "translateY(-2px)" : undefined, boxShadow: on ? "0 0 0 3px var(--u-orange), var(--u-card-shadow)" : "var(--u-card-shadow)", position: "relative" }}>
                       {previewLetter}
                       {on && <span style={{ position: "absolute", top: -8, right: -6, color: "var(--moon)", fontFamily: "var(--font-caprasimo), serif", fontSize: 14 }}>✦</span>}
                     </button>
@@ -358,11 +369,11 @@ export default function AddHeroPage() {
                   const on = voice === v.name;
                   return (
                     <button type="button" key={v.name} onClick={() => setVoice(v.name)}
-                      style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", border: "2px solid var(--ink)", borderRadius: 14, background: on ? "var(--moon)" : "var(--cream)", boxShadow: on ? "3px 3px 0 var(--ink)" : "none", cursor: "pointer", textAlign: "left" }}>
-                      <span style={{ width: 36, height: 36, borderRadius: "50%", background: "var(--twilight)", color: "var(--moon)", border: "2px solid var(--ink)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, flexShrink: 0 }}>▶</span>
+                      style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", border: "none", borderRadius: 14, background: on ? "var(--u-orange)" : "var(--cream-deep)", boxShadow: on ? "var(--u-card-shadow)" : "none", cursor: "pointer", textAlign: "left" }}>
+                      <span style={{ width: 36, height: 36, borderRadius: "50%", background: "var(--twilight)", color: "var(--u-orange)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, flexShrink: 0 }}>▶</span>
                       <span>
-                        <span style={{ display: "block", fontFamily: "var(--font-young-serif), serif", fontSize: 16, color: "var(--twilight)", lineHeight: 1.05 }}>{v.name}</span>
-                        <span style={{ display: "block", fontSize: 11, fontWeight: 700, color: "var(--ink-soft)", letterSpacing: "0.04em", textTransform: "uppercase", marginTop: 2 }}>{v.desc}</span>
+                        <span style={{ display: "block", fontFamily: "var(--font-young-serif), serif", fontSize: 16, color: on ? "#fff" : "var(--twilight)", lineHeight: 1.05 }}>{v.name}</span>
+                        <span style={{ display: "block", fontSize: 11, fontWeight: 700, color: on ? "rgba(255,255,255,0.8)" : "var(--ink-soft)", letterSpacing: "0.04em", textTransform: "uppercase", marginTop: 2 }}>{v.desc}</span>
                       </span>
                     </button>
                   );
@@ -394,8 +405,8 @@ export default function AddHeroPage() {
                 ))}
               </div>
 
-              <div style={{ marginTop: 8, background: "var(--cream-deep)", border: "2px solid var(--ink)", borderRadius: 14, padding: "14px 16px", fontSize: 13, color: "var(--ink-soft)", fontWeight: 600, display: "flex", gap: 12, alignItems: "flex-start" }}>
-                <div style={{ width: 28, height: 28, borderRadius: "50%", background: "var(--moon)", border: "1.5px solid var(--ink)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", color: "var(--twilight)", fontSize: 14, flexShrink: 0 }}>✦</div>
+              <div style={{ marginTop: 8, background: "var(--cream-deep)", borderRadius: 14, padding: "14px 16px", fontSize: 13, color: "var(--ink-soft)", fontWeight: 600, display: "flex", gap: 12, alignItems: "flex-start" }}>
+                <div style={{ width: 28, height: 28, borderRadius: "50%", background: "var(--u-orange)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", color: "#fff", fontSize: 14, flexShrink: 0 }}>✦</div>
                 <div>
                   <strong style={{ color: "var(--twilight)", display: "block", marginBottom: 2, fontFamily: "var(--font-young-serif), serif", fontSize: 14, fontWeight: 400 }}>Stored privately, just for you.</strong>
                   Nothing about your child trains our models. You can <a href="#" style={{ color: "var(--berry)", fontWeight: 800 }}>delete this hero</a> any time and everything goes with them.
@@ -404,35 +415,43 @@ export default function AddHeroPage() {
             </section>
 
             {/* FOOT */}
-            <div style={{ padding: "22px 32px", background: "var(--cream-deep)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap", borderTop: "2.5px solid var(--ink)" }}>
+            <div style={{ padding: "22px 32px", background: "var(--cream-deep)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap", borderTop: "1.5px dashed var(--paper-line)" }}>
               <div style={{ fontSize: 13, color: "var(--ink-soft)", fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ width: 8, height: 8, background: "var(--sage)", borderRadius: "50%", boxShadow: "0 0 0 3px rgba(127,168,138,0.25)" }} />
-                <span>{error ? <span style={{ color: "var(--berry)" }}>{error}</span> : "Auto-saved as draft · just you and us."}</span>
+                <span style={{ width: 8, height: 8, background: "var(--u-orange)", borderRadius: "50%", boxShadow: "0 0 0 3px rgba(255,105,46,0.25)" }} />
+                <span>{error ? <span style={{ color: "var(--u-orange)" }}>{error}</span> : "Auto-saved as draft · just you and us."}</span>
               </div>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                <Link href="/dashboard" className="dash-btn dash-btn-ghost" style={{ border: "1.5px solid var(--ink)", boxShadow: "none" }}>Cancel</Link>
-                <button type="button" disabled={submitting || !canSubmit} onClick={() => submit(false)} className="dash-btn" style={{ background: "transparent" }}>Save for later</button>
+                <Link href="/dashboard" className="dash-btn dash-btn-ghost">Cancel</Link>
+                <button type="button" disabled={submitting || !canSubmit} onClick={() => submit(false)} className="dash-btn dash-btn-ghost">Save for later</button>
                 <button type="button" disabled={submitting || !canSubmit} onClick={() => submit(true)} className="dash-btn dash-btn-berry">{submitting ? "Saving…" : "Create hero & first story →"}</button>
               </div>
             </div>
           </form>
 
           {/* PREVIEW */}
-          <aside className="hero-add-preview" style={{ position: "sticky", top: 24, display: "flex", flexDirection: "column", gap: 24 }}>
-            <div style={{ background: "var(--twilight)", color: "var(--cream)", border: "2.5px solid var(--ink)", borderRadius: 28, boxShadow: "8px 8px 0 var(--ink)", padding: "28px 28px 22px", position: "relative", overflow: "hidden" }}>
-              <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, background: "var(--moon)", borderRadius: "50%", opacity: 0.16, pointerEvents: "none" }} />
-              <div style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--moon)", fontSize: 14, marginBottom: 8, position: "relative" }}>Live character sketch</div>
+          <aside className="hero-add-preview" style={{ position: "sticky", top: 104, display: "flex", flexDirection: "column", gap: 24 }}>
+            <div className="u-panel-dark" style={{ borderRadius: 28, padding: "28px 28px 22px" }}>
+              <AmbientDecor
+                variant="dark"
+                stars={[
+                  { top: "12%", left: "70%" },
+                  { top: "30%", left: "88%" },
+                  { top: "8%", left: "40%" },
+                ]}
+                fireflies={[{ left: "82%", bottom: "20%", delay: "0s", dur: "8s" }]}
+              />
+              <div style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--u-orange)", fontSize: 14, marginBottom: 8, position: "relative" }}>Live character sketch</div>
               <div style={{ display: "flex", alignItems: "center", gap: 18, position: "relative", marginBottom: 18 }}>
-                <div style={{ width: 76, height: 76, borderRadius: 22, border: "2.5px solid var(--cream)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 36, color: av.color, background: av.bg, flexShrink: 0, boxShadow: "4px 4px 0 var(--ink)" }}>{previewLetter}</div>
+                <div style={{ width: 76, height: 76, borderRadius: 22, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 36, color: av.color, background: av.bg, flexShrink: 0, boxShadow: "var(--u-card-shadow)" }}>{previewLetter}</div>
                 <div>
                   <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 30, lineHeight: 1, letterSpacing: "-0.01em", marginBottom: 4 }}>{previewName}</div>
                   <div style={{ fontSize: 13, color: "rgba(251,243,227,0.75)", fontWeight: 600 }}>{previewMeta}</div>
                 </div>
               </div>
               <div style={{ background: "rgba(251,243,227,0.08)", border: "1.5px dashed rgba(251,243,227,0.3)", borderRadius: 14, padding: "14px 16px", fontFamily: "var(--font-young-serif), serif", fontSize: 15, lineHeight: 1.45, color: "var(--cream)", position: "relative", marginBottom: 18, minHeight: 76 }}>
-                <span style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--moon)", fontSize: 24, lineHeight: 0.5 }}>&ldquo;</span>
+                <span style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--u-orange)", fontSize: 24, lineHeight: 0.5 }}>&ldquo;</span>
                 {previewQuote}
-                <span style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--moon)", fontSize: 24, lineHeight: 0.5 }}>&rdquo;</span>
+                <span style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--u-orange)", fontSize: 24, lineHeight: 0.5 }}>&rdquo;</span>
               </div>
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap", position: "relative" }}>
                 {traits.size === 0
@@ -445,7 +464,7 @@ export default function AddHeroPage() {
               </div>
             </div>
 
-            <div style={{ background: "var(--cream)", border: "2.5px solid var(--ink)", borderRadius: 22, boxShadow: "6px 6px 0 var(--ink)", padding: "22px 24px" }}>
+            <div className="u-card" style={{ borderRadius: 22, padding: "22px 24px" }}>
               <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 18, color: "var(--twilight)", marginBottom: 12 }}>What this <span style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--berry)" }}>unlocks</span></div>
               <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 10, margin: 0, padding: 0 }}>
                 {[
@@ -455,7 +474,7 @@ export default function AddHeroPage() {
                   { h: "Keepsake-ready", d: "Any story can become a hardcover with their name on the spine." },
                 ].map((p) => (
                   <li key={p.h} style={{ display: "flex", gap: 12, alignItems: "flex-start", fontSize: 13.5, color: "var(--ink-soft)", fontWeight: 600, lineHeight: 1.4 }}>
-                    <div style={{ width: 22, height: 22, borderRadius: "50%", background: "var(--moon)", border: "1.5px solid var(--ink)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "var(--twilight)", fontFamily: "var(--font-caprasimo), serif", flexShrink: 0, marginTop: 1 }}>✓</div>
+                    <div style={{ width: 22, height: 22, borderRadius: "50%", background: "var(--u-orange)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#fff", fontFamily: "var(--font-caprasimo), serif", flexShrink: 0, marginTop: 1 }}>✓</div>
                     <div>
                       <strong style={{ color: "var(--twilight)", fontFamily: "var(--font-young-serif), serif", fontWeight: 400, fontSize: 14.5, display: "block", marginBottom: 1 }}>{p.h}</strong>
                       {p.d}
@@ -465,22 +484,15 @@ export default function AddHeroPage() {
               </ul>
             </div>
 
-            <div style={{ background: "var(--moon)", border: "2.5px solid var(--ink)", borderRadius: 18, padding: "16px 18px", boxShadow: "5px 5px 0 var(--ink)", fontSize: 13.5, color: "var(--twilight)", fontWeight: 600, lineHeight: 1.45, transform: "rotate(-1deg)" }}>
-              <span style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--berry)", marginRight: 6 }}>Tip ✦</span>
+            <div style={{ background: "var(--u-orange)", borderRadius: 18, padding: "16px 18px", boxShadow: "var(--u-card-shadow)", fontSize: 13.5, color: "#140906", fontWeight: 600, lineHeight: 1.45, transform: "rotate(-1deg)" }}>
+              <span style={{ fontFamily: "var(--font-caprasimo), serif", color: "#fff", marginRight: 6 }}>Tip ✦</span>
               Keep loves &amp; quirks small and specific — &ldquo;names the moon Pip&rdquo; makes a better story than &ldquo;loves space.&rdquo;
             </div>
           </aside>
         </div>
       </main>
 
-      <footer style={{ maxWidth: 1300, margin: "40px auto 0", padding: "24px 48px", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12, color: "var(--ink-soft)", fontWeight: 600, borderTop: "2px dashed var(--paper-line)", position: "relative", zIndex: 2 }}>
-        <div>© 2026 TellTales · Sweet dreams guaranteed.</div>
-        <div>
-          <a href="#" style={{ marginLeft: 20 }}>Privacy (COPPA)</a>
-          <DeleteMyDataLink style={{ marginLeft: 20 }} />
-          <a href="#" style={{ marginLeft: 20 }}>Help</a>
-        </div>
-      </footer>
+      <AppFooter />
 
       <style jsx>{`
         @media (max-width: 1100px) {

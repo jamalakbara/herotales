@@ -1,66 +1,71 @@
+import { PlanCard, type PlanCardProps } from "./plan-card";
+import { Reveal } from "./motion/Reveal";
+
+const PLANS: PlanCardProps[] = [
+  {
+    name: "Firefly",
+    price: "Free",
+    per: " / forever",
+    tag: "For trying us out tonight.",
+    feats: [
+      "1 story per month",
+      "All 5 value blueprints",
+      "Read-along illustrations",
+      "Save up to 3 favorites",
+    ],
+    cta: { label: "Start free", href: "#" },
+  },
+  {
+    name: "Lantern",
+    price: "$9",
+    per: " / month",
+    tag: "The nightly bedtime habit.",
+    feats: [
+      "Unlimited stories",
+      "Warm-voice audio narration",
+      "Up to 3 child heroes",
+      "Unlimited saved favorites",
+      "20% off printed keepsake books",
+    ],
+    badge: "Most loved",
+    featured: true,
+    cta: { label: "Start 7 days free", href: "#", variant: "berry" },
+  },
+  {
+    name: "Constellation",
+    price: "$18",
+    per: " / month",
+    tag: "For bigger families & grandparents.",
+    feats: [
+      "Everything in Lantern",
+      "Up to 8 child heroes",
+      "Voice cloning for family narrators",
+      "1 free keepsake book / month",
+      "Priority story generation",
+    ],
+    cta: { label: "Choose Constellation", href: "#" },
+  },
+];
+
 export function Pricing() {
   return (
     <section id="pricing" className="u-dark-section">
       <div className="u-dark-inner">
-      <span className="section-kicker">Pick your shelf</span>
-      <h2 className="section-title">Simple pricing. Unlimited bedtimes.</h2>
-      <p className="section-sub">
-        Cancel whenever. The stories you&apos;ve made are always yours to keep.
-      </p>
+        <Reveal inView>
+          <span className="section-kicker">Pick your shelf</span>
+          <h2 className="section-title">Simple pricing. Unlimited bedtimes.</h2>
+          <p className="section-sub">
+            Cancel whenever. The stories you&apos;ve made are always yours to keep.
+          </p>
+        </Reveal>
 
-      <div className="pricing-grid">
-        <div className="plan">
-          <div className="plan-name">Firefly</div>
-          <div className="plan-price">
-            Free<span className="per"> / forever</span>
-          </div>
-          <div className="plan-tag">For trying us out tonight.</div>
-          <ul className="plan-feats">
-            <li className="plan-feat">1 story per month</li>
-            <li className="plan-feat">All 5 value blueprints</li>
-            <li className="plan-feat">Read-along illustrations</li>
-            <li className="plan-feat">Save up to 3 favorites</li>
-          </ul>
-          <a href="#" className="btn plan-cta">Start free</a>
+        <div className="pricing-grid">
+          {PLANS.map((plan, i) => (
+            <Reveal key={plan.name} inView index={i} delay={0.1} y={32} className="plan-wrap">
+              <PlanCard {...plan} />
+            </Reveal>
+          ))}
         </div>
-
-        <div className="plan featured">
-          <div className="plan-badge">Most loved</div>
-          <div className="plan-name">Lantern</div>
-          <div className="plan-price">
-            $9<span className="per"> / month</span>
-          </div>
-          <div className="plan-tag">The nightly bedtime habit.</div>
-          <ul className="plan-feats">
-            <li className="plan-feat">Unlimited stories</li>
-            <li className="plan-feat">Warm-voice audio narration</li>
-            <li className="plan-feat">Up to 3 child heroes</li>
-            <li className="plan-feat">Unlimited saved favorites</li>
-            <li className="plan-feat">20% off printed keepsake books</li>
-          </ul>
-          <a href="#" className="btn btn-berry plan-cta">
-            Start 7 days free
-          </a>
-        </div>
-
-        <div className="plan">
-          <div className="plan-name">Constellation</div>
-          <div className="plan-price">
-            $18<span className="per"> / month</span>
-          </div>
-          <div className="plan-tag">
-            For bigger families &amp; grandparents.
-          </div>
-          <ul className="plan-feats">
-            <li className="plan-feat">Everything in Lantern</li>
-            <li className="plan-feat">Up to 8 child heroes</li>
-            <li className="plan-feat">Voice cloning for family narrators</li>
-            <li className="plan-feat">1 free keepsake book / month</li>
-            <li className="plan-feat">Priority story generation</li>
-          </ul>
-          <a href="#" className="btn plan-cta">Choose Constellation</a>
-        </div>
-      </div>
       </div>
     </section>
   );

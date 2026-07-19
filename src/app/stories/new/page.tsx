@@ -2,8 +2,11 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { DeleteMyDataLink } from "@/components/delete-data-link";
+import { motion, useReducedMotion } from "framer-motion";
+import { AppFooter } from "@/components/app-footer";
 import { FloatingNav } from "@/components/floating-nav";
+import { Reveal } from "@/components/motion/Reveal";
+import { Skeleton } from "@/components/skeleton";
 import { Suspense, useEffect, useMemo, useState } from "react";
 
 type ExistingChild = {
@@ -85,6 +88,7 @@ const DEFAULT_HOOK =
 function CreateStoryPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const reduce = useReducedMotion();
   const preselectedChildId = searchParams.get("child_id");
 
   const [name, setName] = useState("Maya");
@@ -114,6 +118,7 @@ function CreateStoryPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const [shelf, setShelf] = useState<ShelfStory[]>([]);
+  const [shelfLoading, setShelfLoading] = useState(false);
 
   useEffect(() => {
     if (!selectedKidId) {
@@ -121,6 +126,7 @@ function CreateStoryPage() {
       return;
     }
     let active = true;
+    setShelfLoading(true);
     fetch(`/api/stories?child_id=${selectedKidId}&status=ready&limit=3`)
       .then((r) => (r.ok ? r.json() : { stories: [] }))
       .then((d: { stories: ShelfStory[] }) => {
@@ -128,6 +134,9 @@ function CreateStoryPage() {
       })
       .catch(() => {
         if (active) setShelf([]);
+      })
+      .finally(() => {
+        if (active) setShelfLoading(false);
       });
     return () => {
       active = false;
@@ -180,7 +189,7 @@ function CreateStoryPage() {
 
   function commitCustomTag() {
     const t = customTag.trim();
-    if (t && !DETAIL_TAGS.includes(t)) {
+    if (t && !(DETAIL_TAGS as readonly string[]).includes(t)) {
       setTags((prev) => new Set(prev).add(t));
     }
     setCustomTag("");
@@ -275,7 +284,7 @@ function CreateStoryPage() {
       />
 
       <main className="page">
-        <div className="page-title-row">
+        <Reveal className="page-title-row">
           <div>
             <span className="page-kicker">Craft tonight&apos;s story</span>
             <h1 className="page-title">
@@ -292,11 +301,11 @@ function CreateStoryPage() {
             </div>
             <span style={{ opacity: 0.7 }}>→ Pages appear</span>
           </div>
-        </div>
+        </Reveal>
 
         <div className="builder">
           {/* LEFT: FORM */}
-          <div className="form-card">
+          <Reveal className="form-card" delay={0.07}>
             <div className="form-step">
               <div className="form-step-num">1</div>
               <div>
@@ -315,16 +324,8 @@ function CreateStoryPage() {
                     <button
                       key={m}
                       onClick={() => { setHeroMode(m); if (m === "new") setSelectedKidId(null); }}
-                      style={{
-                        padding: "8px 16px",
-                        borderRadius: 999,
-                        border: "1.5px solid var(--ink)",
-                        background: heroMode === m ? "var(--twilight)" : "var(--cream)",
-                        color: heroMode === m ? "var(--cream)" : "var(--twilight)",
-                        fontWeight: 700,
-                        fontSize: 13,
-                        cursor: "pointer",
-                      }}
+                      className={`u-chip${heroMode === m ? " active" : ""}`}
+                      style={{ fontSize: 13 }}
                     >
                       {m === "existing" ? "Pick existing hero" : "New hero"}
                     </button>
@@ -336,19 +337,10 @@ function CreateStoryPage() {
                       <div
                         key={k.id}
                         onClick={() => selectExistingKid(k)}
-                        style={{
-                          padding: "12px 18px",
-                          borderRadius: 14,
-                          border: `2px solid ${selectedKidId === k.id ? "var(--berry)" : "var(--ink)"}`,
-                          background: selectedKidId === k.id ? "var(--moon)" : "var(--cream)",
-                          cursor: "pointer",
-                          fontWeight: 700,
-                          fontSize: 14,
-                          color: "var(--twilight)",
-                        }}
+                        className={`kid-pick${selectedKidId === k.id ? " active" : ""}`}
                       >
-                        <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 17 }}>{k.nickname}</div>
-                        <div style={{ fontSize: 12, color: "var(--ink-soft)", marginTop: 2 }}>{k.age} yrs · {k.pronouns}</div>
+                        <div className="kid-pick-name">{k.nickname}</div>
+                        <div className="kid-pick-meta">{k.age} yrs · {k.pronouns}</div>
                       </div>
                     ))}
                   </div>
@@ -374,12 +366,7 @@ function CreateStoryPage() {
                     </button>
                     <button
                       className={`btn${describeOpen ? "" : " btn-ghost"}`}
-                      style={{
-                        padding: "10px 14px",
-                        fontSize: 13.5,
-                        border: "1.5px solid var(--ink)",
-                        boxShadow: "none",
-                      }}
+                      style={{ padding: "10px 14px", fontSize: 13.5 }}
                       onClick={() => setDescribeOpen((v) => !v)}
                     >
                       {describeOpen ? "Cancel description" : "Describe in words"}
@@ -498,7 +485,7 @@ function CreateStoryPage() {
                   </div>
                 ))}
                 {Array.from(tags)
-                  .filter((t) => !DETAIL_TAGS.includes(t))
+                  .filter((t) => !(DETAIL_TAGS as readonly string[]).includes(t))
                   .map((t) => (
                     <div
                       key={t}
@@ -685,16 +672,7 @@ function CreateStoryPage() {
                 </span>
               </div>
               <div className="action-right">
-                <a
-                  href="#"
-                  className="btn"
-                  style={{
-                    border: "1.5px solid var(--ink)",
-                    boxShadow: "none",
-                    background: "transparent",
-                  }}
-                  onClick={handleRandomize}
-                >
+                <a href="#" className="btn btn-ghost" onClick={handleRandomize}>
                   Randomize
                 </a>
                 <a
@@ -720,14 +698,22 @@ function CreateStoryPage() {
                 </div>
               )}
             </div>
-          </div>
+          </Reveal>
 
           {/* RIGHT: PREVIEW */}
-          <div className="preview-col">
+          <Reveal className="preview-col" delay={0.14}>
             <div className="prev-card">
               <div className="prev-head">
                 <span className="prev-label">Your cover, so far</span>
-                <span className="prev-chip">{blueprint}</span>
+                <motion.span
+                  key={blueprint}
+                  className="prev-chip"
+                  initial={reduce ? false : { opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  {blueprint}
+                </motion.span>
               </div>
               <div className="prev-book">
                 <div className="prev-stars">
@@ -740,13 +726,19 @@ function CreateStoryPage() {
                 <div className="prev-moon" />
                 <div className="prev-mountain" />
 
-                <div className="prev-book-meta">
+                <motion.div
+                  key={blueprint}
+                  className="prev-book-meta"
+                  initial={reduce ? false : { opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                >
                   <div className="prev-book-label">Tonight&apos;s tale</div>
                   <div className="prev-book-title">
                     {displayName} &amp; the{" "}
                     <span className="script-inline">{blueprintMeta.hook}</span>
                   </div>
-                </div>
+                </motion.div>
                 <div className="prev-book-bottom">
                   <div className="prev-book-stats">
                     <span>{blueprint}</span>
@@ -793,7 +785,19 @@ function CreateStoryPage() {
                 <span>On {displayName}&apos;s shelf</span>
                 <Link href="/shelf">See all →</Link>
               </div>
-              {shelf.length > 0 ? (
+              {shelfLoading ? (
+                <ul aria-hidden>
+                  {Array.from({ length: 2 }).map((_, i) => (
+                    <li key={i}>
+                      <Skeleton style={{ width: 36, height: 44, borderRadius: 5, flexShrink: 0 }} />
+                      <div className="mini-body">
+                        <Skeleton variant="text" style={{ width: "75%", marginBottom: 7 }} />
+                        <Skeleton variant="text" style={{ width: "50%" }} />
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : shelf.length > 0 ? (
                 <ul>
                   {shelf.map((s, i) => (
                     <li key={s.id}>
@@ -818,18 +822,11 @@ function CreateStoryPage() {
                 </p>
               )}
             </div>
-          </div>
+          </Reveal>
         </div>
       </main>
 
-      <div className="foot-mini">
-        <div>© 2026 TellTales · Sweet dreams guaranteed.</div>
-        <div>
-          <a href="#">Privacy (COPPA)</a>
-          <DeleteMyDataLink style={{ marginLeft: 0 }} />
-          <a href="#">Help</a>
-        </div>
-      </div>
+      <AppFooter variant="mini" />
     </>
   );
 }

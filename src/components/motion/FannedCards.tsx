@@ -7,13 +7,17 @@ type FannedCardsProps = {
   /** One node per card. Middle card stays upright; outer cards fan out. */
   children: React.ReactNode[];
   className?: string;
+  /** Container height; default fits the landing blueprint cards. */
+  minHeight?: number;
+  /** Multiplier on the fan's x/y offsets for tighter spreads (default 1). */
+  spread?: number;
 };
 
 /** Per-card resting rotation/offset for the fanned "hand of cards" look
  * (umano's client-stories spread): outer cards swing wide and tilt, the middle
  * card sits lower and upright at the front. Spacing tightens as the count grows
  * so a 5-card hand still fits. */
-function fanTransform(i: number, count: number) {
+function fanTransform(i: number, count: number, spread: number) {
   const mid = (count - 1) / 2;
   const offset = i - mid;
   const wide = count <= 3;
@@ -22,8 +26,8 @@ function fanTransform(i: number, count: number) {
   const yStep = wide ? 100 : 50;
   return {
     rotate: offset * rotStep,
-    x: offset * xStep,
-    y: 72 - Math.abs(offset) * yStep, // centre dips forward, outers arc up
+    x: offset * xStep * spread,
+    y: (72 - Math.abs(offset) * yStep) * spread, // centre dips forward, outers arc up
   };
 }
 
@@ -33,7 +37,7 @@ function fanTransform(i: number, count: number) {
  * of the hand — straightens, scales up, and brings it to the front. Static
  * spread with no hover under reduced motion.
  */
-export function FannedCards({ children, className }: FannedCardsProps) {
+export function FannedCards({ children, className, minHeight = 620, spread = 1 }: FannedCardsProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const reduce = useReducedMotion();
   const [hovered, setHovered] = useState<number | null>(null);
@@ -52,7 +56,7 @@ export function FannedCards({ children, className }: FannedCardsProps) {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        minHeight: 620,
+        minHeight,
       }}
     >
       {children.map((child, i) => (
@@ -60,6 +64,7 @@ export function FannedCards({ children, className }: FannedCardsProps) {
           key={i}
           i={i}
           count={count}
+          spread={spread}
           progress={scrollYProgress}
           reduce={!!reduce}
           hovered={hovered === i}
@@ -76,6 +81,7 @@ function FannedCard({
   children,
   i,
   count,
+  spread,
   progress,
   reduce,
   hovered,
@@ -84,12 +90,13 @@ function FannedCard({
   children: React.ReactNode;
   i: number;
   count: number;
+  spread: number;
   progress: ReturnType<typeof useScroll>["scrollYProgress"];
   reduce: boolean;
   hovered: boolean;
   onHover: (i: number | null) => void;
 }) {
-  const target = fanTransform(i, count);
+  const target = fanTransform(i, count, spread);
   // Outer wrapper: scroll-driven fan position (rotate / x / y).
   const rotate = useTransform(progress, [0, 1], [0, target.rotate]);
   const x = useTransform(progress, [0, 1], [0, target.x]);
