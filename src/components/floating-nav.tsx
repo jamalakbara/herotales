@@ -11,7 +11,8 @@ export type Crumb = { label: string; href?: string };
 type FloatingNavProps =
   | { variant: "marketing" }
   | { variant: "app" }
-  | { variant: "reader"; crumbs: Crumb[]; action?: ReactNode };
+  | { variant: "reader"; crumbs: Crumb[]; action?: ReactNode }
+  | { variant: "auth" };
 
 const MARKETING_SECTIONS = [
   { id: "how", label: "How it works" },
@@ -55,6 +56,7 @@ export function FloatingNav(props: FloatingNavProps) {
         {props.variant === "reader" && (
           <ReaderInner crumbs={props.crumbs} action={props.action} />
         )}
+        {props.variant === "auth" && <AuthInner />}
       </nav>
     </header>
   );
@@ -149,6 +151,19 @@ function ReaderInner({ crumbs, action }: { crumbs: Crumb[]; action?: ReactNode }
         ))}
       </div>
       <div className="fnav-right">{action ?? <span />}</div>
+    </>
+  );
+}
+
+function AuthInner() {
+  return (
+    <>
+      <SiteLogo href="/" />
+      <div className="fnav-right" style={{ marginLeft: "auto" }}>
+        <Link href="/" className="btn btn-ghost fnav-cta">
+          ← Back home
+        </Link>
+      </div>
     </>
   );
 }

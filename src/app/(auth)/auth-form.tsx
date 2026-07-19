@@ -1,9 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSignIn, useSignUp } from "@clerk/nextjs";
+import { FloatingNav } from "@/components/floating-nav";
+import { AmbientDecor } from "@/components/motion/AmbientDecor";
+import { Reveal } from "@/components/motion/Reveal";
 import styles from "./auth-form.module.css";
 
 type Mode = "sign-in" | "sign-up";
@@ -148,24 +150,11 @@ export function AuthForm({
 
   return (
     <>
-      <header>
-        <nav className={styles.nav}>
-          <Link href="/" className={styles.logo} aria-label="TellTales home">
-            <div className={styles.logoMark} />
-            TellTales
-          </Link>
-          <div className={styles.navAside}>
-            <Link href="/" className={styles.helpLink}>Need a hand?</Link>
-            <Link href="/" className={styles.backPill}>
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
-              Back home
-            </Link>
-          </div>
-        </nav>
-      </header>
+      <FloatingNav variant="auth" />
 
       <main>
         <div className={styles.authWrap}>
+          <Reveal>
           <section className={styles.formCard} aria-labelledby="form-title">
             <span className={styles.eyebrow}>
               <span className={styles.eyebrowDot} />
@@ -413,13 +402,14 @@ export function AuthForm({
                 <div>
                   <strong style={{ color: "var(--ink)", fontWeight: 800 }}>For grown-ups only.</strong>{" "}
                   TellTales is a parent-managed account. We never collect data on children directly — heroes are added by you, the grown-up, and stay safely on your shelf.{" "}
-                  <a href="#" style={{ color: "var(--twilight)", borderBottom: "1.5px dashed var(--twilight)" }}>Read our COPPA promise →</a>
+                  <a href="#" style={{ color: "var(--u-orange)", fontWeight: 700 }}>Read our COPPA promise →</a>
                 </div>
               </div>
             </form>
             </>
             )}
           </section>
+          </Reveal>
 
           <aside className={styles.visual} aria-hidden="true">
             <div className={`${styles.float} ${styles.d1} ${styles.starDecor}`} />
@@ -451,9 +441,16 @@ export function AuthForm({
             </div>
 
             <div className={styles.welcomeCard}>
-              <div className={styles.sparkles}>
-                <span className="sp" /><span className="sp" /><span className="sp" />
-              </div>
+              <AmbientDecor
+                variant="dark"
+                stars={[
+                  { top: "16%", left: "82%" },
+                  { top: "58%", left: "90%" },
+                  { top: "78%", left: "8%" },
+                  { top: "12%", left: "48%" },
+                ]}
+                fireflies={[{ left: "72%", bottom: "18%", delay: "0.8s", dur: "8s" }]}
+              />
               <div className={styles.welcomeEyebrow}>Your shelf is waiting</div>
               <div className={styles.welcomeQuote}>
                 A <em>14-night streak</em>, three little heroes, and one chapter unfinished — let&apos;s pick up where you left off.

@@ -1,3 +1,6 @@
+/* Transit / loading screen — umano soft skin: white card, borderless
+   soft-shadow elevation, orange-only accent. */
+
 .screen {
   min-height: 100dvh;
   display: grid;
@@ -15,35 +18,39 @@
   max-width: 420px;
   padding: 40px 36px;
   border-radius: 28px;
-  border: 2.5px solid var(--ink);
-  background: var(--cream-deep);
-  box-shadow: 8px 8px 0 var(--ink);
+  border: none;
+  background: #fff;
+  box-shadow: var(--u-card-shadow-lg);
 }
 
 .mark {
   width: 56px;
   height: 56px;
-  background: var(--twilight);
+  background: var(--u-orange);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 4px 4px 0 var(--moon);
-  animation: float 3.5s ease-in-out infinite;
+  animation: markFloat 3.5s ease-in-out infinite;
 }
 .mark::before {
   content: "";
   width: 32px;
   height: 32px;
-  background: var(--moon);
+  background: #fff;
   border-radius: 50%;
-  box-shadow: inset -8px -3px 0 var(--twilight);
+  box-shadow: inset -8px -3px 0 var(--u-orange);
+}
+@keyframes markFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
 }
 
 .eyebrow {
   font-family: var(--font-caprasimo), serif;
+  font-style: italic;
   font-size: 15px;
-  color: var(--twilight);
+  color: var(--u-orange);
   letter-spacing: 0.02em;
 }
 
@@ -51,7 +58,8 @@
   font-family: var(--font-young-serif), serif;
   font-size: 24px;
   line-height: 1.2;
-  color: var(--ink);
+  letter-spacing: -0.02em;
+  color: var(--twilight);
   margin: 0;
 }
 
@@ -71,8 +79,8 @@
   width: 11px;
   height: 11px;
   border-radius: 50%;
-  background: var(--moon);
-  border: 1.5px solid var(--ink);
+  background: var(--u-orange);
+  border: none;
   animation: pulseDot 1.6s ease-in-out infinite;
 }
 .dots span:nth-child(2) { animation-delay: 0.2s; }

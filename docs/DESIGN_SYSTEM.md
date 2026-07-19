@@ -110,7 +110,7 @@ Landing + app pages use **global classes** in `globals.css`. The auth pages (`/s
 Pill, `2px solid --ink`, `3px` hard shadow, weight `800`, hover lift, active press.
 - Variants: `.btn-berry` (primary CTA, cream text), `.btn-twilight` (dark), `.btn-ghost` (transparent, no shadow/border), `.btn-lg` (bigger padding/size).
 - Disabled: `.btn[disabled]` → `opacity: 0.45; pointer-events: none`.
-- Auth submit is `.submit` (module) — same anatomy, berry fill, full width.
+- Auth submit is `.submit` (module) — same anatomy as the umano `.btn-berry`: borderless orange pill, white text, hover `translateY(-1px)` → `--moon-deep`, full width.
 
 ### Eyebrow / pill label — `.eyebrow`
 Cream-deep pill, `1.5px` ink border, uppercase, with a berry `.dot` that has a soft glow ring.
@@ -119,7 +119,7 @@ Cream-deep pill, `1.5px` ink border, uppercase, with a berry `.dot` that has a s
 - `.bp-card` (blueprint value card): cream, `2px` ink, `4px` shadow, `min-height 220px`, hover lift to `6–8px`, colored `.bp-icon` by nth-child.
 - `.feature`: cream-deep, `2px` ink, `5px` shadow; 2nd nudged down `20px`, 3rd is sage with cream text.
 - `.plan`: cream, `2.5px` ink, `6px` shadow; `.featured` is twilight, lifted `-12px`, with rotated `.plan-badge`. Rendered only via `<PlanCard>` (`src/components/plan-card.tsx`) — shared by the landing `Pricing` section and the keepsake-books binding cards; never hand-roll this markup. Props: `name / price / per / tag / feats` (`ReactNode[]`, so emphasis like `<strong>20% off</strong>` needs no `dangerouslySetInnerHTML`), optional `badge`, `featured`, `onSelect` (click-to-feature → `.plan-selectable`, `cursor: pointer`), and a structured `cta` — `{ label, variant?: "berry" }` plus either `{ href }` (renders `.btn` link) or `{ disabled: true, title? }` (renders disabled `.btn` button that stops propagation so the card can still be selected).
-- `.form-card` / `.formCard`: cream, `2.5px` ink, `8–10px` shadow — the primary form container.
+- `.form-card` / `.formCard`: white, borderless, soft shadow (`--u-card-shadow` / `-lg`), `24–28px` radius — the primary form container (re-skinned in the APP PAGES section / auth module respectively).
 
 ### Book cover — `<BookCover>` (`src/components/book-cover.tsx`)
 Shared React primitive for the "story book spine" card on the dashboard shelf, the full shelf, and the keepsake picker — the single source of truth for that markup (previously copy-pasted three ways). Presentational: the wrapper + info block live in `<BookCard>` (below) — pages don't hand-roll them.
@@ -142,10 +142,11 @@ The full grid item: `<BookCover>` + the caption below (Young-Serif title line, t
 - Shared footer: `<AppFooter variant="wide" | "mini">` (`src/components/app-footer.tsx`) — the © / Privacy / Delete-my-data / Help strip on every app page (`.app-foot` / `.foot-mini`). Never inline a page footer again.
 
 ### Nav — `<FloatingNav>` (`src/components/floating-nav.tsx`)
-One fixed, centered **pill** nav for the whole app (replaces the old `Nav` / `DashboardNav` / `ReaderNav` — do not reintroduce those). Cream fill, `2px` ink border, `999px` radius, `5px` hard offset shadow (`.fnav-pill`); condenses to a `4px` shadow past `60px` scroll. Logo reuses `.logo` + `.logo-mark`. Three variants via one prop:
+One fixed, centered **pill** nav for the whole app (replaces the old `Nav` / `DashboardNav` / `ReaderNav` — do not reintroduce those). Grey (`#F0F0F0`) borderless pill with a whisper shadow (umano override of `.fnav-pill`); shadow deepens slightly past `60px` scroll. Logo reuses `.logo` + `.logo-mark`. Four variants via one prop:
 - `variant="marketing"` — landing. Section links (`.fnav-link`, active = `--berry`) driven by an `IntersectionObserver` over `#how / #stories / #pricing / #faq`; links are hidden over the hero and expand once scrolled (`.fnav-collapse`). CTA = `.btn-berry`.
 - `variant="app"` — dashboard/shelf/keepsake/heroes. Home/Shelf/New/Keepsake links (active = current route) + `+ New story` CTA + Clerk user menu (`.fnav-avatar` → `.fnav-menu`).
 - `variant="reader"` — story create/read. `.nav-crumbs` breadcrumb trail + optional right-hand `action` slot.
+- `variant="auth"` — sign-in/sign-up. Logo (→ `/`) + a `.btn-ghost` "← Back home" pill on the right. The auth pages must not hand-roll a nav in their module.
 
 Because the nav is fixed, `body` carries `padding-top: 84px`; the landing hero tucks back under it with `margin-top: -84px`.
 
@@ -153,7 +154,7 @@ Because the nav is fixed, `body` carries `padding-top: 84px`; the landing hero t
 `.blueprints`, `.quote-section`, `.cta-strip` share the pattern: rounded `32px`, colored surface (twilight/berry), `2.5px` ink, `10px` shadow, dotted-starfield `::before`, decorative circles.
 
 ### Transit / loading screen — `.screen` / `.card` (`sso-callback.module.css`)
-Full-viewport branded wait state for auth redirects (OAuth `/sso-callback`). `.screen` = `100dvh` grid-centered on `--cream`. `.card` = centered column, `28px` radius, `2.5px` ink, `8px` hard shadow on `--cream-deep` (matches `.form-card` elevation). Contents: floating `.mark` (twilight circle + moon inner dot + `4px` moon shadow — the `.logo-mark` primitive scaled to `56px`, `float` loop), Caprasimo `.eyebrow`, Young Serif `.title`, Nunito `.sub`, and a three-dot `.dots` row reusing `pulseDot` with staggered delays (`0 / .2s / .4s`). All motion disabled under `prefers-reduced-motion`. Use for any "finishing sign-in / provisioning" transit, not for inline button spinners.
+Full-viewport branded wait state for auth redirects (OAuth `/sso-callback`). `.screen` = `100dvh` grid-centered on `--cream`. `.card` = centered column, `28px` radius, **white, borderless, `--u-card-shadow-lg`** (the `.u-card-lg` contract, expressed in the module). Contents: floating `.mark` (orange circle + white inner dot — the umano `.logo-mark` scaled to `56px`, gentle `markFloat` bob), Playfair-italic `.eyebrow` (orange), Playfair `.title`, Inter `.sub`, and a three-dot orange `.dots` row reusing the global `pulseDot` with staggered delays (`0 / .2s / .4s`). All motion disabled under `prefers-reduced-motion`. Use for any "finishing sign-in / provisioning" transit, not for inline button spinners.
 
 ---
 
@@ -164,7 +165,7 @@ Reusable decorations: `.star-decor` (moon star via `clip-path` polygon), `.moon-
 **No global page texture.** The page is flat `#FAFAFA` — the old `body::before/::after` grain/glow rules were deleted. Ambient atmosphere comes from `<AmbientDecor>` inside colored panels instead.
 
 ### `<AmbientDecor>` (`src/components/motion/AmbientDecor.tsx`)
-Sparse tone-on-tone bedtime decor for colored panels: twinkling stars (`.u-bgstar`, reuses `twinkle`), drifting firefly lanterns (`.u-firefly`, reuses `fireflyDrift`), optional wheat-meadow SVG (`meadow`, hero only). `variant="orange"` (dark-orange stars on the orange hero) or `variant="dark"` (cream stars on twilight panels) — the variant class (`.u-decor-orange`/`.u-decor-dark`) sets the palette vars. Pass `stars`/`fireflies` arrays to control layout, `fireflies={[]}` for stars-only. Consumers: landing hero, dashboard "tonight" card + nudge banner, shelf empty state, reader end-CTA + illustration placeholder, keepsake hero. Ambient loops disabled under reduced motion via the `.u-bgstar/.u-firefly` reduce rule.
+Sparse tone-on-tone bedtime decor for colored panels: twinkling stars (`.u-bgstar`, reuses `twinkle`), drifting firefly lanterns (`.u-firefly`, reuses `fireflyDrift`), optional wheat-meadow SVG (`meadow`, hero only). `variant="orange"` (dark-orange stars on the orange hero) or `variant="dark"` (cream stars on twilight panels) — the variant class (`.u-decor-orange`/`.u-decor-dark`) sets the palette vars. Pass `stars`/`fireflies` arrays to control layout, `fireflies={[]}` for stars-only. Consumers: landing hero, dashboard "tonight" card + nudge banner, shelf empty state, reader end-CTA + illustration placeholder, keepsake hero, auth welcome card. Ambient loops disabled under reduced motion via the `.u-bgstar/.u-firefly` reduce rule.
 
 ### `<PinnedPanel>` (`src/components/motion/PinnedPanel.tsx`)
 The hero/FAQ pin extracted as a primitive: `heightVh` wrapper (`.u-pin`) > sticky full-viewport child (`.u-pin-sticky`) > `motion.section` scrubbing `scale 1 → 0.955` + `radius 0 → 44px`. `className` applies to both branches; `pinnedClassName` only when pinned (full-viewport sizing); renders a plain static `<section>` under reduced motion. Consumers: landing FAQ (`faq.tsx`, panel class `.u-faq-panel`) and the keepsake hero (`.kp-hero` / `.kp-hero-panel`, tucked under the nav via `.kp-hero-tuck`).
