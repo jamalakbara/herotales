@@ -11,6 +11,12 @@ type FannedCardsProps = {
   minHeight?: number;
   /** Multiplier on the fan's x/y offsets for tighter spreads (default 1). */
   spread?: number;
+  /**
+   * Render the fan fully spread with no scroll scrubbing (hover lift still
+   * active). Required inside pinned sections — the container never moves
+   * through the viewport there, so scroll progress would stay at 0.
+   */
+  staticSpread?: boolean;
 };
 
 /** Per-card resting rotation/offset for the fanned "hand of cards" look
@@ -37,7 +43,7 @@ function fanTransform(i: number, count: number, spread: number) {
  * of the hand — straightens, scales up, and brings it to the front. Static
  * spread with no hover under reduced motion.
  */
-export function FannedCards({ children, className, minHeight = 620, spread = 1 }: FannedCardsProps) {
+export function FannedCards({ children, className, minHeight = 620, spread = 1, staticSpread = false }: FannedCardsProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const reduce = useReducedMotion();
   const [hovered, setHovered] = useState<number | null>(null);
@@ -67,6 +73,7 @@ export function FannedCards({ children, className, minHeight = 620, spread = 1 }
           spread={spread}
           progress={scrollYProgress}
           reduce={!!reduce}
+          staticSpread={staticSpread}
           hovered={hovered === i}
           onHover={setHovered}
         >
@@ -84,6 +91,7 @@ function FannedCard({
   spread,
   progress,
   reduce,
+  staticSpread,
   hovered,
   onHover,
 }: {
@@ -93,6 +101,7 @@ function FannedCard({
   spread: number;
   progress: ReturnType<typeof useScroll>["scrollYProgress"];
   reduce: boolean;
+  staticSpread: boolean;
   hovered: boolean;
   onHover: (i: number | null) => void;
 }) {
@@ -104,7 +113,7 @@ function FannedCard({
 
   const base = i === Math.floor(count / 2) ? count : i;
 
-  const outer = reduce
+  const outer = reduce || staticSpread
     ? { rotate: target.rotate, x: target.x, y: target.y }
     : { rotate, x, y };
 

@@ -174,8 +174,9 @@ export default function KeepsakeBooksPage() {
                 <a href="#how" className="btn btn-lg" style={{ background: "rgba(251,243,227,0.12)", color: "var(--cream)" }}>See what&apos;s inside</a>
               </div>
             </div>
-            {/* Book mock stack — fans out on scroll, spring-lifts on hover */}
-            <FannedCards className="kp-hero-mocks" minHeight={380} spread={0.55}>
+            {/* Book mock stack — static fan (scroll never advances inside the
+                pinned panel), spring-lifts on hover */}
+            <FannedCards className="kp-hero-mocks" minHeight={380} spread={0.55} staticSpread>
               {[
                 { bg: "var(--u-orange)", col: "#fff", lbl: "Chapter 1", title: "Ada & the", script: "Honest Fox", scriptCol: "#fff", meta: "Honesty", star: "✦", d: "0s" },
                 { bg: "var(--cream)", col: "var(--twilight)", lbl: "Keepsake edition", title: "The Smallest", script: "Friend at School", scriptCol: "var(--u-orange)", meta: "Kindness · hardcover", star: "♡", d: "-2.3s" },
