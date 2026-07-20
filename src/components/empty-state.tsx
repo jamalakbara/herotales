@@ -24,7 +24,7 @@ export function EmptyState({
     <div className={orange ? "u-empty-orange" : "u-empty"} style={style}>
       {orange && <AmbientDecor variant="orange" fireflies={[]} />}
       <div style={{ position: "relative", zIndex: 1 }}>
-        <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: orange ? 24 : 22, color: orange ? "#140906" : "var(--twilight)", marginBottom: orange ? 8 : 6 }}>
+        <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: orange ? 24 : 22, color: orange ? "var(--ink-warm)" : "var(--twilight)", marginBottom: orange ? 8 : 6 }}>
           {title}
         </div>
         <div style={{ fontSize: 14, fontWeight: 600, marginBottom: orange ? 16 : 18, color: orange ? undefined : "var(--ink-soft)" }}>

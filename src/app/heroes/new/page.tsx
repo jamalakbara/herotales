@@ -473,7 +473,7 @@ export default function AddHeroPage() {
               </ul>
             </div>
 
-            <div style={{ background: "var(--u-orange)", borderRadius: 18, padding: "16px 18px", boxShadow: "var(--u-card-shadow)", fontSize: 13.5, color: "#140906", fontWeight: 600, lineHeight: 1.45, transform: "rotate(-1deg)" }}>
+            <div style={{ background: "var(--u-orange)", borderRadius: 18, padding: "16px 18px", boxShadow: "var(--u-card-shadow)", fontSize: 13.5, color: "var(--ink-warm)", fontWeight: 600, lineHeight: 1.45, transform: "rotate(-1deg)" }}>
               <span style={{ fontFamily: "var(--font-caprasimo), serif", color: "#fff", marginRight: 6 }}>Tip ✦</span>
               Keep loves &amp; quirks small and specific — &ldquo;names the moon Pip&rdquo; makes a better story than &ldquo;loves space.&rdquo;
             </div>

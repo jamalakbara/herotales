@@ -15,7 +15,7 @@ export const AVATAR_SWATCHES: HeroSwatch[] = [
   { bg: "#fff", color: "var(--u-orange)" },
   { bg: "var(--moon-deep)", color: "#fff" },
   { bg: "var(--ink)", color: "#fff" },
-  { bg: "#140906", color: "var(--u-orange)" },
+  { bg: "var(--ink-warm)", color: "var(--u-orange)" },
 ];
 
 /** Positional rotation for kid avatars (kid index % 4) on dashboard + shelf. */

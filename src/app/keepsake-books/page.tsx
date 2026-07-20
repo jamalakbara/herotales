@@ -180,7 +180,7 @@ export default function KeepsakeBooksPage() {
             const isDark = i === 2;
             const isOrange = i === 1;
             const styleVars = { "--i": i } as CSSProperties;
-            const titleCol = isDark ? "#fff" : isOrange ? "#140906" : "var(--twilight)";
+            const titleCol = isDark ? "#fff" : isOrange ? "var(--ink-warm)" : "var(--twilight)";
             const subCol = isDark ? "rgba(251,243,227,0.8)" : isOrange ? "rgba(20,9,6,0.72)" : "var(--ink-soft)";
             return (
               <div key={i} className="kp-feat kp-stagger" style={{ ...styleVars, background: featBg, borderRadius: 18, boxShadow: "var(--u-card-shadow)", padding: 22 }}>

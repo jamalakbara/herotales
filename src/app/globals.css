@@ -17,6 +17,7 @@
   --color-berry-deep: #E24E12;
   --color-sage: #FF692E;
   --color-lilac: #E4E4E4;
+  --color-ink-warm: #140906;
 }
 
 :root {
@@ -33,6 +34,8 @@
   --berry-deep: #E24E12;
   --sage: #FF692E;
   --lilac: #E4E4E4;
+  /* warm near-black for text on orange surfaces */
+  --ink-warm: #140906;
   --shadow-soft: 0 12px 32px rgba(0,0,0,0.12);
   /* umano soft elevation */
   --u-orange: #FF692E;
@@ -1892,11 +1895,7 @@ h1.story-title .script-em {
 .illus .star {
   position: absolute; background: var(--cream);
   border-radius: 50%;
-  animation: twk 2.6s ease-in-out infinite;
-}
-@keyframes twk {
-  0%,100% { opacity: 0.3; transform: scale(0.7); }
-  50% { opacity: 1; transform: scale(1.3); }
+  animation: twinkle2 2.6s ease-in-out infinite;
 }
 .illus .mountain {
   position: absolute; bottom: 0; left: 0; right: 0; height: 38%;
@@ -3186,7 +3185,7 @@ body { padding-top: 84px; }
 /* orange dot + ring vanish on the orange panel — use the eyebrow's own ink */
 .u-hero-head .eyebrow .dot { background: rgba(20,9,6,0.72); box-shadow: none; }
 h1.u-hero-title {
-  color: #140906;
+  color: var(--ink-warm);
   font-weight: 700;
   letter-spacing: -0.03em;
   font-size: clamp(38px, 4.8vw, 76px);
@@ -3201,7 +3200,7 @@ h1.u-hero-title .highlight::after { display: none; }
   font-size: clamp(16px, 1.4vw, 20px);
 }
 .u-hero-ctas { display: flex; gap: 14px; justify-content: center; }
-.u-hero-ghost { background: transparent; color: #140906; border: 1.5px solid rgba(20,9,6,0.4) !important; box-shadow: none; }
+.u-hero-ghost { background: transparent; color: var(--ink-warm); border: 1.5px solid rgba(20,9,6,0.4) !important; box-shadow: none; }
 .u-hero-ghost:hover { background: rgba(20,9,6,0.06); }
 
 /* Rising story card ("device") */
@@ -3255,7 +3254,7 @@ h1.u-hero-title .highlight::after { display: none; }
   .u-notify { transition: none; }
 }
 .u-notify-kicker { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-soft); }
-.u-notify-title { font-weight: 800; font-size: 16px; color: #140906; }
+.u-notify-title { font-weight: 800; font-size: 16px; color: var(--ink-warm); }
 
 .u-hero-book {
   width: 360px;
@@ -3265,7 +3264,7 @@ h1.u-hero-title .highlight::after { display: none; }
   padding: 26px;
 }
 .u-hero-book-label { font-family: var(--font-young-serif), serif; font-style: italic; color: var(--u-orange); font-size: 16px; }
-.u-hero-book-title { font-family: var(--font-young-serif), serif; font-size: 30px; color: #140906; letter-spacing: -0.01em; margin: 6px 0 18px; line-height: 1.12; }
+.u-hero-book-title { font-family: var(--font-young-serif), serif; font-size: 30px; color: var(--ink-warm); letter-spacing: -0.01em; margin: 6px 0 18px; line-height: 1.12; }
 .u-hero-book-title .script { color: var(--u-orange); font-style: italic; }
 .u-hero-book-scene {
   position: relative; height: 190px; border-radius: 16px;
@@ -3365,12 +3364,12 @@ body { background: #FAFAFA; }
 
 /* ---- Hero → umano flat orange (base rule edited in place above) ---- */
 .u-hero-copy .eyebrow { color: rgba(20,9,6,0.72) !important; }
-h1.u-hero-title { color: #140906 !important; font-weight: 700; letter-spacing: -0.03em; }
+h1.u-hero-title { color: var(--ink-warm) !important; font-weight: 700; letter-spacing: -0.03em; }
 h1.u-hero-title .highlight { color: #fff !important; font-family: var(--font-young-serif), serif !important; font-style: italic; }
 h1.u-hero-title .highlight::after { display: none !important; }
 h1.u-hero-title .sparkle { color: #fff !important; }
 .u-hero-sub { color: rgba(20,9,6,0.82) !important; }
-.u-hero-ghost { border: 1.5px solid rgba(20,9,6,0.38) !important; color: #140906 !important; background: transparent !important; }
+.u-hero-ghost { border: 1.5px solid rgba(20,9,6,0.38) !important; color: var(--ink-warm) !important; background: transparent !important; }
 .u-hero-ghost:hover { background: rgba(20,9,6,0.06) !important; }
 .u-hero-proof { color: rgba(20,9,6,0.82) !important; }
 .u-hero-proof .avatars > div { border: 2px solid #fff !important; }
@@ -3416,7 +3415,7 @@ h1.u-hero-title .sparkle { color: #fff !important; }
 
 /* ---- Section headings → umano ---- */
 .section-kicker { color: var(--u-orange) !important; font-family: var(--font-nunito), sans-serif !important; font-weight: 700 !important; text-transform: uppercase; letter-spacing: 0.14em !important; font-size: 12px !important; }
-.section-title { letter-spacing: -0.03em !important; color: #140906 !important; }
+.section-title { letter-spacing: -0.03em !important; color: var(--ink-warm) !important; }
 .section-sub { color: var(--ink-soft) !important; }
 
 /* ---- Pricing → borderless soft-shadow umano cards ---- */
@@ -3456,7 +3455,7 @@ h1.u-hero-title .sparkle { color: #fff !important; }
 .plan.featured .plan-name, .plan.featured .plan-price, .plan.featured .plan-tag, .plan.featured .plan-feat { color: #fff !important; }
 .plan-name { font-family: var(--font-nunito), sans-serif !important; font-weight: 700 !important; color: var(--ink-soft) !important; text-transform: none; }
 .plan.featured .plan-name { color: var(--u-orange) !important; }
-.plan-price { font-family: var(--font-young-serif), serif !important; color: #140906 !important; }
+.plan-price { font-family: var(--font-young-serif), serif !important; color: var(--ink-warm) !important; }
 .plan.featured .plan-price { color: #fff !important; }
 .plan-badge { background: var(--u-orange) !important; color: #fff !important; border: none !important; box-shadow: 0 8px 24px rgba(255, 105, 46, 0.35) !important; transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1); }
 .plan.featured:hover .plan-badge { transform: rotate(-3deg) scale(1.06); }

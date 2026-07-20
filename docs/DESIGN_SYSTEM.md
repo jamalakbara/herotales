@@ -42,11 +42,12 @@ Token **names are the legacy ones**, repointed to umano values (so old classes s
 | CTA pressed | `--color-berry-deep` | `--berry-deep` | `#E24E12` |
 | (folded → orange) | `--color-sage` | `--sage` | `#FF692E` |
 | (folded → light grey) | `--color-lilac` | `--lilac` | `#E4E4E4` |
+| Text on orange surfaces (warm near-black) | `--color-ink-warm` | `--ink-warm` | `#140906` |
 
 Plus umano elevation tokens on `:root`: `--u-orange: #FF692E`, `--u-card-shadow: 0 12px 32px rgba(0,0,0,.10)`, `--u-card-shadow-lg: 0 16px 48px rgba(0,0,0,.14)`, `--u-radius: 16px`.
 
 **Usage rules**
-- Palette is essentially **orange + near-black + white + grey**. Orange is the only accent (CTAs, active links, kickers, checks). Text on orange = near-black `#140906`; text on dark surfaces = white / `rgba(251,243,227,.7–.82)`.
+- Palette is essentially **orange + near-black + white + grey**. Orange is the only accent (CTAs, active links, kickers, checks). Text on orange = `var(--ink-warm)` (never the raw hex; low-alpha companions stay `rgba(20,9,6,…)`); text on dark surfaces = white / `rgba(251,243,227,.7–.82)`.
 - Elevation is **soft blurred shadow, no border** (`--u-card-shadow` / `-lg`). The hero is flat orange; the page is flat `#FAFAFA` (no grain/glow).
 - CTA buttons: black pill on light/orange backgrounds, orange pill for the primary "convert" action. Radius `43px`.
 
@@ -189,7 +190,7 @@ The hero/FAQ pin extracted as a primitive: `heightVh` wrapper (`.u-pin`) > stick
 ### Reader progress hairline — `.read-progress`
 Fixed 3px orange bar at the top of the story reader, `scaleX` driven by `useScroll` (`transform-origin: 0 50%`). Not rendered under reduced motion.
 
-Named animation loops (keep names; reuse rather than redefine): `float` (6s ambient bob, `--r` rotation var), `twinkle`/`spTwinkle` (star pulse), `moonDrift`, `shoot` (shooting star), `rise` (sparkle float-up), `fillIn`, `playPulse`, `pulseDot`, `spFloat`. All ambient loops are 2.4–8s and **must** be disabled under `prefers-reduced-motion: reduce`.
+Named animation loops (keep names; reuse rather than redefine): `float` (6s ambient bob, `--r` rotation var), `twinkle`/`spTwinkle`/`twinkle2` (star pulse; the duplicate `twk` was folded into `twinkle2`), `moonDrift`, `shoot` (shooting star), `rise` (sparkle float-up), `fillIn`, `playPulse`, `pulseDot`, `spFloat`. All ambient loops are 2.4–8s and **must** be disabled under `prefers-reduced-motion: reduce`.
 
 ### Scroll & entrance motion — Framer Motion primitives (`src/components/motion/`)
 

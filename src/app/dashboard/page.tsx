@@ -243,7 +243,7 @@ export default function DashboardPage() {
           {/* Streak */}
           <div style={{ background: "var(--u-orange)", borderRadius: 22, boxShadow: "var(--u-card-shadow-lg)", padding: "24px 26px" }}>
             <div style={{ fontFamily: "var(--font-caprasimo), serif", fontSize: 13, color: "rgba(20,9,6,0.72)", marginBottom: 6 }}>Bedtime streak</div>
-            <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 46, color: "#140906", lineHeight: 1, letterSpacing: "-0.02em", display: "flex", alignItems: "baseline", gap: 8 }}>
+            <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 46, color: "var(--ink-warm)", lineHeight: 1, letterSpacing: "-0.02em", display: "flex", alignItems: "baseline", gap: 8 }}>
               {profile?.streak_nights ?? 0}<span style={{ fontSize: 14, fontWeight: 700, fontFamily: "var(--font-nunito), sans-serif", color: "rgba(20,9,6,0.7)" }}>{(profile?.streak_nights ?? 0) === 1 ? "night so far" : "nights in a row"}</span>
             </div>
             <div style={{ marginTop: 14, display: "flex", gap: 4 }}>
@@ -280,7 +280,7 @@ export default function DashboardPage() {
         {/* BLUEPRINT NUDGE */}
         {activeKidObj && (
         <Reveal inView>
-        <div style={{ background: "var(--u-orange)", color: "#140906", borderRadius: 28, boxShadow: "var(--u-card-shadow-lg)", padding: "36px 40px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 28, flexWrap: "wrap", position: "relative", overflow: "hidden", marginBottom: 40 }}>
+        <div style={{ background: "var(--u-orange)", color: "var(--ink-warm)", borderRadius: 28, boxShadow: "var(--u-card-shadow-lg)", padding: "36px 40px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 28, flexWrap: "wrap", position: "relative", overflow: "hidden", marginBottom: 40 }}>
           <AmbientDecor variant="orange" fireflies={[]} />
           <div style={{ position: "relative", maxWidth: 560 }}>
             <div style={{ fontFamily: "var(--font-caprasimo), serif", color: "rgba(20,9,6,0.72)", fontSize: 14, marginBottom: 6 }}>Gentle nudge</div>
