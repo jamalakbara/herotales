@@ -6,13 +6,16 @@ import { BookCard, NewTaleCard } from "@/components/book-card";
 import { accentColors } from "@/components/book-cover";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorAlert } from "@/components/error-alert";
+import { FilterChips } from "@/components/filter-chips";
 import { FloatingNav } from "@/components/floating-nav";
+import { ShelfPlankGrid } from "@/components/shelf-grid";
 import { SectionKicker } from "@/components/section-kicker";
 import { Reveal } from "@/components/motion/Reveal";
 import { Skeleton, SkeletonBookItem } from "@/components/skeleton";
 import { getErrorMessage } from "@/lib/errors";
 import { KID_PALETTES } from "@/lib/hero-palette";
 import { pickName, storyToBook, type BookView, type StoryListItem } from "@/lib/story-view";
+import { BLUEPRINTS } from "@/lib/types";
 
 type APIKid = { id: string; nickname: string; tales: number; favorites: number };
 
@@ -23,11 +26,10 @@ function ShelfSection({ label, count, books }: { label: string; count: string; b
       <div className="dash-shelf-label-anim" style={{ fontFamily: "var(--font-caprasimo), serif", fontSize: 18, color: "var(--twilight)", marginTop: 28, marginBottom: 14, display: "flex", alignItems: "baseline", gap: 12 }}>
         {label} <span style={{ fontFamily: "var(--font-nunito), sans-serif", fontWeight: 700, fontSize: 13, color: "var(--ink-soft)" }}>· {count}</span>
       </div>
-      <div className="dash-shelf-plank-anim shelf-plank" />
-      <div className="shelf-grid">
+      <ShelfPlankGrid plankClassName="dash-shelf-plank-anim">
         {books.map((b, i) => <BookCard key={b.id} book={b} size="md" index={i} />)}
         {label === "Earlier this month" && <NewTaleCard href="/stories/new" size="md" index={craftIdx} />}
-      </div>
+      </ShelfPlankGrid>
     </Reveal>
   );
 }
@@ -85,7 +87,7 @@ export default function ShelfPage() {
     };
   }, []);
 
-  const filters = ["All", "Favorites ♡", "Bravery", "Honesty", "Patience", "Kindness", "Persistence"];
+  const filters = ["All", "Favorites ♡", ...BLUEPRINTS];
 
   const kidTabs = useMemo(() => {
     const total = kids.reduce((acc, k) => acc + k.tales, 0);
@@ -168,11 +170,7 @@ export default function ShelfPage() {
             <span style={{ fontSize: 15, color: "var(--ink-soft)" }}>⌕</span>
             <input type="text" placeholder="Search by title, hero, or lesson…" value={search} onChange={(e) => setSearch(e.target.value)} style={{ border: "none", background: "transparent", outline: "none", fontFamily: "var(--font-nunito), sans-serif", fontWeight: 600, fontSize: 14, color: "var(--ink)", flex: 1 }} />
           </div>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-            {filters.map(f => (
-              <button key={f} onClick={() => setActiveFilter(f)} className={`dash-fc${activeFilter === f ? " dash-fc-active" : ""}`} style={{ padding: "7px 14px", background: "var(--cream-deep)", border: "none", borderRadius: 999, fontWeight: 700, fontSize: 12.5, color: "var(--twilight)", cursor: "pointer" }}>{f}</button>
-            ))}
-          </div>
+          <FilterChips options={filters} active={activeFilter} onSelect={setActiveFilter} size="sm" />
           <div style={{ display: "flex", borderRadius: 999, overflow: "hidden", background: "var(--cream-deep)" }}>
             {["Shelf", "List"].map(v => (
               <button key={v} onClick={() => setActiveView(v)} className="dash-view-btn" style={{ border: "none", background: activeView === v ? "var(--ink)" : "transparent", padding: "8px 14px", fontFamily: "var(--font-nunito), sans-serif", fontWeight: 800, fontSize: 12.5, color: activeView === v ? "#fff" : "var(--ink-soft)", cursor: "pointer" }}>{v}</button>
@@ -181,12 +179,9 @@ export default function ShelfPage() {
         </div>
 
         {loading ? (
-          <>
-            <div className="shelf-plank" />
-            <div className="shelf-grid">
-              {Array.from({ length: 5 }).map((_, i) => <SkeletonBookItem key={i} />)}
-            </div>
-          </>
+          <ShelfPlankGrid>
+            {Array.from({ length: 5 }).map((_, i) => <SkeletonBookItem key={i} />)}
+          </ShelfPlankGrid>
         ) : activeView === "List" ? (
           filtered.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>

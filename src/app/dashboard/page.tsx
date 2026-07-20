@@ -4,7 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import { AppFooter } from "@/components/app-footer";
 import { BookCard, NewTaleCard } from "@/components/book-card";
 import { ErrorAlert } from "@/components/error-alert";
+import { FilterChips } from "@/components/filter-chips";
 import { FloatingNav } from "@/components/floating-nav";
+import { ShelfPlankGrid } from "@/components/shelf-grid";
 import { HeadAccent, SectionHeader } from "@/components/section-header";
 import { SectionKicker } from "@/components/section-kicker";
 import { AmbientDecor } from "@/components/motion/AmbientDecor";
@@ -218,27 +220,21 @@ export default function DashboardPage() {
             ? `${activeKidObj.tales} ${activeKidObj.tales === 1 ? "story" : "stories"} · ${activeKidObj.favorites} favorite${activeKidObj.favorites === 1 ? "" : "s"}`
             : "Add a hero to begin"}
           action={
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-              {filters.map(f => (
-                <button
-                  key={f}
-                  onClick={() => { if (!f.startsWith("Sort:")) setActiveFilter(f); }}
-                  className={`dash-filter-chip ${activeFilter === f ? "dash-filter-chip-active" : ""}`}
-                  style={{ padding: "8px 14px", background: "var(--cream-deep)", border: "none", borderRadius: 999, fontWeight: 700, fontSize: 13, color: "var(--twilight)", cursor: "pointer" }}
-                >{f}</button>
-              ))}
-            </div>
+            <FilterChips
+              options={filters}
+              active={activeFilter}
+              onSelect={(f) => { if (!f.startsWith("Sort:")) setActiveFilter(f); }}
+            />
           }
         />
 
         {/* SHELF PLANK + BOOKS */}
-        <div style={{ height: 14, background: "var(--ink)", borderRadius: 3, marginBottom: -2, boxShadow: "0 3px 0 rgba(28,21,64,0.4)" }} />
-        <div className="dash-shelf-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 24, padding: "24px 20px 36px", background: "var(--cream-deep)", borderRadius: "4px 4px 24px 24px", boxShadow: "var(--u-card-shadow)", marginBottom: 56 }}>
+        <ShelfPlankGrid size="lg">
           {loading && Array.from({ length: 3 }).map((_, i) => <SkeletonBookItem key={i} />)}
           {booksView.map((b, i) => <BookCard key={b.id} book={b} size="lg" index={i} />)}
           {/* New story tile */}
           <NewTaleCard href={newStoryHref} size="lg" index={booksView.length} />
-        </div>
+        </ShelfPlankGrid>
         </Reveal>
 
         {/* STATS ROW */}

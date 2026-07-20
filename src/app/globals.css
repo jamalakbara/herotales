@@ -2340,16 +2340,6 @@ h1.story-title .script-em {
   border-style: solid !important;
 }
 
-/* Filter chips */
-.dash-filter-chip {
-  cursor: pointer; transition: background 0.12s ease, color 0.12s ease, box-shadow 0.12s ease;
-}
-.dash-filter-chip:hover { background: var(--cream) !important; }
-.dash-filter-chip-active {
-  background: var(--twilight) !important; color: var(--cream) !important;
-  box-shadow: 2px 2px 0 var(--ink) !important;
-}
-
 /* Blueprint nudge cards */
 .dash-bpc {
   cursor: pointer; text-decoration: none; display: block;
@@ -2365,7 +2355,7 @@ h1.story-title .script-em {
 }
 .dash-kid-tab:hover { transform: translateY(-2px); box-shadow: 3px 3px 0 var(--ink); }
 
-/* Shelf filter chips */
+/* Filter chips (dashboard + shelf, rendered via <FilterChips>) */
 .dash-fc {
   cursor: pointer; transition: background 0.12s ease;
 }
@@ -2653,6 +2643,15 @@ h1.story-title .script-em {
 }
 @media (max-width: 640px) {
   .shelf-grid { grid-template-columns: repeat(2, 1fr); gap: 16px 12px; padding: 20px 14px 28px; }
+}
+/* lg variant (dashboard shelf) — wider books, deeper plank shadow. The
+   .dash-shelf-grid media rules above still win the narrow breakpoints. */
+.shelf-plank-lg { box-shadow: 0 3px 0 rgba(28, 21, 64, 0.4); }
+.shelf-grid-lg {
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  padding: 24px 20px 36px;
+  margin-bottom: 56px;
 }
 
 /* =====================================================================
@@ -3725,7 +3724,7 @@ html.lenis, html.lenis body { height: auto; }
 .dash-kid-tab:hover { box-shadow: var(--u-card-shadow); }
 .dash-list-row:hover { transform: translateY(-2px); box-shadow: var(--u-card-shadow-lg); }
 .dash-list-row:active { transform: none; box-shadow: var(--u-card-shadow); }
-.dash-filter-chip-active, .dash-fc-active {
+.dash-fc-active {
   background: var(--u-orange) !important;
   color: #fff !important;
   box-shadow: none !important;
