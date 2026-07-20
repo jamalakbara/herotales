@@ -39,39 +39,29 @@ type MTileProps = {
 };
 
 /**
- * One media tile in the 3D deck. `d = deckPos - i` is its distance from the
- * front: d<0 it's still in the deck, receded into depth (small, tilted back,
- * pushed away on Z) and rising toward front as d→0; d=0 it's front & upright;
- * d>0 it's dealt — flips up and tumbles toward the camera (rotateX + +Z) while
- * fading, revealing the next tile popping forward out of depth. preserve-3d on
- * the stage sorts tiles by their translateZ, so the dealt tile passes in front.
- * The last tile doesn't deal — its media zooms full-bleed to black.
+ * One media tile in the horizontal carousel. `d = deckPos - i` is its distance
+ * from the front: d<0 it waits off-screen RIGHT and slides in as d→0; d=0 it's
+ * front and centred; d>0 (non-last) it slides out to the LEFT. A slight scale
+ * dip + edge fade keep the on/off feel soft rather than a hard cut. The last
+ * tile doesn't slide out — its media zooms full-bleed to black.
  */
 function MTile({ c, i, n, progress, isLast, zStart, coverScale, mediaRef }: MTileProps) {
+  // Off-screen travel: card is min(330,86vw) wide, centred in ≤390 — 460px
+  // clears it entirely into the overflow-hidden gutter.
+  const x = useTransform(progress, (p) => {
+    const d = deckPos(p, n) - i;
+    if (d <= 0) return ramp(d, -1, 0, 460, 0); // wait right, slide to centre
+    return isLast ? 0 : ramp(d, 0, 1, 0, -460); // slide out left
+  });
   const opacity = useTransform(progress, (p) => {
     const d = deckPos(p, n) - i;
-    if (d <= 0) return ramp(d, -1.4, -0.5, 0, 1);
-    return isLast ? 1 : ramp(d, 0.1, 0.7, 1, 0);
+    if (d <= 0) return ramp(d, -1, -0.78, 0, 1); // fade in just inside the right edge
+    return isLast ? 1 : ramp(d, 0.78, 1, 1, 0); // fade out just before the left edge
   });
   const scale = useTransform(progress, (p) => {
     const d = deckPos(p, n) - i;
-    if (d <= 0) return ramp(d, -1.4, 0, 0.68, 1);
-    return isLast ? 1 : ramp(d, 0, 0.8, 1, 1.15);
-  });
-  const y = useTransform(progress, (p) => {
-    const d = deckPos(p, n) - i;
-    if (d <= 0) return ramp(d, -1.4, 0, 60, 0);
-    return isLast ? 0 : ramp(d, 0, 0.8, 0, -260);
-  });
-  const z = useTransform(progress, (p) => {
-    const d = deckPos(p, n) - i;
-    if (d <= 0) return ramp(d, -1.4, 0, -520, 0);
-    return isLast ? 0 : ramp(d, 0, 0.8, 0, 260);
-  });
-  const rotateX = useTransform(progress, (p) => {
-    const d = deckPos(p, n) - i;
-    if (d <= 0) return ramp(d, -1.4, 0, 18, 0);
-    return isLast ? 0 : ramp(d, 0, 0.8, 0, -42);
+    const ad = Math.abs(d);
+    return isLast && d > 0 ? 1 : ramp(ad, 0, 1, 1, 0.9); // gentle dip while travelling
   });
 
   // Last tile only: media zooms + rounds off + darkens to black over the tail.
@@ -89,7 +79,7 @@ function MTile({ c, i, n, progress, isLast, zStart, coverScale, mediaRef }: MTil
   const videoOpacity = useTransform(progress, (p) => (isLast ? ramp(p, 0.9, 0.99, 1, 0) : 1));
 
   return (
-    <motion.div className="u-fzoom-m-tile" style={{ opacity, scale, y, z, rotateX }}>
+    <motion.div className="u-fzoom-m-tile" style={{ opacity, scale, x }}>
       <motion.div
         ref={mediaRef}
         className="u-hcard-media u-fzoom-m-media"
@@ -123,12 +113,13 @@ function MCaption({ c, i, n, progress, isLast, zStart }: {
     // Last card also clears just before its media zooms to black.
     return isLast ? Math.min(reveal, ramp(p, zStart - 0.05, zStart - 0.01, 1, 0)) : reveal;
   });
-  const y = useTransform(progress, (p) => {
+  // Slides in from the right / out to the left, echoing the media carousel.
+  const x = useTransform(progress, (p) => {
     const d = deckPos(p, n) - i;
-    return d <= 0 ? ramp(d, -0.42, -0.06, 18, 0) : 0;
+    return d <= 0 ? ramp(d, -0.42, -0.02, 44, 0) : ramp(d, 0.02, 0.42, 0, -44);
   });
   return (
-    <motion.div className="u-fzoom-m-cap" style={{ opacity, y }}>
+    <motion.div className="u-fzoom-m-cap" style={{ opacity, x }}>
       <div className="u-hcard-title">
         <span style={{ color: c.tint, fontSize: 20 }}>{c.icon}</span>
         {c.title}
@@ -141,12 +132,12 @@ function MCaption({ c, i, n, progress, isLast, zStart }: {
 /**
  * Mobile replacement for the desktop pinned pan+zoom. Phones can't hold a
  * horizontal row (cards overflow, captions clip), so the section pins and
- * plays a 3D card deck: one media tile front and upright at a time, each
- * dealing up-and-away toward the camera as the next pops forward out of depth,
- * with a clean caption swapping in a fixed slot beneath. The last tile zooms
- * to black into the dark stories section; an ambient orange glow warms the
- * stage. Rendered only for narrow && !reduced-motion (FeatureZoom keeps the
- * static scroll-row fallback for reduced motion).
+ * plays a horizontal carousel instead: one full-width media tile centred and
+ * readable at a time, sliding out to the left as the next slides in from the
+ * right, with a clean caption swapping in a fixed slot beneath. The last tile
+ * zooms full-bleed to black into the dark stories section; an ambient orange
+ * glow warms the stage. Rendered only for narrow && !reduced-motion
+ * (FeatureZoom keeps the static scroll-row fallback for reduced motion).
  */
 export function FeatureZoomMobile({ cards, head }: { cards: FeatureCard[]; head: React.ReactNode }) {
   const ref = useRef<HTMLElement | null>(null);

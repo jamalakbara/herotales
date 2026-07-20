@@ -2909,10 +2909,11 @@ body { padding-top: 84px; }
   flex: 1;
   width: 100%;
   display: grid;
-  place-items: center;   /* every card shares one grid cell, centred */
+  place-items: center;   /* every tile shares one grid cell, centred */
   position: relative;
-  perspective: 1100px;             /* 3D deck depth */
-  transform-style: preserve-3d;    /* sort cards by their translateZ, not DOM order */
+  /* Tiles waiting/leaving in the side gutters are clipped by .u-fzoom-m-sticky
+     (overflow:hidden). The stage itself must NOT clip, or the last tile's
+     zoom-to-black would be trimmed to the stage rect instead of the viewport. */
 }
 /* Ambient orange glow behind the active card — soft studio warmth. */
 .u-fzoom-m-stage::before {
@@ -2925,13 +2926,11 @@ body { padding-top: 84px; }
   filter: blur(18px);
   pointer-events: none;
 }
-/* Media tiles stack in one grid cell; the 3D deal is driven per-tile in JS. */
+/* Media tiles stack in one grid cell; the carousel slide is driven per-tile in JS. */
 .u-fzoom-m-tile {
   grid-area: 1 / 1;
   width: min(330px, 86vw);
   will-change: transform, opacity;
-  transform-style: preserve-3d;
-  backface-visibility: hidden;
 }
 .u-fzoom-m-media {
   height: 360px;
