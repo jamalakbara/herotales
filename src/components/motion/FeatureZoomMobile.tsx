@@ -8,79 +8,88 @@ import type { FeatureCard } from "./FeatureZoom";
 /** Piecewise-linear ramp: `from` at/below `a`, `to` at/above `b`, linear between.
  *  Used inside function-form useTransform so every value stays on the JS/rAF
  *  path (framer only hardware-accelerates the array form, which on this pinned
- *  stage lands on a non-monotonic ViewTimeline — see FeatureZoom's capOpacity). */
+ *  stage lands on a non-monotonic ViewTimeline and flickers — see FeatureZoom). */
 const ramp = (p: number, a: number, b: number, from: number, to: number) =>
   p <= a ? from : p >= b ? to : from + (to - from) * ((p - a) / (b - a));
 
-type MCardProps = {
+/**
+ * Eased deck position 0..n. Each card `i` owns scroll segment [i/n,(i+1)/n];
+ * within it the position DWELLS at `i` for the first ~55% (card held front and
+ * readable) then transitions to `i+1` over the last ~45% (the deal). So
+ * `pos - i` — a card's signed distance from the front of the deck — sits at 0
+ * while you read, then climbs through 1 as the next card takes over.
+ */
+const deckPos = (p: number, n: number) => {
+  const raw = p * n;
+  const fl = Math.floor(Math.min(raw, n - 1e-4));
+  const frac = raw - fl;
+  const s = frac < 0.55 ? 0 : (frac - 0.55) / 0.45;
+  return fl + s;
+};
+
+type MTileProps = {
   c: FeatureCard;
   i: number;
   n: number;
   progress: MotionValue<number>;
   isLast: boolean;
+  zStart: number;
   coverScale: number;
   mediaRef?: React.Ref<HTMLDivElement>;
 };
 
 /**
- * One feature card in the mobile stage. Each card owns a scroll segment
- * `[i/n, (i+1)/n]`: it scales + slides + un-rotates into centre, holds fully
- * readable, then (unless last) scales + slides out as the next takes over. The
- * caption reveals a beat after the card so the eye lands on the art first. The
- * last card doesn't exit — its media zooms full-bleed and darkens to black,
- * handing off to the dark stories section (mirrors the desktop zoom).
+ * One media tile in the 3D deck. `d = deckPos - i` is its distance from the
+ * front: d<0 it's still in the deck, receded into depth (small, tilted back,
+ * pushed away on Z) and rising toward front as d→0; d=0 it's front & upright;
+ * d>0 it's dealt — flips up and tumbles toward the camera (rotateX + +Z) while
+ * fading, revealing the next tile popping forward out of depth. preserve-3d on
+ * the stage sorts tiles by their translateZ, so the dealt tile passes in front.
+ * The last tile doesn't deal — its media zooms full-bleed to black.
  */
-function MCard({ c, i, n, progress, isLast, coverScale, mediaRef }: MCardProps) {
-  const seg = 1 / n;
-  const enterMid = i * seg; // start of this card's segment = when it finishes arriving
-  const exitMid = (i + 1) * seg; // when the NEXT card has fully covered this one
-  // Slide-and-cover: each card slides up from below over the tail of the
-  // previous segment and sits at rest (higher z-index) covering the one before
-  // it, then holds through its own segment until the next card covers it. There
-  // is always exactly one opaque card on screen — no blank blink between cards,
-  // no double-exposed media. The motion reverses cleanly on scroll-up.
-  const W = seg * 0.5; // slide-in occupies the last half of the previous segment
-
-  const y = useTransform(progress, (p) => (i === 0 ? 0 : ramp(p, enterMid - W, enterMid, 480, 0)));
+function MTile({ c, i, n, progress, isLast, zStart, coverScale, mediaRef }: MTileProps) {
   const opacity = useTransform(progress, (p) => {
-    const rise = i === 0 ? 1 : ramp(p, enterMid - W, enterMid - W * 0.5, 0, 1);
-    // Once covered by the next card, fade to 0 (invisible behind it) so nothing
-    // lurks under the top card — e.g. so the last card's fading caption reveals
-    // the page, not the previous card's caption.
-    const clear = isLast ? 1 : ramp(p, exitMid + W * 0.15, exitMid + W * 0.6, 1, 0);
-    return Math.min(rise, clear);
+    const d = deckPos(p, n) - i;
+    if (d <= 0) return ramp(d, -1.4, -0.5, 0, 1);
+    return isLast ? 1 : ramp(d, 0.1, 0.7, 1, 0);
   });
-  const scale = useTransform(progress, (p) => (i === 0 ? 1 : ramp(p, enterMid - W, enterMid, 0.94, 1)));
+  const scale = useTransform(progress, (p) => {
+    const d = deckPos(p, n) - i;
+    if (d <= 0) return ramp(d, -1.4, 0, 0.68, 1);
+    return isLast ? 1 : ramp(d, 0, 0.8, 1, 1.15);
+  });
+  const y = useTransform(progress, (p) => {
+    const d = deckPos(p, n) - i;
+    if (d <= 0) return ramp(d, -1.4, 0, 60, 0);
+    return isLast ? 0 : ramp(d, 0, 0.8, 0, -260);
+  });
+  const z = useTransform(progress, (p) => {
+    const d = deckPos(p, n) - i;
+    if (d <= 0) return ramp(d, -1.4, 0, -520, 0);
+    return isLast ? 0 : ramp(d, 0, 0.8, 0, 260);
+  });
+  const rotateX = useTransform(progress, (p) => {
+    const d = deckPos(p, n) - i;
+    if (d <= 0) return ramp(d, -1.4, 0, 18, 0);
+    return isLast ? 0 : ramp(d, 0, 0.8, 0, -42);
+  });
 
-  // Last card fades its caption out just before the zoom-to-black takes over.
-  const zStart = 1 - seg * 0.5;
-  const capOpacity = useTransform(progress, (p) =>
-    isLast ? ramp(p, zStart - seg * 0.18, zStart, 1, 0) : 1,
-  );
-
-  // Last card only: media zooms + rounds off + darkens to black over the tail.
-  const mediaScale = useTransform(progress, (p) =>
-    isLast ? ramp(p, zStart, 1, 1, coverScale) : 1,
-  );
+  // Last tile only: media zooms + rounds off + darkens to black over the tail.
+  const mediaScale = useTransform(progress, (p) => (isLast ? ramp(p, zStart, 1, 1, coverScale) : 1));
   const mediaRadius = useTransform(progress, (p) =>
     isLast ? ramp(p, zStart, zStart + (1 - zStart) * 0.7, 18, 0) : 18,
   );
   // Color needs the array form (framer interpolates real colors); the media's
-  // own scroll progress is monotonic through the zoom, so no flicker here.
+  // own zoom progress is monotonic, so no flicker here.
   const mediaBg = useTransform(
     progress,
     isLast ? [zStart, zStart + (1 - zStart) * 0.7] : [0, 1],
     isLast ? ["#ffffff", "#0C0B0F"] : ["#ffffff", "#ffffff"],
   );
-  const videoOpacity = useTransform(progress, (p) =>
-    isLast ? ramp(p, 0.9, 0.99, 1, 0) : 1,
-  );
+  const videoOpacity = useTransform(progress, (p) => (isLast ? ramp(p, 0.9, 0.99, 1, 0) : 1));
 
   return (
-    <motion.div
-      className="u-fzoom-m-card"
-      style={{ opacity, scale, y, zIndex: i + 1 /* later cards cover earlier ones */ }}
-    >
+    <motion.div className="u-fzoom-m-tile" style={{ opacity, scale, y, z, rotateX }}>
       <motion.div
         ref={mediaRef}
         className="u-hcard-media u-fzoom-m-media"
@@ -94,41 +103,57 @@ function MCard({ c, i, n, progress, isLast, coverScale, mediaRef }: MCardProps) 
           <span style={{ fontSize: 68, color: c.tint }}>{c.icon}</span>
         )}
       </motion.div>
-      <motion.div className="u-fzoom-m-cap" style={{ opacity: capOpacity }}>
-        <div className="u-hcard-title">
-          <span style={{ color: c.tint, fontSize: 20 }}>{c.icon}</span>
-          {c.title}
-        </div>
-        <p className="u-hcard-desc">{c.desc}</p>
-      </motion.div>
     </motion.div>
   );
 }
 
-/** A progress dot; the one whose segment holds the current scroll is filled + grown. */
-function Dot({ i, n, progress }: { i: number; n: number; progress: MotionValue<number> }) {
-  const seg = 1 / n;
-  const center = (i + 0.5) * seg;
-  const opacity = useTransform(progress, (p) => (Math.abs(p - center) < seg * 0.5 ? 1 : 0.28));
-  const scale = useTransform(progress, (p) => (Math.abs(p - center) < seg * 0.5 ? 1.4 : 1));
-  return <motion.span className="u-fzoom-m-dot" style={{ opacity, scale }} />;
+/**
+ * The caption for card `i`, living in a fixed slot below the deck (NOT riding
+ * the 3D tiles — that's what kept the captions from colliding). Visible only
+ * while its card is at/near the front; during the flip between two cards no
+ * caption shows for a beat (the eye is on the tumbling media). A small
+ * upward-settle gives it life as it appears.
+ */
+function MCaption({ c, i, n, progress, isLast, zStart }: {
+  c: FeatureCard; i: number; n: number; progress: MotionValue<number>; isLast: boolean; zStart: number;
+}) {
+  const opacity = useTransform(progress, (p) => {
+    const ad = Math.abs(deckPos(p, n) - i);
+    const reveal = ramp(ad, 0.14, 0.42, 1, 0); // full near front, gone during the deal
+    // Last card also clears just before its media zooms to black.
+    return isLast ? Math.min(reveal, ramp(p, zStart - 0.05, zStart - 0.01, 1, 0)) : reveal;
+  });
+  const y = useTransform(progress, (p) => {
+    const d = deckPos(p, n) - i;
+    return d <= 0 ? ramp(d, -0.42, -0.06, 18, 0) : 0;
+  });
+  return (
+    <motion.div className="u-fzoom-m-cap" style={{ opacity, y }}>
+      <div className="u-hcard-title">
+        <span style={{ color: c.tint, fontSize: 20 }}>{c.icon}</span>
+        {c.title}
+      </div>
+      <p className="u-hcard-desc">{c.desc}</p>
+    </motion.div>
+  );
 }
 
 /**
  * Mobile replacement for the desktop pinned pan+zoom. Phones can't hold a
- * horizontal row (cards overflow, captions clip), so instead the section pins
- * and deals ONE full-width card at a time: each slides up from below to cover
- * the previous one, holds fully readable, then is covered by the next — with
- * the last card zooming to black into the dark stories section. Progress dots
- * track position; an ambient orange glow warms the stage. Rendered only for
- * narrow && !reduced-motion (FeatureZoom keeps the static scroll-row fallback
- * for reduced motion).
+ * horizontal row (cards overflow, captions clip), so the section pins and
+ * plays a 3D card deck: one media tile front and upright at a time, each
+ * dealing up-and-away toward the camera as the next pops forward out of depth,
+ * with a clean caption swapping in a fixed slot beneath. The last tile zooms
+ * to black into the dark stories section; an ambient orange glow warms the
+ * stage. Rendered only for narrow && !reduced-motion (FeatureZoom keeps the
+ * static scroll-row fallback for reduced motion).
  */
 export function FeatureZoomMobile({ cards, head }: { cards: FeatureCard[]; head: React.ReactNode }) {
   const ref = useRef<HTMLElement | null>(null);
   const lastMediaRef = useRef<HTMLDivElement | null>(null);
   const [coverScale, setCoverScale] = useState(8);
   const n = cards.length;
+  const zStart = (n - 1) / n + (1 / n) * 0.5; // middle of the last segment
 
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end end"] });
 
@@ -151,7 +176,9 @@ export function FeatureZoomMobile({ cards, head }: { cards: FeatureCard[]; head:
 
   const veilOpacity = useTransform(scrollYProgress, (p) => ramp(p, 0.96, 1, 0, 1));
   // Head fades out as the last card takes the stage so the zoom-to-black is clean.
-  const headOpacity = useTransform(scrollYProgress, (p) => ramp(p, 1 - 1 / n + 0.02, 1 - 1 / n + 0.1, 1, 0));
+  const headOpacity = useTransform(scrollYProgress, (p) =>
+    ramp(p, 1 - 1 / n + 0.02, 1 - 1 / n + 0.1, 1, 0),
+  );
 
   return (
     <section id="how" ref={ref} className="u-fzoom-m" style={{ height: `${n * 100}vh` }}>
@@ -161,23 +188,32 @@ export function FeatureZoomMobile({ cards, head }: { cards: FeatureCard[]; head:
         </motion.div>
         <div className="u-fzoom-m-stage">
           {cards.map((c, i) => (
-            <MCard
+            <MTile
               key={c.title}
               c={c}
               i={i}
               n={n}
               progress={scrollYProgress}
               isLast={i === n - 1}
+              zStart={zStart}
               coverScale={coverScale}
               mediaRef={i === n - 1 ? lastMediaRef : undefined}
             />
           ))}
         </div>
-        <motion.div className="u-fzoom-m-dots" style={{ opacity: headOpacity }}>
+        <div className="u-fzoom-m-capslot">
           {cards.map((c, i) => (
-            <Dot key={c.title} i={i} n={n} progress={scrollYProgress} />
+            <MCaption
+              key={c.title}
+              c={c}
+              i={i}
+              n={n}
+              progress={scrollYProgress}
+              isLast={i === n - 1}
+              zStart={zStart}
+            />
           ))}
-        </motion.div>
+        </div>
         <motion.div className="u-fzoom-veil" style={{ opacity: veilOpacity }} aria-hidden />
       </div>
     </section>

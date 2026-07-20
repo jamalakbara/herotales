@@ -2911,6 +2911,8 @@ body { padding-top: 84px; }
   display: grid;
   place-items: center;   /* every card shares one grid cell, centred */
   position: relative;
+  perspective: 1100px;             /* 3D deck depth */
+  transform-style: preserve-3d;    /* sort cards by their translateZ, not DOM order */
 }
 /* Ambient orange glow behind the active card — soft studio warmth. */
 .u-fzoom-m-stage::before {
@@ -2923,10 +2925,13 @@ body { padding-top: 84px; }
   filter: blur(18px);
   pointer-events: none;
 }
-.u-fzoom-m-card {
-  grid-area: 1 / 1;          /* stack all cards in the same cell */
+/* Media tiles stack in one grid cell; the 3D deal is driven per-tile in JS. */
+.u-fzoom-m-tile {
+  grid-area: 1 / 1;
   width: min(330px, 86vw);
   will-change: transform, opacity;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
 }
 .u-fzoom-m-media {
   height: 360px;
@@ -2940,28 +2945,18 @@ body { padding-top: 84px; }
   transform-origin: center center;
   will-change: transform;
 }
-/* Opaque cream so a card sliding up fully masks the caption of the one it
-   covers (cards share a grid cell; text-on-transparent would bleed through). */
-.u-fzoom-m-cap { margin-top: 18px; padding: 6px 2px 10px; background: var(--cream); }
+/* Fixed caption slot below the deck — captions swap here (one at a time), so
+   they never collide with each other or ride the 3D tiles. */
+.u-fzoom-m-capslot {
+  position: relative;
+  width: min(340px, 88vw);
+  height: 138px;
+  margin: 6px auto 42px;
+  flex-shrink: 0;
+}
+.u-fzoom-m-cap { position: absolute; inset: 0; }
 .u-fzoom-m-cap .u-hcard-title { margin-top: 0; }
-.u-fzoom-m-cap .u-hcard-desc { max-width: none; }
-.u-fzoom-m-dots {
-  position: absolute;
-  bottom: 28px;
-  left: 0;
-  right: 0;
-  display: flex;
-  gap: 9px;
-  justify-content: center;
-  z-index: 4;
-}
-.u-fzoom-m-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: var(--u-orange);
-  display: block;
-}
+.u-fzoom-m-cap .u-hcard-desc { max-width: none; margin-top: 8px; }
 
 /* ---------- UMANO SECTION: dark client stories (fanned) ---------- */
 /* Full-bleed dark so the zoom bridge fills the screen and the fan lands on the
