@@ -3,6 +3,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
 import { LoopVideo } from "./LoopVideo";
+import { useMediaQuery } from "../use-media-query";
 
 export type FeatureCard = {
   icon: string;
@@ -63,6 +64,7 @@ export function FeatureZoom({ cards, head }: FeatureZoomProps) {
   const cardRef = useRef<HTMLDivElement | null>(null);
   const mediaRef = useRef<HTMLDivElement | null>(null);
   const reduce = useReducedMotion();
+  const narrow = useMediaQuery("(max-width: 720px)");
   const [endX, setEndX] = useState(0);
   const [coverScale, setCoverScale] = useState(8);
 
@@ -119,8 +121,24 @@ export function FeatureZoom({ cards, head }: FeatureZoomProps) {
   // Hex literal (not a CSS var) — framer can only interpolate real color values.
   // Keep in sync with --twilight-deep in globals.css.
   const mediaBg = useTransform(scrollYProgress, [0.58, 0.92], ["#ffffff", "#0C0B0F"]);
-  const capOpacity = useTransform(scrollYProgress, [0.46, 0.56], [1, 0]);
-  const capY = useTransform(scrollYProgress, [0.46, 0.58], [0, 120]); // slide out (no lag)
+  // On mobile the pan distance is short so the card centres fast; give the caption
+  // more dwell time — fade starts AFTER the pan ends (0.6) not during it.
+  //
+  // Function form (not the [in]→[out] array form) is deliberate: framer compiles
+  // the array form into a native WAAPI animation on a ViewTimeline tied to this
+  // element's own viewport progress. That progress is NON-monotonic here (the cap
+  // is simultaneously translated by capY, covered by the zooming media, and the
+  // row barely pans on mobile) so the baked opacity flickered 1→0→1. The function
+  // form stays on the JS/rAF path driven by scrollYProgress (the section
+  // timeline), which is monotonic — no flicker.
+  const capFade = narrow ? [0.60, 0.76] : [0.46, 0.56];
+  const capOpacity = useTransform(scrollYProgress, (p) => {
+    const [a, b] = capFade;
+    if (p <= a) return 1;
+    if (p >= b) return 0;
+    return 1 - (p - a) / (b - a);
+  });
+  const capY = useTransform(scrollYProgress, narrow ? [0.60, 0.78] : [0.46, 0.58], [0, 120]);
   const glyphOpacity = useTransform(scrollYProgress, [0.72, 0.9], [1, 0]);
   // Video fades as the zoom finishes so the darkened media bg (→ black) shows
   // through — screen is black before the next section, not the frozen frame.
