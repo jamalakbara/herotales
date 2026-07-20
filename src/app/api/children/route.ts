@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { asc, eq } from "drizzle-orm";
 import { requireUser, parseJsonBody } from "@/lib/api";
+import { getErrorMessage } from "@/lib/errors";
 import { db } from "@/lib/db";
 import { children } from "@/lib/db/schema";
 import { childSelect, toChildColumns } from "@/lib/db/children-fields";
@@ -22,7 +23,7 @@ export async function GET() {
     ]);
     return NextResponse.json({ children: data, quota });
   } catch (err) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Query failed" }, { status: 500 });
+    return NextResponse.json({ error: getErrorMessage(err, "Query failed") }, { status: 500 });
   }
 }
 

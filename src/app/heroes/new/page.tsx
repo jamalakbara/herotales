@@ -8,6 +8,9 @@ import { FloatingNav } from "@/components/floating-nav";
 import { AmbientDecor } from "@/components/motion/AmbientDecor";
 import { Reveal } from "@/components/motion/Reveal";
 import { Skeleton } from "@/components/skeleton";
+import { getErrorMessage } from "@/lib/errors";
+import { AVATAR_SWATCHES } from "@/lib/hero-palette";
+import { CHILD_AGES } from "@/lib/types";
 
 type ExistingChild = {
   id: string;
@@ -15,8 +18,6 @@ type ExistingChild = {
   age: number;
   pronouns: string;
 };
-
-const AGES = ["2", "3", "4", "5", "6", "7", "8"] as const;
 
 const PRONOUN_CHIPS: { label: string; value: string }[] = [
   { label: "she / her", value: "she/her" },
@@ -58,19 +59,6 @@ const VOICES = [
   { name: "Atlas", desc: "Soft · Deep · Grandfatherly" },
   { name: "Marisol", desc: "Gentle · Lilting · Cozy" },
   { name: "Your own", desc: "Record once · 3 minutes" },
-];
-
-// --berry/--sage/--moon fold to one orange in the umano skin — the swatch
-// row rotates the distinct surfaces that remain.
-const AVATAR_SWATCHES: { bg: string; color: string }[] = [
-  { bg: "var(--u-orange)", color: "#fff" },
-  { bg: "var(--lilac)", color: "var(--twilight)" },
-  { bg: "var(--twilight)", color: "#fff" },
-  { bg: "var(--cream-deep)", color: "var(--twilight)" },
-  { bg: "#fff", color: "var(--u-orange)" },
-  { bg: "var(--moon-deep)", color: "#fff" },
-  { bg: "var(--ink)", color: "#fff" },
-  { bg: "#140906", color: "var(--u-orange)" },
 ];
 
 const SEAT_COLORS = ["var(--u-orange)", "var(--lilac)", "var(--twilight)"];
@@ -179,7 +167,7 @@ export default function AddHeroPage() {
       if (goCreateStory) router.push(`/stories/new?child_id=${child.id}`);
       else router.push("/dashboard");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not save hero");
+      setError(getErrorMessage(e, "Could not save hero"));
       setSubmitting(false);
     }
   }
@@ -278,7 +266,7 @@ export default function AddHeroPage() {
                   <label style={lblStyle} htmlFor="f-age">Age</label>
                   <select id="f-age" style={inpStyle} value={age} onChange={(e) => setAge(e.target.value)}>
                     <option value="">Pick one</option>
-                    {AGES.map((a) => <option key={a} value={a}>{a}</option>)}
+                    {CHILD_AGES.map((a) => <option key={a} value={a}>{a}</option>)}
                   </select>
                 </div>
               </div>

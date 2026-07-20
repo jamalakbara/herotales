@@ -7,7 +7,10 @@ import { FloatingNav } from "@/components/floating-nav";
 import { AmbientDecor } from "@/components/motion/AmbientDecor";
 import { Reveal } from "@/components/motion/Reveal";
 import { SkeletonBookItem, SkeletonKidCard } from "@/components/skeleton";
-import { pickName, storyToBook, timeAgo, type StoryListItem } from "@/lib/story-view";
+import { getErrorMessage } from "@/lib/errors";
+import { KID_PALETTES } from "@/lib/hero-palette";
+import { BLUEPRINT_ICONS, pickName, storyToBook, timeAgo, type StoryListItem } from "@/lib/story-view";
+import { BLUEPRINTS } from "@/lib/types";
 
 type APIChild = {
   id: string;
@@ -26,8 +29,6 @@ type APIDashboard = {
   recent_stories: StoryListItem[];
 };
 
-const ALL_BLUEPRINTS = ["Bravery", "Honesty", "Patience", "Kindness", "Persistence"];
-
 function getGreetingTime(): string {
   return new Date().toLocaleString("en-US", {
     weekday: "long",
@@ -36,11 +37,6 @@ function getGreetingTime(): string {
     hour12: true,
   });
 }
-
-// --berry/--sage/--moon all fold to orange in the umano skin — rotate
-// through distinct surfaces instead so avatars stay tellable apart.
-const KID_AVATAR_BG = ["var(--u-orange)", "var(--twilight)", "var(--lilac)", "var(--cream-deep)"];
-const KID_AVATAR_FG = ["#fff", "#fff", "var(--twilight)", "var(--twilight)"];
 
 const filters = ["All", "Favorites ♡", "Bravery", "Kindness", "Patience", "Sort: Recent ▾"];
 
@@ -61,7 +57,7 @@ export default function DashboardPage() {
         if (!cancelled) setData(j);
       })
       .catch((e: unknown) => {
-        if (!cancelled) setLoadError(e instanceof Error ? e.message : "Could not load");
+        if (!cancelled) setLoadError(getErrorMessage(e, "Could not load"));
       });
     return () => {
       cancelled = true;
@@ -90,14 +86,14 @@ export default function DashboardPage() {
   const kidStories = activeKidObj ? recent.filter((s) => s.child_id === activeKidObj.id) : recent;
   const usedBlueprints = new Set(kidStories.map((s) => s.blueprint));
   const newStoryHref = activeKidObj ? `/stories/new?child_id=${activeKidObj.id}` : "/stories/new";
-  const nudgeBlueprint = ALL_BLUEPRINTS.find((b) => !usedBlueprints.has(b)) ?? null;
+  const nudgeBlueprint = BLUEPRINTS.find((b) => !usedBlueprints.has(b)) ?? null;
 
   const kidsView = kids.map((k, i) => ({
     id: k.id,
     name: k.nickname,
     age: `${k.age} years · ${k.pronouns}`,
-    avBg: KID_AVATAR_BG[i % KID_AVATAR_BG.length],
-    avCol: KID_AVATAR_FG[i % KID_AVATAR_FG.length],
+    avBg: KID_PALETTES[i % KID_PALETTES.length].bg,
+    avCol: KID_PALETTES[i % KID_PALETTES.length].color,
     tales: k.tales,
     favs: k.favorites,
     printed: 0,
@@ -321,11 +317,10 @@ export default function DashboardPage() {
             )}
           </div>
           <div style={{ display: "flex", gap: 10, position: "relative" }}>
-            {ALL_BLUEPRINTS.filter((b) => !usedBlueprints.has(b)).slice(0, 3).map((label) => {
-              const icons: Record<string, string> = { Bravery: "★", Honesty: "✓", Patience: "⟲", Kindness: "♡", Persistence: "↑" };
+            {BLUEPRINTS.filter((b) => !usedBlueprints.has(b)).slice(0, 3).map((label) => {
               return (
                 <Link key={label} href={newStoryHref} className="dash-bpc" style={{ padding: "12px 14px", background: "#fff", color: "var(--twilight)", borderRadius: 14, boxShadow: "var(--u-card-shadow)", fontFamily: "var(--font-young-serif), serif", fontSize: 13, textAlign: "center", minWidth: 84 }}>
-                  <span style={{ display: "block", fontFamily: "var(--font-caprasimo), serif", fontSize: 20, color: "var(--u-orange)", marginBottom: 4 }}>{icons[label]}</span>
+                  <span style={{ display: "block", fontFamily: "var(--font-caprasimo), serif", fontSize: 20, color: "var(--u-orange)", marginBottom: 4 }}>{BLUEPRINT_ICONS[label]}</span>
                   {label}
                 </Link>
               );

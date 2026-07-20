@@ -10,6 +10,7 @@ import { PinnedPanel } from "@/components/motion/PinnedPanel";
 import { PlanCard, type PlanCardProps } from "@/components/plan-card";
 import { Reveal } from "@/components/motion/Reveal";
 import { SkeletonBookItem } from "@/components/skeleton";
+import { getErrorMessage } from "@/lib/errors";
 import { storyToBook, type BookView, type StoryListItem } from "@/lib/story-view";
 
 const features = [
@@ -100,7 +101,7 @@ export default function KeepsakeBooksPage() {
         setApiStories(json.stories ?? []);
       } catch (e) {
         if (!alive) return;
-        setLoadError(e instanceof Error ? e.message : "Failed to load stories");
+        setLoadError(getErrorMessage(e, "Failed to load stories"));
       } finally {
         if (alive) setLoading(false);
       }

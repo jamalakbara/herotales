@@ -6,6 +6,7 @@ import { useSignIn, useSignUp } from "@clerk/nextjs";
 import { FloatingNav } from "@/components/floating-nav";
 import { AmbientDecor } from "@/components/motion/AmbientDecor";
 import { Reveal } from "@/components/motion/Reveal";
+import { getErrorMessage } from "@/lib/errors";
 import styles from "./auth-form.module.css";
 
 type Mode = "sign-in" | "sign-up";
@@ -15,7 +16,7 @@ function clerkError(e: unknown): string {
     const errs = (e as { errors?: Array<{ message?: string; longMessage?: string }> }).errors;
     if (errs && errs[0]) return errs[0].longMessage || errs[0].message || "Something went wrong.";
   }
-  return e instanceof Error ? e.message : "Something went wrong.";
+  return getErrorMessage(e, "Something went wrong.");
 }
 
 export function AuthForm({

@@ -2,6 +2,7 @@
 import { CSSProperties, useState } from "react";
 import { useClerk } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
+import { getErrorMessage } from "@/lib/errors";
 
 export function DeleteMyDataLink({ style }: { style?: CSSProperties }) {
   const { signOut } = useClerk();
@@ -22,7 +23,7 @@ export function DeleteMyDataLink({ style }: { style?: CSSProperties }) {
       await signOut();
       router.push("/");
     } catch (err) {
-      window.alert(err instanceof Error ? err.message : "Delete failed. Please try again.");
+      window.alert(getErrorMessage(err, "Delete failed. Please try again."));
       setBusy(false);
     }
   }

@@ -30,6 +30,8 @@ export const StoryDocSchema = z.object({
 });
 export type StoryDoc = z.infer<typeof StoryDocSchema>;
 
+export const CHILD_AGES = ["2", "3", "4", "5", "6", "7", "8"] as const;
+
 export const ChildFieldsSchema = z.object({
   nickname: z.string().min(1).max(40),
   age: z.number().int().min(2).max(8),

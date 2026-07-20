@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { requireUser, parseJsonBody } from "@/lib/api";
+import { getErrorMessage } from "@/lib/errors";
 import { db } from "@/lib/db";
 import { children, stories } from "@/lib/db/schema";
 import { getOrResetQuota } from "@/lib/quota";
@@ -60,7 +61,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json({ stories: rows, total: total ?? 0, limit, offset });
   } catch (err) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Query failed" }, { status: 500 });
+    return NextResponse.json({ error: getErrorMessage(err, "Query failed") }, { status: 500 });
   }
 }
 

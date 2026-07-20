@@ -8,6 +8,8 @@ import { FloatingNav } from "@/components/floating-nav";
 import { AmbientDecor } from "@/components/motion/AmbientDecor";
 import { Reveal } from "@/components/motion/Reveal";
 import { Skeleton, SkeletonBookItem } from "@/components/skeleton";
+import { getErrorMessage } from "@/lib/errors";
+import { KID_PALETTES } from "@/lib/hero-palette";
 import { pickName, storyToBook, type BookView, type StoryListItem } from "@/lib/story-view";
 
 type APIKid = { id: string; nickname: string; tales: number; favorites: number };
@@ -47,15 +49,6 @@ function BookRow({ b, index }: { b: BookView; index: number }) {
   );
 }
 
-// --berry/--sage/--moon all fold to orange in the umano skin — rotate
-// through distinct surfaces instead (mirrors the dashboard avatar palette).
-const KID_PALETTES = [
-  { bg: "var(--u-orange)", color: "#fff" },
-  { bg: "var(--lilac)", color: "var(--twilight)" },
-  { bg: "var(--twilight)", color: "#fff" },
-  { bg: "var(--cream-deep)", color: "var(--twilight)" },
-];
-
 export default function ShelfPage() {
   const [activeTab, setActiveTab] = useState("all");
   const [activeFilter, setActiveFilter] = useState("All");
@@ -80,7 +73,7 @@ export default function ShelfPage() {
         setStories(list.stories ?? []);
       })
       .catch((e: unknown) => {
-        if (!cancelled) setLoadError(e instanceof Error ? e.message : "Could not load shelf");
+        if (!cancelled) setLoadError(getErrorMessage(e, "Could not load shelf"));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);

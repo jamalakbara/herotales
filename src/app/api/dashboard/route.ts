@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { asc, desc, eq } from "drizzle-orm";
 import { requireUser } from "@/lib/api";
+import { getErrorMessage } from "@/lib/errors";
 import { db } from "@/lib/db";
 import { children, profiles, stories } from "@/lib/db/schema";
 import { getOrResetQuota } from "@/lib/quota";
@@ -81,7 +82,7 @@ export async function GET() {
   } catch (err) {
     console.error("[/api/dashboard]", err);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Internal server error" },
+      { error: getErrorMessage(err, "Internal server error") },
       { status: 500 },
     );
   }

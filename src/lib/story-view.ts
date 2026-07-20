@@ -32,6 +32,18 @@ export const THEME_STAR: Record<string, string> = {
   Persistence: "↑",
 };
 
+/**
+ * Picker/nudge glyphs per blueprint (Honesty = "✓"). Cover star glyphs live
+ * in THEME_STAR above (Honesty = "✦") — distinct on purpose, do not merge.
+ */
+export const BLUEPRINT_ICONS: Record<string, string> = {
+  Bravery: "★",
+  Honesty: "✓",
+  Patience: "⟲",
+  Kindness: "♡",
+  Persistence: "↑",
+};
+
 export function themeStar(blueprint: string): string {
   return THEME_STAR[blueprint] ?? "✦";
 }

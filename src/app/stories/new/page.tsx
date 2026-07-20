@@ -7,7 +7,9 @@ import { AppFooter } from "@/components/app-footer";
 import { FloatingNav } from "@/components/floating-nav";
 import { Reveal } from "@/components/motion/Reveal";
 import { Skeleton } from "@/components/skeleton";
-import { timeAgo } from "@/lib/story-view";
+import { getErrorMessage } from "@/lib/errors";
+import { BLUEPRINT_ICONS, timeAgo } from "@/lib/story-view";
+import { CHILD_AGES } from "@/lib/types";
 import { Suspense, useEffect, useMemo, useState } from "react";
 
 type ExistingChild = {
@@ -27,15 +29,14 @@ type ShelfStory = {
   created_at: string;
 };
 
+// Page-specific copy per blueprint; glyphs come from the shared BLUEPRINT_ICONS map.
 const BLUEPRINTS = [
-  { name: "Bravery", icon: "★", desc: "Facing the dark", hook: "Brave Lantern" },
-  { name: "Honesty", icon: "✓", desc: "Owning the truth", hook: "Honest Fox" },
-  { name: "Patience", icon: "⟲", desc: "Letting it grow", hook: "Patient Seed" },
-  { name: "Kindness", icon: "♡", desc: "Seeing others", hook: "Little Kindness" },
-  { name: "Persistence", icon: "↑", desc: "Try, tumble, try", hook: "Long Climb" },
-] as const;
-
-const AGES = ["2", "3", "4", "5", "6", "7", "8"] as const;
+  { name: "Bravery", desc: "Facing the dark", hook: "Brave Lantern" },
+  { name: "Honesty", desc: "Owning the truth", hook: "Honest Fox" },
+  { name: "Patience", desc: "Letting it grow", hook: "Patient Seed" },
+  { name: "Kindness", desc: "Seeing others", hook: "Little Kindness" },
+  { name: "Persistence", desc: "Try, tumble, try", hook: "Long Climb" },
+].map((b) => ({ ...b, icon: BLUEPRINT_ICONS[b.name] }));
 const PRONOUNS = ["she / her", "he / him", "they / them", "let me type"] as const;
 const DETAIL_TAGS = [
   "curly hair",
@@ -240,7 +241,7 @@ function CreateStoryPage() {
       const j = (await res.json()) as { story_id: string };
       router.push(`/stories/${j.story_id}`);
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : "Something went wrong");
+      setSubmitError(getErrorMessage(err, "Something went wrong"));
       setSubmitting(false);
     }
   }
@@ -412,7 +413,7 @@ function CreateStoryPage() {
                 <div>
                   <label className="field-label">Age</label>
                   <div className="age-chips">
-                    {AGES.map((a) => (
+                    {CHILD_AGES.map((a) => (
                       <div
                         key={a}
                         className={`age-chip${age === a ? " active" : ""}`}
