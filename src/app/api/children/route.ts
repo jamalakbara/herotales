@@ -1,26 +1,11 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { asc, eq } from "drizzle-orm";
-import { requireUser, badRequest } from "@/lib/api";
+import { requireUser, parseJsonBody } from "@/lib/api";
 import { db } from "@/lib/db";
 import { children } from "@/lib/db/schema";
 import { childSelect, toChildColumns } from "@/lib/db/children-fields";
 import { getOrResetQuota } from "@/lib/quota";
-
-const CreateChild = z.object({
-  nickname: z.string().min(1).max(40),
-  age: z.number().int().min(2).max(8),
-  pronouns: z.string().min(1).max(40),
-  detail_tags: z.array(z.string().max(60)).max(12).optional(),
-  character_description: z.string().max(1000).optional(),
-  avatar_idx: z.number().int().min(0).max(7).optional(),
-  narrator_voice: z.string().max(40).optional(),
-  growth_traits: z.array(z.string().max(60)).max(8).optional(),
-  quirk: z.string().max(500).optional(),
-  skip_scary: z.boolean().optional(),
-  short_stories: z.boolean().optional(),
-  use_real_name: z.boolean().optional(),
-});
+import { ChildFieldsSchema } from "@/lib/types";
 
 export async function GET() {
   const auth = await requireUser();
@@ -46,14 +31,8 @@ export async function POST(req: Request) {
   if ("error" in auth) return auth.error;
   const { userId } = auth;
 
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return badRequest("Invalid JSON body");
-  }
-  const parsed = CreateChild.safeParse(body);
-  if (!parsed.success) return badRequest("Invalid child", parsed.error.flatten());
+  const parsed = await parseJsonBody(req, ChildFieldsSchema, "Invalid child");
+  if ("error" in parsed) return parsed.error;
 
   const [data] = await db
     .insert(children)

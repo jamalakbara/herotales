@@ -8,8 +8,10 @@ export const BlueprintEnum = z.enum(BLUEPRINTS);
 export const LengthEnum = z.enum(LENGTHS);
 export const VoiceEnum = z.enum(VOICES);
 
+export const STORY_STATUSES = ["pending", "generating", "ready", "failed"] as const;
+
 export type Json = string | number | boolean | null | { [k: string]: Json | undefined } | Json[];
-export type StoryStatus = "pending" | "generating" | "ready" | "failed";
+export type StoryStatus = (typeof STORY_STATUSES)[number];
 export type StoryBlueprint = (typeof BLUEPRINTS)[number];
 export type StoryLength = (typeof LENGTHS)[number];
 
@@ -28,12 +30,34 @@ export const StoryDocSchema = z.object({
 });
 export type StoryDoc = z.infer<typeof StoryDocSchema>;
 
-export const ChildInputSchema = z.object({
+export const ChildFieldsSchema = z.object({
   nickname: z.string().min(1).max(40),
   age: z.number().int().min(2).max(8),
   pronouns: z.string().min(1).max(40),
-  detail_tags: z.array(z.string().max(60)).max(12).default([]),
+  detail_tags: z.array(z.string().max(60)).max(12).optional(),
   character_description: z.string().max(1000).optional(),
+  avatar_idx: z.number().int().min(0).max(7).optional(),
+  narrator_voice: z.string().max(40).optional(),
+  growth_traits: z.array(z.string().max(60)).max(8).optional(),
+  quirk: z.string().max(500).optional(),
+  skip_scary: z.boolean().optional(),
+  short_stories: z.boolean().optional(),
+  use_real_name: z.boolean().optional(),
+});
+export type ChildFields = z.infer<typeof ChildFieldsSchema>;
+
+export const ChildPatchSchema = ChildFieldsSchema.partial().refine(
+  (v) => Object.keys(v).length > 0,
+  { message: "Empty patch" },
+);
+export type ChildPatch = z.infer<typeof ChildPatchSchema>;
+
+export const ChildInputSchema = ChildFieldsSchema.pick({
+  nickname: true,
+  age: true,
+  pronouns: true,
+  detail_tags: true,
+  character_description: true,
 });
 export type ChildInput = z.infer<typeof ChildInputSchema>;
 

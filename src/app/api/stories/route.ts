@@ -1,27 +1,12 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { and, desc, eq, sql } from "drizzle-orm";
-import { requireUser, badRequest } from "@/lib/api";
+import { requireUser, parseJsonBody } from "@/lib/api";
 import { db } from "@/lib/db";
 import { children, stories } from "@/lib/db/schema";
 import { getOrResetQuota } from "@/lib/quota";
 import { inngest } from "@/lib/inngest/client";
-import { BlueprintEnum, LengthEnum, VoiceEnum, ChildInputSchema } from "@/lib/types";
+import { BLUEPRINTS, STORY_STATUSES, StoryRequestSchema } from "@/lib/types";
 import type { StoryBlueprint, StoryStatus } from "@/lib/types";
-
-const BLUEPRINT_VALUES: readonly StoryBlueprint[] = ["Bravery", "Honesty", "Patience", "Kindness", "Persistence"];
-const STATUS_VALUES: readonly StoryStatus[] = ["pending", "generating", "ready", "failed"];
-
-const CreateStory = z
-  .object({
-    child_id: z.string().uuid().optional(),
-    child: ChildInputSchema.optional(),
-    blueprint: BlueprintEnum,
-    length: LengthEnum.default("Bedtime"),
-    voice: VoiceEnum.default("Juniper"),
-    hook: z.string().max(240).optional(),
-  })
-  .refine((v) => v.child_id || v.child, { message: "child_id or child required" });
 
 export async function GET(req: Request) {
   const auth = await requireUser();
@@ -38,11 +23,11 @@ export async function GET(req: Request) {
 
   const conds = [eq(stories.parentId, userId)];
   if (childId) conds.push(eq(stories.childId, childId));
-  if (blueprint && (BLUEPRINT_VALUES as readonly string[]).includes(blueprint)) {
+  if (blueprint && (BLUEPRINTS as readonly string[]).includes(blueprint)) {
     conds.push(eq(stories.blueprint, blueprint as StoryBlueprint));
   }
   if (favorite === "true") conds.push(eq(stories.favorite, true));
-  if (status && (STATUS_VALUES as readonly string[]).includes(status)) {
+  if (status && (STORY_STATUSES as readonly string[]).includes(status)) {
     conds.push(eq(stories.status, status as StoryStatus));
   }
   const where = and(...conds);
@@ -84,14 +69,8 @@ export async function POST(req: Request) {
   if ("error" in auth) return auth.error;
   const { userId } = auth;
 
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return badRequest("Invalid JSON body");
-  }
-  const parsed = CreateStory.safeParse(body);
-  if (!parsed.success) return badRequest("Invalid story request", parsed.error.flatten());
+  const parsed = await parseJsonBody(req, StoryRequestSchema, "Invalid story request");
+  if ("error" in parsed) return parsed.error;
 
   const quota = await getOrResetQuota(userId);
   if (quota.remaining <= 0) {
