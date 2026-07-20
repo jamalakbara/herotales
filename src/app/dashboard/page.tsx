@@ -3,7 +3,10 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AppFooter } from "@/components/app-footer";
 import { BookCard, NewTaleCard } from "@/components/book-card";
+import { ErrorAlert } from "@/components/error-alert";
 import { FloatingNav } from "@/components/floating-nav";
+import { HeadAccent, SectionHeader } from "@/components/section-header";
+import { SectionKicker } from "@/components/section-kicker";
 import { AmbientDecor } from "@/components/motion/AmbientDecor";
 import { Reveal } from "@/components/motion/Reveal";
 import { SkeletonBookItem, SkeletonKidCard } from "@/components/skeleton";
@@ -106,17 +109,13 @@ export default function DashboardPage() {
       <FloatingNav variant="app" />
       <main className="dash-page app-main" style={{ maxWidth: 1400, margin: "0 auto", padding: "10px 48px 80px", position: "relative", zIndex: 2 }}>
 
-        {loadError && (
-          <div style={{ marginBottom: 24, padding: "14px 18px", background: "rgba(180,60,90,0.08)", border: "2px solid var(--berry)", borderRadius: 16, color: "var(--berry)", fontWeight: 700, fontSize: 13.5 }}>
-            {loadError}
-          </div>
-        )}
+        {loadError && <ErrorAlert>{loadError}</ErrorAlert>}
 
         {/* GREETING */}
         <Reveal className="dash-greet" style={{ display: "grid", gridTemplateColumns: "1.15fr 0.85fr", gap: 36, marginBottom: 48, alignItems: "stretch" }}>
           <div className="u-card-lg" style={{ padding: "40px 44px", position: "relative", overflow: "hidden" }}>
             <span style={{ position: "absolute", top: 20, right: 32, fontFamily: "var(--font-caprasimo), serif", fontSize: 64, color: "var(--moon)", transform: "rotate(14deg)", opacity: 0.85, pointerEvents: "none" }}>✦</span>
-            <div style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--berry)", fontSize: 16, transform: "rotate(-1.5deg)", display: "inline-block", marginBottom: 10 }}>{getGreetingTime()}</div>
+            <SectionKicker style={{ marginBottom: 10 }}>{getGreetingTime()}</SectionKicker>
             <h1 style={{ fontFamily: "var(--font-young-serif), serif", fontSize: "clamp(36px, 3.6vw, 50px)", lineHeight: 1.02, letterSpacing: "-0.02em", color: "var(--twilight)", maxWidth: 560, marginBottom: 14 }}>
               Welcome back, <span style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--berry)" }}>{greetingFirstName}</span>. The woods are ready when you are.
             </h1>
@@ -177,15 +176,11 @@ export default function DashboardPage() {
 
         {/* KIDS SECTION HEADER */}
         <Reveal inView>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 20, flexWrap: "wrap", gap: 14 }}>
-          <div>
-            <h2 style={{ fontFamily: "var(--font-young-serif), serif", fontSize: "clamp(24px, 2.4vw, 30px)", color: "var(--twilight)", letterSpacing: "-0.01em" }}>
-              Your little <span style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--berry)", fontSize: "0.9em" }}>heroes</span>
-            </h2>
-            <div style={{ fontSize: 13.5, color: "var(--ink-soft)", fontWeight: 600, marginTop: 4 }}>Each child has their own character sketch and story shelf.</div>
-          </div>
-          <Link href="/shelf" className="dash-stat-link">See all stories →</Link>
-        </div>
+        <SectionHeader
+          title={<>Your little <HeadAccent>heroes</HeadAccent></>}
+          sub="Each child has their own character sketch and story shelf."
+          action={<Link href="/shelf" className="dash-stat-link">See all stories →</Link>}
+        />
 
         {/* KIDS ROW */}
         <div className="dash-kids-row" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 56 }}>
@@ -216,28 +211,25 @@ export default function DashboardPage() {
 
         {/* SHELF HEADER */}
         <Reveal inView>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, gap: 16, flexWrap: "wrap" }}>
-          <div>
-            <h2 style={{ fontFamily: "var(--font-young-serif), serif", fontSize: "clamp(24px, 2.4vw, 30px)", color: "var(--twilight)", letterSpacing: "-0.01em" }}>
-              {activeKidObj?.nickname ?? "Your"}<span style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--berry)", fontSize: "0.9em" }}>{activeKidObj ? "'s shelf" : " shelf"}</span>
-            </h2>
-            <div style={{ fontSize: 13.5, color: "var(--ink-soft)", fontWeight: 600, marginTop: 4 }}>
-              {activeKidObj
-                ? `${activeKidObj.tales} ${activeKidObj.tales === 1 ? "story" : "stories"} · ${activeKidObj.favorites} favorite${activeKidObj.favorites === 1 ? "" : "s"}`
-                : "Add a hero to begin"}
+        <SectionHeader
+          align="center"
+          title={<>{activeKidObj?.nickname ?? "Your"}<HeadAccent>{activeKidObj ? "'s shelf" : " shelf"}</HeadAccent></>}
+          sub={activeKidObj
+            ? `${activeKidObj.tales} ${activeKidObj.tales === 1 ? "story" : "stories"} · ${activeKidObj.favorites} favorite${activeKidObj.favorites === 1 ? "" : "s"}`
+            : "Add a hero to begin"}
+          action={
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+              {filters.map(f => (
+                <button
+                  key={f}
+                  onClick={() => { if (!f.startsWith("Sort:")) setActiveFilter(f); }}
+                  className={`dash-filter-chip ${activeFilter === f ? "dash-filter-chip-active" : ""}`}
+                  style={{ padding: "8px 14px", background: "var(--cream-deep)", border: "none", borderRadius: 999, fontWeight: 700, fontSize: 13, color: "var(--twilight)", cursor: "pointer" }}
+                >{f}</button>
+              ))}
             </div>
-          </div>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-            {filters.map(f => (
-              <button
-                key={f}
-                onClick={() => { if (!f.startsWith("Sort:")) setActiveFilter(f); }}
-                className={`dash-filter-chip ${activeFilter === f ? "dash-filter-chip-active" : ""}`}
-                style={{ padding: "8px 14px", background: "var(--cream-deep)", border: "none", borderRadius: 999, fontWeight: 700, fontSize: 13, color: "var(--twilight)", cursor: "pointer" }}
-              >{f}</button>
-            ))}
-          </div>
-        </div>
+          }
+        />
 
         {/* SHELF PLANK + BOOKS */}
         <div style={{ height: 14, background: "var(--ink)", borderRadius: 3, marginBottom: -2, boxShadow: "0 3px 0 rgba(28,21,64,0.4)" }} />

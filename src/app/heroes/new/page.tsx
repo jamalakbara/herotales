@@ -7,6 +7,7 @@ import { AppFooter } from "@/components/app-footer";
 import { FloatingNav } from "@/components/floating-nav";
 import { AmbientDecor } from "@/components/motion/AmbientDecor";
 import { Reveal } from "@/components/motion/Reveal";
+import { SectionKicker } from "@/components/section-kicker";
 import { Skeleton } from "@/components/skeleton";
 import { getErrorMessage } from "@/lib/errors";
 import { AVATAR_SWATCHES } from "@/lib/hero-palette";
@@ -221,7 +222,7 @@ export default function AddHeroPage() {
         {/* HEAD */}
         <Reveal className="hero-add-head" style={{ display: "grid", gridTemplateColumns: "1.1fr 0.9fr", gap: 36, marginBottom: 40, alignItems: "end" }}>
           <div>
-            <span style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--berry)", fontSize: 16, transform: "rotate(-1.5deg)", display: "inline-block", marginBottom: 8 }}>Sketching a new character</span>
+            <SectionKicker>Sketching a new character</SectionKicker>
             <h1 style={{ fontFamily: "var(--font-young-serif), serif", fontSize: "clamp(38px, 4vw, 56px)", lineHeight: 1.0, letterSpacing: "-0.02em", color: "var(--twilight)", marginBottom: 14 }}>
               Who&apos;s joining the <span style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--berry)" }}>woods</span>?
             </h1>

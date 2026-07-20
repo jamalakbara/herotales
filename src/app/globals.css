@@ -3513,6 +3513,24 @@ html.lenis, html.lenis body { height: auto; }
   border-radius: 24px;
   box-shadow: var(--u-card-shadow-lg);
 }
+/* Empty-state panels (see EmptyState component) */
+.u-empty {
+  text-align: center;
+  padding: 36px;
+  background: var(--cream-deep);
+  border-radius: 20px;
+  box-shadow: var(--u-card-shadow);
+}
+.u-empty-orange {
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+  padding: 60px 20px;
+  background: var(--u-orange);
+  border-radius: 28px;
+  box-shadow: var(--u-card-shadow-lg);
+  color: rgba(20, 9, 6, 0.72);
+}
 
 /* ---- Shared app footer ---- */
 .app-foot {

@@ -3,7 +3,9 @@ import Link from "next/link";
 import { useState, useEffect, useMemo, CSSProperties } from "react";
 import { AppFooter } from "@/components/app-footer";
 import { BookCard } from "@/components/book-card";
+import { EmptyState } from "@/components/empty-state";
 import { FloatingNav } from "@/components/floating-nav";
+import { HeadAccent, SectionHeader } from "@/components/section-header";
 import { AmbientDecor } from "@/components/motion/AmbientDecor";
 import { FannedCards } from "@/components/motion/FannedCards";
 import { PinnedPanel } from "@/components/motion/PinnedPanel";
@@ -193,15 +195,12 @@ export default function KeepsakeBooksPage() {
 
         {/* PICK A STORY */}
         <Reveal inView>
-        <div id="pick" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 20, flexWrap: "wrap", gap: 14 }}>
-          <div>
-            <h2 style={{ fontFamily: "var(--font-young-serif), serif", fontSize: "clamp(24px, 2.4vw, 30px)", color: "var(--twilight)", letterSpacing: "-0.01em" }}>
-              Pick a tale to <span style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--berry)", fontSize: "0.9em" }}>print</span>
-            </h2>
-            <div style={{ fontSize: 13.5, color: "var(--ink-soft)", fontWeight: 600, marginTop: 4 }}>Only completed stories can be printed. Select one, then choose a binding below.</div>
-          </div>
-          <Link href="/shelf" className="btn btn-ghost" style={{ fontSize: 13, padding: "8px 16px" }}>Browse full shelf →</Link>
-        </div>
+        <SectionHeader
+          id="pick"
+          title={<>Pick a tale to <HeadAccent>print</HeadAccent></>}
+          sub="Only completed stories can be printed. Select one, then choose a binding below."
+          action={<Link href="/shelf" className="btn btn-ghost" style={{ fontSize: 13, padding: "8px 16px" }}>Browse full shelf →</Link>}
+        />
 
         {loadError && (
           <div style={{ background: "var(--berry)", color: "var(--cream)", border: "2px solid var(--ink)", borderRadius: 14, padding: "12px 18px", marginBottom: 16, fontSize: 13.5, fontWeight: 700 }}>
@@ -214,13 +213,13 @@ export default function KeepsakeBooksPage() {
             {Array.from({ length: 5 }).map((_, i) => <SkeletonBookItem key={i} />)}
           </div>
         ) : stories.length === 0 ? (
-          <div style={{ background: "var(--cream-deep)", borderRadius: 20, boxShadow: "var(--u-card-shadow)", padding: 36, marginBottom: 56, textAlign: "center" }}>
-            <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 22, color: "var(--twilight)", marginBottom: 6 }}>No printable tales yet</div>
-            <div style={{ fontSize: 14, color: "var(--ink-soft)", fontWeight: 600, marginBottom: 18 }}>Finish a story first — every completed tale lands here for keepsake printing.</div>
-            <Link href="/stories/new" className="btn btn-berry">
-              Start a new tale →
-            </Link>
-          </div>
+          <EmptyState
+            variant="plain"
+            style={{ marginBottom: 56 }}
+            title="No printable tales yet"
+            sub="Finish a story first — every completed tale lands here for keepsake printing."
+            cta={<Link href="/stories/new" className="btn btn-berry">Start a new tale →</Link>}
+          />
         ) : (
         <div className="kp-pick-grid" style={{ marginBottom: 56 }}>
           {stories.map((s, i) => (
@@ -232,14 +231,10 @@ export default function KeepsakeBooksPage() {
 
         {/* PRICING */}
         <Reveal inView>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 20, flexWrap: "wrap", gap: 14 }}>
-          <div>
-            <h2 style={{ fontFamily: "var(--font-young-serif), serif", fontSize: "clamp(24px, 2.4vw, 30px)", color: "var(--twilight)", letterSpacing: "-0.01em" }}>
-              Choose a <span style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--berry)", fontSize: "0.9em" }}>binding</span>
-            </h2>
-            <div style={{ fontSize: 13.5, color: "var(--ink-soft)", fontWeight: 600, marginTop: 4 }}>All editions are printed on thick matte paper with a foil-pressed title. Prices per book.</div>
-          </div>
-        </div>
+        <SectionHeader
+          title={<>Choose a <HeadAccent>binding</HeadAccent></>}
+          sub="All editions are printed on thick matte paper with a foil-pressed title. Prices per book."
+        />
         </Reveal>
 
         <div className="pricing-grid" style={{ marginBottom: 56 }}>
@@ -252,18 +247,14 @@ export default function KeepsakeBooksPage() {
 
         {/* ORDERS */}
         <Reveal inView>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 20, flexWrap: "wrap", gap: 14 }}>
-          <div>
-            <h2 style={{ fontFamily: "var(--font-young-serif), serif", fontSize: "clamp(24px, 2.4vw, 30px)", color: "var(--twilight)", letterSpacing: "-0.01em" }}>
-              Your <span style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--berry)", fontSize: "0.9em" }}>orders</span>
-            </h2>
-            <div style={{ fontSize: 13.5, color: "var(--ink-soft)", fontWeight: 600, marginTop: 4 }}>
-              {orders.length === 0 ? "No keepsake orders yet — printing arrives once checkout opens." : `${orders.length} keepsake${orders.length === 1 ? "" : "s"} ordered`}
-            </div>
-          </div>
-          {/* TODO: Phase 3 — Stripe. Receipts download wired post-billing. */}
-          <button disabled title="Available once keepsake checkout opens" className="kp-cta" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "8px 16px", borderRadius: 999, fontWeight: 800, fontSize: 13, border: "none", background: "var(--cream-deep)", color: "var(--ink)", cursor: "not-allowed", opacity: 0.5 }}>Download receipts</button>
-        </div>
+        <SectionHeader
+          title={<>Your <HeadAccent>orders</HeadAccent></>}
+          sub={orders.length === 0 ? "No keepsake orders yet — printing arrives once checkout opens." : `${orders.length} keepsake${orders.length === 1 ? "" : "s"} ordered`}
+          action={
+            /* TODO: Phase 3 — Stripe. Receipts download wired post-billing. */
+            <button disabled title="Available once keepsake checkout opens" className="kp-cta" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "8px 16px", borderRadius: 999, fontWeight: 800, fontSize: 13, border: "none", background: "var(--cream-deep)", color: "var(--ink)", cursor: "not-allowed", opacity: 0.5 }}>Download receipts</button>
+          }
+        />
 
         <div style={{ background: "#fff", borderRadius: 20, boxShadow: "var(--u-card-shadow)", overflow: "hidden", marginBottom: 56 }}>
           <div className="kp-order-cols kp-order-head" style={{ padding: "14px 22px", background: "var(--cream-deep)", fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-soft)" }}>
@@ -309,14 +300,10 @@ export default function KeepsakeBooksPage() {
 
         {/* FAQ */}
         <Reveal inView>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 20, flexWrap: "wrap", gap: 14 }}>
-          <div>
-            <h2 style={{ fontFamily: "var(--font-young-serif), serif", fontSize: "clamp(24px, 2.4vw, 30px)", color: "var(--twilight)", letterSpacing: "-0.01em" }}>
-              Little <span style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--berry)", fontSize: "0.9em" }}>questions</span>
-            </h2>
-            <div style={{ fontSize: 13.5, color: "var(--ink-soft)", fontWeight: 600, marginTop: 4 }}>Tap any question to read the answer.</div>
-          </div>
-        </div>
+        <SectionHeader
+          title={<>Little <HeadAccent>questions</HeadAccent></>}
+          sub="Tap any question to read the answer."
+        />
 
         <div style={{ background: "#fff", borderRadius: 22, boxShadow: "var(--u-card-shadow)", padding: "28px 32px" }}>
           {faqs.map((f, i) => (

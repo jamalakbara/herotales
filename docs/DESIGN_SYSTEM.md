@@ -67,6 +67,7 @@ The app pages (dashboard, shelf, story builder, reader, keepsake) are fully migr
 - `.u-card-lg` — white, radius `28px`, `var(--u-card-shadow-lg)` (hero-grade panels, e.g. the dashboard greeting).
 - `.u-panel-dark` — `--twilight` surface, white text, radius `24px`, shadow-lg, `position: relative; overflow: hidden` (ready to host `<AmbientDecor>`).
 - `.u-chip` / `.u-chip.active` — grey pill resting, **orange fill + white text** when selected, `translateY(-1px)` hover.
+- `.u-empty` / `.u-empty-orange` — centered empty-state panels (cream-deep tray / decorated u-orange hero). Rendered via `<EmptyState>` (§6), not hand-rolled.
 
 > **BookCover exception:** `<BookCover>` (and its mini spine thumbnails / hero book mocks) intentionally keeps the v1 `2.5px` ink outline + hard offset shadow — it is the one "physical printed book" motif. Do not soften it, and do not use hard shadows anywhere else.
 
@@ -145,6 +146,12 @@ The full grid item: `<BookCover>` + the caption below (Young-Serif title line, t
 - Chip pickers (`.age-chip`, `.pron-chip`, `.tag`, `.bp-opt`, `.voice-opt`, `.length-opt`): grey resting, borderless, hover lift; `.active` = **orange fill + white text** (or dark surface + soft shadow for the larger `.bp-opt`/`.voice-opt` tiles). Selection = filled accent, never just a text-color change. `.suggest-chip` keeps its dashed grey outline, filling orange on hover.
 - `.kid-pick` (existing-hero picker on `stories/new`): grey card; selected = white fill + **inset orange ring** + soft shadow — the same selection language as the keepsake story picker.
 - Shared footer: `<AppFooter variant="wide" | "mini">` (`src/components/app-footer.tsx`) — the © / Privacy / Delete-my-data / Help strip on every app page (`.app-foot` / `.foot-mini`). Never inline a page footer again.
+
+### App-page section scaffolding (shared components — never inline these blocks again)
+- `<SectionHeader title sub? action? align? id?>` (`src/components/section-header.tsx`) — the serif `h2` + 13.5px sub line on the left, optional action slot (link / button / chip row) on the right; flex space-between, wraps. `align="center"` for headers whose action is taller than the title (dashboard shelf header). Accent words inside `title` use `<HeadAccent>` (Caprasimo, `--berry`, `0.9em`). Used on dashboard (heroes, shelf) and keepsake (pick / binding / orders / FAQ).
+- `<SectionKicker size?>` (`src/components/section-kicker.tsx`) — the rotated (`-1.5deg`) Caprasimo berry kicker above a page heading. `size` 16 default, 17 on the shelf hero; pass `className` for entry animations (`dash-shelf-kicker-anim`). Page-specific kicker variants (keepsake's orange `kp-hero-kicker`, the dashboard dark-panel moon label) stay local.
+- `<ErrorAlert>` (`src/components/error-alert.tsx`) — inline load/submit error banner (berry text on `rgba(180,60,90,0.08)`, `2px` berry border, radius 16). Dashboard + shelf. Keepsake's solid-berry variant is a different visual and stays inline.
+- `<EmptyState variant="orange" | "plain" title sub cta?>` (`src/components/empty-state.tsx`) — centered no-content panel backed by `.u-empty` (plain: cream-deep tray, radius 20, `--u-card-shadow`) / `.u-empty-orange` (u-orange hero panel, radius 28, shadow-lg, hosts `<AmbientDecor variant="orange">`). Shelf zero-match + keepsake picker.
 
 ### Nav — `<FloatingNav>` (`src/components/floating-nav.tsx`)
 One fixed, centered **pill** nav for the whole app (replaces the old `Nav` / `DashboardNav` / `ReaderNav` — do not reintroduce those). Grey (`#F0F0F0`) borderless pill with a whisper shadow (umano override of `.fnav-pill`); shadow deepens slightly past `60px` scroll. Logo reuses `.logo` + `.logo-mark`. Four variants via one prop:

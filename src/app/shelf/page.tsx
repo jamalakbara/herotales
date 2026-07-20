@@ -4,8 +4,10 @@ import { useEffect, useMemo, useState, CSSProperties } from "react";
 import { AppFooter } from "@/components/app-footer";
 import { BookCard, NewTaleCard } from "@/components/book-card";
 import { accentColors } from "@/components/book-cover";
+import { EmptyState } from "@/components/empty-state";
+import { ErrorAlert } from "@/components/error-alert";
 import { FloatingNav } from "@/components/floating-nav";
-import { AmbientDecor } from "@/components/motion/AmbientDecor";
+import { SectionKicker } from "@/components/section-kicker";
 import { Reveal } from "@/components/motion/Reveal";
 import { Skeleton, SkeletonBookItem } from "@/components/skeleton";
 import { getErrorMessage } from "@/lib/errors";
@@ -130,7 +132,7 @@ export default function ShelfPage() {
 
         <div style={{ marginBottom: 32, display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 24, flexWrap: "wrap" }}>
           <div>
-            <span className="dash-shelf-kicker-anim" style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--berry)", fontSize: 17, transform: "rotate(-1.5deg)", display: "inline-block", marginBottom: 8 }}>Every tale you&apos;ve told</span>
+            <SectionKicker className="dash-shelf-kicker-anim" size={17}>Every tale you&apos;ve told</SectionKicker>
             <h1 className="dash-shelf-head-anim dash-shelf-head-delay-1" style={{ fontFamily: "var(--font-young-serif), serif", fontSize: "clamp(38px, 4vw, 56px)", lineHeight: 1.02, letterSpacing: "-0.02em", color: "var(--twilight)" }}>
               The whole <span style={{ fontFamily: "var(--font-caprasimo), serif", fontStyle: "normal", color: "var(--berry)" }}>shelf</span>
             </h1>
@@ -158,11 +160,7 @@ export default function ShelfPage() {
           })}
         </div>
 
-        {loadError && (
-          <div style={{ marginBottom: 16, padding: "12px 16px", background: "rgba(180,60,90,0.08)", border: "2px solid var(--berry)", borderRadius: 14, color: "var(--berry)", fontWeight: 700, fontSize: 13 }}>
-            {loadError}
-          </div>
-        )}
+        {loadError && <ErrorAlert style={{ marginBottom: 16 }}>{loadError}</ErrorAlert>}
 
         {/* Toolbar */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 14, padding: "14px 18px", background: "#fff", borderRadius: 18, boxShadow: "var(--u-card-shadow)", marginBottom: 28 }}>
@@ -209,20 +207,14 @@ export default function ShelfPage() {
 
         {filtered.length === 0 && !loading && !loadError && (
           <Reveal inView>
-          <div style={{ position: "relative", overflow: "hidden", textAlign: "center", padding: "60px 20px", background: "var(--u-orange)", borderRadius: 28, boxShadow: "var(--u-card-shadow-lg)", color: "rgba(20,9,6,0.72)" }}>
-            <AmbientDecor variant="orange" fireflies={[]} />
-            <div style={{ position: "relative", zIndex: 1 }}>
-              <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 24, color: "#140906", marginBottom: 8 }}>
-                {stories.length === 0 ? "Your shelf is waiting" : "No tales match"}
-              </div>
-              <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>
-                {stories.length === 0 ? "Spin your first story to begin." : "Try a different filter or hero."}
-              </div>
-              {stories.length === 0 && (
-                <Link href="/stories/new" className="btn" style={{ display: "inline-block" }}>+ Craft a tale</Link>
-              )}
-            </div>
-          </div>
+          <EmptyState
+            variant="orange"
+            title={stories.length === 0 ? "Your shelf is waiting" : "No tales match"}
+            sub={stories.length === 0 ? "Spin your first story to begin." : "Try a different filter or hero."}
+            cta={stories.length === 0 && (
+              <Link href="/stories/new" className="btn" style={{ display: "inline-block" }}>+ Craft a tale</Link>
+            )}
+          />
           </Reveal>
         )}
 
