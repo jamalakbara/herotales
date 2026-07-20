@@ -2879,20 +2879,54 @@ body { padding-top: 84px; }
   z-index: 6;
 }
 /* Mobile swap for the pinned feature pan+zoom (rendered ≤720 by FeatureZoom):
-   a plain vertical stack — every card fully visible with a solid caption, no
-   pin/pan/zoom (that choreography is unreadable on a phone and its scrubbed
-   fades were fragile). Hands into the dark stories section at a clean edge. */
+   a swipeable centre-snapping carousel — the centred card pops full-size while
+   neighbours shrink + dim, with a dot pager. Pure CSS scroll-snap + focus
+   scaling (JS only tracks the active index); no scroll-scrubbed motion, so none
+   of the WAAPI fragility the pin had. Hands into the dark stories section at a
+   clean edge. */
 .u-fzoom-static { max-width: none; margin: 0; padding: 0; width: 100%; }
 .u-fzoom-static .u-track-head { padding: 72px 24px 0; }
-.u-fcard-stack {
+.u-fcar {
   display: flex;
-  flex-direction: column;
-  gap: 40px;
-  max-width: 380px;
-  margin: 0 auto;
-  padding: 24px 24px 8px;
+  gap: 18px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  /* Side inset = (100vw − card)/2 so the first & last card can sit dead-centre. */
+  padding: 26px calc((100vw - 300px) / 2) 20px;
+  scroll-padding-inline: calc((100vw - 300px) / 2);
 }
-.u-fcard-stack .u-hcard { width: 100%; max-width: none; }
+.u-fcar::-webkit-scrollbar { display: none; }
+.u-fcar-item {
+  flex: 0 0 300px;
+  scroll-snap-align: center;
+  transform: scale(0.88);
+  opacity: 0.5;
+  transition: transform 0.4s cubic-bezier(.22,1,.36,1), opacity 0.4s ease;
+}
+.u-fcar-item.is-active { transform: scale(1); opacity: 1; }
+.u-fcar-item .u-hcard { width: 100%; max-width: none; }
+.u-fcar-dots {
+  display: flex;
+  justify-content: center;
+  gap: 9px;
+  margin-top: 6px;
+}
+.u-fcar-dot {
+  width: 9px; height: 9px;
+  padding: 0;
+  border-radius: 999px;
+  border: 2px solid var(--ink);
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.25s ease, transform 0.25s ease;
+}
+.u-fcar-dot.is-active { background: var(--moon); transform: scale(1.25); }
+@media (prefers-reduced-motion: reduce) {
+  .u-fcar-item { transition: none; transform: none; opacity: 1; }
+  .u-fcar-dot { transition: none; }
+}
 
 /* ---------- UMANO SECTION: dark client stories (fanned) ---------- */
 /* Full-bleed dark so the zoom bridge fills the screen and the fan lands on the

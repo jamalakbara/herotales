@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
 import { LoopVideo } from "./LoopVideo";
 import { useMediaQuery } from "../use-media-query";
@@ -148,27 +148,24 @@ export function FeatureZoom({ cards, head }: FeatureZoomProps) {
 
   // Phones can't hold the pinned horizontal pan+zoom (cards are ~78vw, the pan is
   // tiny, and the scrubbed caption fade was fragile — see the WAAPI note above).
-  // Render a plain vertical stack instead: every card fully visible, caption
-  // always solid, no scroll hijack. Reduced motion keeps the wide horizontal row.
-  if (reduce || narrow) {
+  // Swap in a swipeable snap carousel: cards snap to centre, the centred one pops
+  // full-size while neighbours shrink + dim, with a dot pager. Pure CSS
+  // scroll-snap (JS only tracks the active index) — no scroll-scrubbed motion.
+  if (narrow) {
+    return <FeatureCarousel cards={cards} head={head} />;
+  }
+  // Reduced motion (wide): a plain horizontal-scroll row.
+  if (reduce) {
     return (
       <section id="how" className="u-fzoom-static">
         <div className="u-track-head">{head}</div>
-        {narrow ? (
-          <div className="u-fcard-stack">
+        <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+          <div style={{ display: "flex", gap: 28, padding: "0 48px" }}>
             {cards.map((c) => (
               <Card key={c.title} c={c} />
             ))}
           </div>
-        ) : (
-          <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
-            <div style={{ display: "flex", gap: 28, padding: "0 48px" }}>
-              {cards.map((c) => (
-                <Card key={c.title} c={c} />
-              ))}
-            </div>
-          </div>
-        )}
+        </div>
       </section>
     );
   }
@@ -213,6 +210,81 @@ export function FeatureZoom({ cards, head }: FeatureZoomProps) {
         </motion.div>
 
         <motion.div className="u-fzoom-veil" style={{ opacity: veilOpacity }} aria-hidden />
+      </div>
+    </section>
+  );
+}
+
+/**
+ * Mobile feature carousel (≤720px): a swipeable, centre-snapping row. The
+ * centred card pops to full size while its neighbours shrink + dim; a dot pager
+ * mirrors the active card and lets you jump. Snapping + focus scaling are pure
+ * CSS (`scroll-snap` + a `.is-active` class); an IntersectionObserver watching a
+ * thin centre band only tracks which card is active — no scroll-scrubbed motion,
+ * so none of the WAAPI/ViewTimeline fragility the pinned zoom hit.
+ */
+function FeatureCarousel({ cards, head }: FeatureZoomProps) {
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const reduce = useReducedMotion();
+  const [active, setActive] = useState(0);
+
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+    const items = Array.from(track.querySelectorAll<HTMLElement>("[data-fc-item]"));
+    // Shrink the observer root to a thin central band (10% wide) so the card
+    // sitting under the centre is the one reported active.
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            const i = items.indexOf(e.target as HTMLElement);
+            if (i >= 0) setActive(i);
+          }
+        }
+      },
+      { root: track, rootMargin: "0px -45% 0px -45%", threshold: 0 },
+    );
+    items.forEach((it) => io.observe(it));
+    return () => io.disconnect();
+  }, [cards.length]);
+
+  const goTo = (i: number) => {
+    const track = trackRef.current;
+    const item = track?.querySelectorAll<HTMLElement>("[data-fc-item]")[i];
+    item?.scrollIntoView({
+      behavior: reduce ? "auto" : "smooth",
+      inline: "center",
+      block: "nearest",
+    });
+  };
+
+  return (
+    <section id="how" className="u-fzoom-static">
+      <div className="u-track-head">{head}</div>
+      <div className="u-fcar" ref={trackRef}>
+        {cards.map((c, i) => (
+          <div
+            key={c.title}
+            data-fc-item
+            className={`u-fcar-item${i === active ? " is-active" : ""}`}
+          >
+            <Card c={c} />
+          </div>
+        ))}
+      </div>
+      <div className="u-fcar-dots" role="tablist" aria-label="Feature cards">
+        {cards.map((c, i) => (
+          <button
+            key={c.title}
+            type="button"
+            role="tab"
+            aria-selected={i === active}
+            aria-label={c.title}
+            className={`u-fcar-dot${i === active ? " is-active" : ""}`}
+            onClick={() => goTo(i)}
+          />
+        ))}
       </div>
     </section>
   );
