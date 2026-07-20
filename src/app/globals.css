@@ -2878,6 +2878,21 @@ body { padding-top: 84px; }
   pointer-events: none;
   z-index: 6;
 }
+/* Mobile swap for the pinned feature pan+zoom (rendered ≤720 by FeatureZoom):
+   a plain vertical stack — every card fully visible with a solid caption, no
+   pin/pan/zoom (that choreography is unreadable on a phone and its scrubbed
+   fades were fragile). Hands into the dark stories section at a clean edge. */
+.u-fzoom-static { max-width: none; margin: 0; padding: 0; width: 100%; }
+.u-fzoom-static .u-track-head { padding: 72px 24px 0; }
+.u-fcard-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  max-width: 380px;
+  margin: 0 auto;
+  padding: 24px 24px 8px;
+}
+.u-fcard-stack .u-hcard { width: 100%; max-width: none; }
 
 /* ---------- UMANO SECTION: dark client stories (fanned) ---------- */
 /* Full-bleed dark so the zoom bridge fills the screen and the fan lands on the

@@ -146,17 +146,29 @@ export function FeatureZoom({ cards, head }: FeatureZoomProps) {
   // Veil closes to full black right at the pin end (also the ultrawide backstop).
   const veilOpacity = useTransform(scrollYProgress, [0.9, 1], [0, 1]);
 
-  if (reduce) {
+  // Phones can't hold the pinned horizontal pan+zoom (cards are ~78vw, the pan is
+  // tiny, and the scrubbed caption fade was fragile — see the WAAPI note above).
+  // Render a plain vertical stack instead: every card fully visible, caption
+  // always solid, no scroll hijack. Reduced motion keeps the wide horizontal row.
+  if (reduce || narrow) {
     return (
-      <section id="how">
+      <section id="how" className="u-fzoom-static">
         <div className="u-track-head">{head}</div>
-        <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
-          <div style={{ display: "flex", gap: 28, padding: "0 48px" }}>
+        {narrow ? (
+          <div className="u-fcard-stack">
             {cards.map((c) => (
               <Card key={c.title} c={c} />
             ))}
           </div>
-        </div>
+        ) : (
+          <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+            <div style={{ display: "flex", gap: 28, padding: "0 48px" }}>
+              {cards.map((c) => (
+                <Card key={c.title} c={c} />
+              ))}
+            </div>
+          </div>
+        )}
       </section>
     );
   }
