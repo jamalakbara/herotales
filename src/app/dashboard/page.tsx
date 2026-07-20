@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { AppFooter } from "@/components/app-footer";
 import { BookCard, NewTaleCard } from "@/components/book-card";
 import { ErrorAlert } from "@/components/error-alert";
@@ -12,7 +12,7 @@ import { SectionKicker } from "@/components/section-kicker";
 import { AmbientDecor } from "@/components/motion/AmbientDecor";
 import { Reveal } from "@/components/motion/Reveal";
 import { SkeletonBookItem, SkeletonKidCard } from "@/components/skeleton";
-import { getErrorMessage } from "@/lib/errors";
+import { useFetchJson } from "@/components/use-fetch-json";
 import { KID_PALETTES } from "@/lib/hero-palette";
 import { BLUEPRINT_ICONS, pickName, storyToBook, timeAgo, type StoryListItem } from "@/lib/story-view";
 import { BLUEPRINTS } from "@/lib/types";
@@ -45,31 +45,40 @@ function getGreetingTime(): string {
 
 const filters = ["All", "Favorites ♡", "Bravery", "Kindness", "Patience", "Sort: Recent ▾"];
 
+// Local to the dashboard stats row — promote to src/components only if a
+// second page grows stat cards.
+function StatCard({ variant, label, value, unit, children }: {
+  variant: "orange" | "card" | "dark";
+  label: string;
+  value: ReactNode;
+  unit?: string;
+  children?: ReactNode;
+}) {
+  const s = {
+    orange: { cls: undefined, wrapStyle: { background: "var(--u-orange)", boxShadow: "var(--u-card-shadow-lg)" }, kicker: "rgba(20,9,6,0.72)", val: "var(--ink-warm)", unitCol: "rgba(20,9,6,0.7)" },
+    card: { cls: "u-card", wrapStyle: undefined, kicker: "var(--u-orange)", val: "var(--twilight)", unitCol: "var(--ink-soft)" },
+    dark: { cls: "u-panel-dark", wrapStyle: undefined, kicker: "var(--u-orange)", val: "#fff", unitCol: "rgba(255,255,255,0.7)" },
+  }[variant];
+  return (
+    <div className={s.cls} style={{ borderRadius: 22, padding: "24px 26px", ...s.wrapStyle }}>
+      <div style={{ fontFamily: "var(--font-caprasimo), serif", fontSize: 13, color: s.kicker, marginBottom: 6 }}>{label}</div>
+      {variant !== "dark" ? (
+        <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 46, color: s.val, lineHeight: 1, letterSpacing: "-0.02em", display: "flex", alignItems: "baseline", gap: 8 }}>
+          {value}
+          {unit && <span style={{ fontSize: 14, fontWeight: 700, fontFamily: "var(--font-nunito), sans-serif", color: s.unitCol }}>{unit}</span>}
+        </div>
+      ) : (
+        <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 28, color: s.val, lineHeight: 1.2, marginTop: 8 }}>{value}</div>
+      )}
+      {children}
+    </div>
+  );
+}
+
 export default function DashboardPage() {
-  const [data, setData] = useState<APIDashboard | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const { data, error: loadError, loading } = useFetchJson<APIDashboard>("/api/dashboard", "Dashboard load failed");
   const [activeKid, setActiveKid] = useState(0);
   const [activeFilter, setActiveFilter] = useState("All");
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/dashboard", { cache: "no-store" })
-      .then(async (r) => {
-        if (!r.ok) throw new Error(`Dashboard load failed (${r.status})`);
-        return (await r.json()) as APIDashboard;
-      })
-      .then((j) => {
-        if (!cancelled) setData(j);
-      })
-      .catch((e: unknown) => {
-        if (!cancelled) setLoadError(getErrorMessage(e, "Could not load"));
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const loading = !data && !loadError;
   const kids = data?.kids ?? [];
   const recent = data?.recent_stories ?? [];
   const profile = data?.profile;
@@ -240,12 +249,12 @@ export default function DashboardPage() {
         {/* STATS ROW */}
         <Reveal inView>
         <div className="dash-stats-row" style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr 1fr", gap: 20, marginBottom: 56 }}>
-          {/* Streak */}
-          <div style={{ background: "var(--u-orange)", borderRadius: 22, boxShadow: "var(--u-card-shadow-lg)", padding: "24px 26px" }}>
-            <div style={{ fontFamily: "var(--font-caprasimo), serif", fontSize: 13, color: "rgba(20,9,6,0.72)", marginBottom: 6 }}>Bedtime streak</div>
-            <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 46, color: "var(--ink-warm)", lineHeight: 1, letterSpacing: "-0.02em", display: "flex", alignItems: "baseline", gap: 8 }}>
-              {profile?.streak_nights ?? 0}<span style={{ fontSize: 14, fontWeight: 700, fontFamily: "var(--font-nunito), sans-serif", color: "rgba(20,9,6,0.7)" }}>{(profile?.streak_nights ?? 0) === 1 ? "night so far" : "nights in a row"}</span>
-            </div>
+          <StatCard
+            variant="orange"
+            label="Bedtime streak"
+            value={profile?.streak_nights ?? 0}
+            unit={(profile?.streak_nights ?? 0) === 1 ? "night so far" : "nights in a row"}
+          >
             <div style={{ marginTop: 14, display: "flex", gap: 4 }}>
               {["M","T","W","T","F","S"].map((d, i) => (
                 <div key={i} style={{ flex: 1, height: 26, borderRadius: 4, background: "var(--twilight)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 11, color: "var(--u-orange)" }}>{d}</div>
@@ -253,27 +262,24 @@ export default function DashboardPage() {
               <div style={{ flex: 1, height: 26, borderRadius: 4, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 11, color: "var(--u-orange)" }}>S</div>
             </div>
             <div style={{ fontSize: 13, color: "rgba(20,9,6,0.72)", fontWeight: 600, marginTop: 8, maxWidth: 280, lineHeight: 1.4 }}>Tonight keeps it going — your little ones are learning that stories show up, every single night.</div>
-          </div>
-          {/* Usage */}
-          <div className="u-card" style={{ borderRadius: 22, padding: "24px 26px" }}>
-            <div style={{ fontFamily: "var(--font-caprasimo), serif", fontSize: 13, color: "var(--u-orange)", marginBottom: 6 }}>This month</div>
-            <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 46, color: "var(--twilight)", lineHeight: 1, letterSpacing: "-0.02em", display: "flex", alignItems: "baseline", gap: 8 }}>
-              {quota?.used ?? 0}<span style={{ fontSize: 14, fontWeight: 700, fontFamily: "var(--font-nunito), sans-serif", color: "var(--ink-soft)" }}>of {quota?.quota ?? 0} stories used</span>
-            </div>
+          </StatCard>
+          <StatCard
+            variant="card"
+            label="This month"
+            value={quota?.used ?? 0}
+            unit={`of ${quota?.quota ?? 0} stories used`}
+          >
             <div style={{ fontSize: 13, color: "var(--ink-soft)", fontWeight: 600, marginTop: 8, maxWidth: 280, lineHeight: 1.4 }}>
               {quota ? `${quota.remaining} ${quota.remaining === 1 ? "story" : "stories"} left this period.` : "Loading…"}
             </div>
             <span className="dash-stat-link" style={{ marginTop: 12, display: "inline-block", opacity: 0.6 }} title="Upgrades arrive in a future update">Upgrades coming soon →</span>
-          </div>
-          {/* Keepsake */}
-          <div className="u-panel-dark" style={{ borderRadius: 22, padding: "24px 26px" }}>
-            <div style={{ fontFamily: "var(--font-caprasimo), serif", fontSize: 13, color: "var(--u-orange)", marginBottom: 6 }}>Keepsake book</div>
-            <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 28, color: "#fff", lineHeight: 1.2, marginTop: 8 }}>Coming soon</div>
+          </StatCard>
+          <StatCard variant="dark" label="Keepsake book" value="Coming soon">
             <div style={{ fontSize: 13, fontWeight: 600, opacity: 0.75, marginTop: 8, lineHeight: 1.4, maxWidth: 240 }}>
               Turn your stories into a printed keepsake book — available soon.
             </div>
             <Link href="/keepsake-books" className="dash-stat-link" style={{ color: "var(--u-orange)", marginTop: 14, display: "inline-block" }}>Learn more →</Link>
-          </div>
+          </StatCard>
         </div>
         </Reveal>
 

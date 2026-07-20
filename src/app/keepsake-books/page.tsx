@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useState, useEffect, useMemo, CSSProperties } from "react";
+import { useState, useMemo, CSSProperties } from "react";
 import { AppFooter } from "@/components/app-footer";
 import { BookCard } from "@/components/book-card";
 import { EmptyState } from "@/components/empty-state";
@@ -12,7 +12,7 @@ import { PinnedPanel } from "@/components/motion/PinnedPanel";
 import { PlanCard, type PlanCardProps } from "@/components/plan-card";
 import { Reveal } from "@/components/motion/Reveal";
 import { SkeletonBookItem } from "@/components/skeleton";
-import { getErrorMessage } from "@/lib/errors";
+import { useFetchJson } from "@/components/use-fetch-json";
 import { storyToBook, type BookView, type StoryListItem } from "@/lib/story-view";
 
 const features = [
@@ -88,34 +88,14 @@ export default function KeepsakeBooksPage() {
   const [selectedStory, setSelectedStory] = useState(0);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [featuredPlan, setFeaturedPlan] = useState(1);
-  const [apiStories, setApiStories] = useState<StoryListItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        const res = await fetch("/api/stories?status=ready&limit=20", { cache: "no-store" });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = await res.json();
-        if (!alive) return;
-        setApiStories(json.stories ?? []);
-      } catch (e) {
-        if (!alive) return;
-        setLoadError(getErrorMessage(e, "Failed to load stories"));
-      } finally {
-        if (alive) setLoading(false);
-      }
-    })();
-    return () => {
-      alive = false;
-    };
-  }, []);
+  const { data, error: loadError, loading } = useFetchJson<{ stories: StoryListItem[] }>(
+    "/api/stories?status=ready&limit=20",
+    "Failed to load stories",
+  );
 
   const stories: BookView[] = useMemo(
-    () => apiStories.slice(0, 5).map((s, i) => storyToBook(s, i)),
-    [apiStories],
+    () => (data?.stories ?? []).slice(0, 5).map((s, i) => storyToBook(s, i)),
+    [data],
   );
 
   return (
