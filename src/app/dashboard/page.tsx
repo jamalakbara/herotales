@@ -108,7 +108,7 @@ export default function DashboardPage() {
   return (
     <>
       <FloatingNav variant="app" />
-      <main className="dash-page" style={{ maxWidth: 1400, margin: "0 auto", padding: "10px 48px 80px", position: "relative", zIndex: 2 }}>
+      <main className="dash-page app-main" style={{ maxWidth: 1400, margin: "0 auto", padding: "10px 48px 80px", position: "relative", zIndex: 2 }}>
 
         {loadError && (
           <div style={{ marginBottom: 24, padding: "14px 18px", background: "rgba(180,60,90,0.08)", border: "2px solid var(--berry)", borderRadius: 16, color: "var(--berry)", fontWeight: 700, fontSize: 13.5 }}>

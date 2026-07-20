@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
+import { useMediaQuery } from "../use-media-query";
 
 type FannedCardsProps = {
   /** One node per card. Middle card stays upright; outer cards fan out. */
@@ -47,6 +48,11 @@ export function FannedCards({ children, className, minHeight = 620, spread = 1, 
   const ref = useRef<HTMLDivElement | null>(null);
   const reduce = useReducedMotion();
   const [hovered, setHovered] = useState<number | null>(null);
+  // Narrow screens can't hold the full spread — outer cards would clip into
+  // half-off-screen slivers. Tighten into a deck: neighbours peek behind the
+  // upright centre card instead of flying off the edges.
+  const narrow = useMediaQuery("(max-width: 720px)");
+  const effectiveSpread = narrow ? spread * 0.38 : spread;
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start 0.9", "center 0.55"],
@@ -62,7 +68,7 @@ export function FannedCards({ children, className, minHeight = 620, spread = 1, 
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        minHeight,
+        minHeight: narrow ? Math.min(minHeight, 520) : minHeight,
       }}
     >
       {children.map((child, i) => (
@@ -70,7 +76,7 @@ export function FannedCards({ children, className, minHeight = 620, spread = 1, 
           key={i}
           i={i}
           count={count}
-          spread={spread}
+          spread={effectiveSpread}
           progress={scrollYProgress}
           reduce={!!reduce}
           staticSpread={staticSpread}

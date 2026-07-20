@@ -19,8 +19,8 @@ function ShelfSection({ label, count, books }: { label: string; count: string; b
       <div className="dash-shelf-label-anim" style={{ fontFamily: "var(--font-caprasimo), serif", fontSize: 18, color: "var(--twilight)", marginTop: 28, marginBottom: 14, display: "flex", alignItems: "baseline", gap: 12 }}>
         {label} <span style={{ fontFamily: "var(--font-nunito), sans-serif", fontWeight: 700, fontSize: 13, color: "var(--ink-soft)" }}>· {count}</span>
       </div>
-      <div className="dash-shelf-plank-anim" style={{ height: 14, background: "var(--ink)", borderRadius: 3, marginBottom: -2 }} />
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "24px 20px", padding: "28px 22px 40px", background: "var(--cream-deep)", borderRadius: "4px 4px 24px 24px", boxShadow: "var(--u-card-shadow)", marginBottom: 26 }}>
+      <div className="dash-shelf-plank-anim shelf-plank" />
+      <div className="shelf-grid">
         {books.map((b, i) => <BookCard key={b.id} book={b} size="md" index={i} />)}
         {label === "Earlier this month" && <NewTaleCard href="/stories/new" size="md" index={craftIdx} />}
       </div>
@@ -133,7 +133,7 @@ export default function ShelfPage() {
   return (
     <>
       <FloatingNav variant="app" />
-      <main style={{ maxWidth: 1400, margin: "0 auto", padding: "10px 48px 80px", position: "relative", zIndex: 2 }}>
+      <main className="app-main" style={{ maxWidth: 1400, margin: "0 auto", padding: "10px 48px 80px", position: "relative", zIndex: 2 }}>
 
         <div style={{ marginBottom: 32, display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 24, flexWrap: "wrap" }}>
           <div>
@@ -191,8 +191,8 @@ export default function ShelfPage() {
 
         {loading ? (
           <>
-            <div style={{ height: 14, background: "var(--ink)", borderRadius: 3, marginBottom: -2 }} />
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "24px 20px", padding: "28px 22px 40px", background: "var(--cream-deep)", borderRadius: "4px 4px 24px 24px", boxShadow: "var(--u-card-shadow)", marginBottom: 26 }}>
+            <div className="shelf-plank" />
+            <div className="shelf-grid">
               {Array.from({ length: 5 }).map((_, i) => <SkeletonBookItem key={i} />)}
             </div>
           </>

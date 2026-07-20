@@ -11,6 +11,7 @@ import {
 } from "framer-motion";
 import { AmbientDecor, type DecorStar, type DecorFirefly } from "./motion/AmbientDecor";
 import { LoopVideo } from "./motion/LoopVideo";
+import { useMediaQuery } from "./use-media-query";
 
 const easeOut = cubicBezier(0.22, 1, 0.36, 1);
 
@@ -43,6 +44,10 @@ const FIREFLIES: DecorFirefly[] = [
 export function Hero() {
   const ref = useRef<HTMLDivElement | null>(null);
   const reduce = useReducedMotion();
+  // On short/narrow screens the headline fills most of the panel, so the
+  // desktop start-offset (360) would hide the card entirely and half-clip the
+  // notify pill at the fold — start higher so the book top peeks cleanly.
+  const mobile = useMediaQuery("(max-width: 960px)");
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start start", "end end"],
@@ -52,7 +57,9 @@ export function Hero() {
   const textY = useTransform(scrollYProgress, [0, 0.26], [0, -520]);
   const textOpacity = useTransform(scrollYProgress, [0, 0.22], [1, 0]);
   // Card: peeks from bottom + small → rises to centre + grows (eased settle).
-  const cardY = useTransform(scrollYProgress, [0, 1], [360, -76], { ease: easeOut });
+  const restY = mobile ? 210 : 360;
+  const settleY = mobile ? -70 : -76;
+  const cardY = useTransform(scrollYProgress, [0, 1], [restY, settleY], { ease: easeOut });
   const cardScale = useTransform(scrollYProgress, [0, 1], [0.85, 1.02], { ease: easeOut });
   // Orange panel: full-bleed + square → inset + rounded.
   const panelScale = useTransform(scrollYProgress, [0, 0.55], [1, 0.955], { ease: easeOut });
@@ -99,7 +106,7 @@ export function Hero() {
         {/* Rising story card (our "device") */}
         <motion.div
           className="u-hero-stage"
-          style={reduce ? { y: -76, scale: 1 } : { y: cardY, scale: cardScale }}
+          style={reduce ? { y: settleY, scale: 1 } : { y: cardY, scale: cardScale }}
         >
           <div className="u-notify">
             <div className="u-notify-mark">✦</div>

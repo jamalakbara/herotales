@@ -166,11 +166,11 @@ export default function KeepsakeBooksPage() {
         </PinnedPanel>
       </div>
 
-      <main style={{ maxWidth: 1400, margin: "0 auto", padding: "48px 48px 80px", position: "relative", zIndex: 2 }}>
+      <main className="app-main" style={{ maxWidth: 1400, margin: "0 auto", padding: "48px 48px 80px", position: "relative", zIndex: 2 }}>
 
         {/* FEATURES */}
         <Reveal inView>
-        <div id="how" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 56 }}>
+        <div id="how" className="kp-how-grid" style={{ marginBottom: 56 }}>
           {features.map((f, i) => {
             // berry/sage fold to orange in the umano skin — rotate distinct surfaces
             const featBg = ["#fff", "var(--u-orange)", "var(--twilight)", "var(--lilac)"][i];
@@ -209,7 +209,7 @@ export default function KeepsakeBooksPage() {
         )}
 
         {loading ? (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 18, background: "var(--cream-deep)", borderRadius: 20, boxShadow: "var(--u-card-shadow)", padding: 22, marginBottom: 56 }}>
+          <div className="kp-pick-grid" style={{ marginBottom: 56 }}>
             {Array.from({ length: 5 }).map((_, i) => <SkeletonBookItem key={i} />)}
           </div>
         ) : stories.length === 0 ? (
@@ -221,7 +221,7 @@ export default function KeepsakeBooksPage() {
             </Link>
           </div>
         ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 18, background: "var(--cream-deep)", borderRadius: 20, boxShadow: "var(--u-card-shadow)", padding: 22, marginBottom: 56 }}>
+        <div className="kp-pick-grid" style={{ marginBottom: 56 }}>
           {stories.map((s, i) => (
             <BookCard key={s.id} book={s} size="sm" index={i} onClick={() => setSelectedStory(i)} selected={selectedStory === i} />
           ))}
@@ -265,7 +265,7 @@ export default function KeepsakeBooksPage() {
         </div>
 
         <div style={{ background: "#fff", borderRadius: 20, boxShadow: "var(--u-card-shadow)", overflow: "hidden", marginBottom: 56 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "60px 1.4fr 1fr 1fr 140px", gap: 16, alignItems: "center", padding: "14px 22px", background: "var(--cream-deep)", fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-soft)" }}>
+          <div className="kp-order-cols kp-order-head" style={{ padding: "14px 22px", background: "var(--cream-deep)", fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-soft)" }}>
             <div /><div>Book</div><div>Status</div><div>Ordered</div><div />
           </div>
           {orders.length === 0 && (
@@ -276,7 +276,7 @@ export default function KeepsakeBooksPage() {
           {orders.map((o, i) => {
             const styleVars = { "--i": i } as CSSProperties;
             return (
-              <div key={i} className="kp-order-row" style={{ ...styleVars, display: "grid", gridTemplateColumns: "60px 1.4fr 1fr 1fr 140px", gap: 16, alignItems: "center", padding: "18px 22px", borderBottom: i < orders.length - 1 ? "1.5px dashed var(--paper-line)" : "none" }}>
+              <div key={i} className="kp-order-row kp-order-cols" style={{ ...styleVars, padding: "18px 22px", borderBottom: i < orders.length - 1 ? "1.5px dashed var(--paper-line)" : "none" }}>
                 <div style={{ width: 44, height: 56, background: spineBg[o.spineCls], border: "2px solid var(--ink)", borderRadius: "3px 6px 6px 3px", position: "relative", flexShrink: 0 }}>
                   <div style={{ position: "absolute", left: 4, top: 6, bottom: 6, width: 2, background: "rgba(251,243,227,0.3)" }} />
                   <span style={{ position: "absolute", top: 18, left: "50%", transform: "translateX(-50%)", color: "var(--moon)", fontFamily: "var(--font-caprasimo), serif", fontSize: 12 }}>✦</span>

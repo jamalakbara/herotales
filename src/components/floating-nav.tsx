@@ -135,9 +135,16 @@ function AppInner() {
 }
 
 function ReaderInner({ crumbs, action }: { crumbs: Crumb[]; action?: ReactNode }) {
+  // Compact back link shown ≤720px, where the full crumb trail is hidden.
+  const back = [...crumbs].reverse().find((c) => c.href);
   return (
     <>
       <SiteLogo href="/dashboard" />
+      {back?.href && (
+        <Link href={back.href} className="fnav-link fnav-back">
+          ← {back.label}
+        </Link>
+      )}
       <div className="nav-crumbs fnav-crumbs">
         {crumbs.map((c, i) => (
           <Fragment key={i}>
@@ -210,6 +217,14 @@ function UserMenu() {
         <div role="menu" className="fnav-menu">
           <div className="fnav-menu-label">Signed in as</div>
           <div className="fnav-menu-email">{email ?? "—"}</div>
+          {/* Pill links hide ≤720px — the menu carries navigation on mobile. */}
+          <div className="fnav-menu-links">
+            {APP_LINKS.map(({ href, label }) => (
+              <Link key={href} href={href} className="fnav-link" onClick={() => setOpen(false)}>
+                {label}
+              </Link>
+            ))}
+          </div>
           <button
             type="button"
             onClick={handleSignOut}

@@ -220,7 +220,7 @@ export default function AddHeroPage() {
   return (
     <>
       <FloatingNav variant="app" />
-      <main style={{ maxWidth: 1300, margin: "0 auto", padding: "0 48px 80px", position: "relative", zIndex: 2 }}>
+      <main className="app-main" style={{ maxWidth: 1300, margin: "0 auto", padding: "0 48px 80px", position: "relative", zIndex: 2 }}>
         {/* CRUMB */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, fontWeight: 700, color: "var(--ink-soft)", marginBottom: 18 }}>
           <Link href="/dashboard">Home</Link>

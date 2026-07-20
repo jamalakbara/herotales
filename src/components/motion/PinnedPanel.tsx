@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
+import { useMediaQuery } from "../use-media-query";
 
 type PinnedPanelProps = {
   /** Scroll room for the pin (wrapper height). 150vh matches the landing FAQ. */
@@ -37,18 +38,38 @@ export function PinnedPanel({
 }: PinnedPanelProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const reduce = useReducedMotion();
+  // A pinned 100vh panel can't hold content taller than the viewport — on
+  // phones (accordion open, tall copy) it clips. Render a flowing section
+  // instead, with a light exit scrub (shrink + round as the bottom edge passes
+  // the fold) so it still hands off to what follows like the desktop pin.
+  const narrow = useMediaQuery("(max-width: 720px)");
   const { scrollYProgress } = useScroll({
     target: ref,
-    offset: ["start start", "end end"],
+    // narrow: shrink late and fast — minimize the window where the rounded
+    // panel and the revealing footer share the screen
+    offset: narrow ? ["end 0.9", "end 0.6"] : ["start start", "end end"],
   });
-  const scale = useTransform(scrollYProgress, progressRange, scaleRange);
-  const radius = useTransform(scrollYProgress, progressRange, radiusRange);
+  const scale = useTransform(scrollYProgress, narrow ? [0, 1] : progressRange, narrow ? [1, 0.93] : scaleRange);
+  const radius = useTransform(scrollYProgress, narrow ? [0, 1] : progressRange, narrow ? [0, 28] : radiusRange);
 
   if (reduce) {
     return (
       <section id={id} className={className}>
         {children}
       </section>
+    );
+  }
+
+  if (narrow) {
+    return (
+      <motion.section
+        ref={ref as React.RefObject<HTMLElement>}
+        id={id}
+        className={className}
+        style={{ scale, borderRadius: radius, transformOrigin: "center bottom", overflow: "hidden" }}
+      >
+        {children}
+      </motion.section>
     );
   }
 

@@ -1033,6 +1033,8 @@ footer {
   .hero, .how, .quote-section, .features, .blueprint-grid, .pricing-grid, .foot-grid {
     grid-template-columns: 1fr;
   }
+  /* featured lift is a 3-col-row accent — in the 1-col stack it just makes the gaps uneven */
+  .plan.featured { transform: none; }
   .blueprint-grid { grid-template-columns: repeat(2, 1fr); }
   .storybook-stage { height: 480px; }
   .nav-links { display: none; }
@@ -2272,6 +2274,16 @@ h1.story-title .script-em {
   .chap-title { font-size: 30px; }
   .story-text { font-size: 18px; }
 }
+@media (max-width: 640px) {
+  .story-col { padding: 20px; }
+  .audio-bar { flex-wrap: wrap; padding: 16px; }
+  .audio-meta { flex: 1 1 180px; }
+  .audio-tools { flex-basis: 100%; justify-content: flex-end; margin-top: 2px; }
+  .play-btn { width: 46px; height: 46px; }
+  .chap-nav { flex-wrap: wrap; gap: 10px; }
+  .nav-chip { padding: 9px 14px; }
+  .nav-chip .nv-ttl { display: none; }
+}
 
 /* =====================================================================
    DASHBOARD PAGES — interactive animations
@@ -2609,11 +2621,38 @@ h1.story-title .script-em {
   .dash-greet { grid-template-columns: 1fr !important; }
 }
 @media (max-width: 640px) {
-  .dash-page { padding-left: 20px !important; padding-right: 20px !important; }
   .dash-nav { padding-left: 20px !important; padding-right: 20px !important; }
   .dash-nav-links { display: none !important; }
   .dash-shelf-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 14px !important; padding: 18px 14px 24px !important; }
   .dash-kids-row { grid-template-columns: 1fr !important; }
+}
+
+/* App page shell — responsive side padding shared by dashboard, shelf,
+   keepsake and hero-add mains (!important beats their inline 48px). */
+@media (max-width: 900px) {
+  .app-main { padding-left: 32px !important; padding-right: 32px !important; }
+}
+@media (max-width: 640px) {
+  .app-main { padding-left: 20px !important; padding-right: 20px !important; }
+}
+
+/* Shelf plank + book grid (shared by loading skeleton and real shelf) */
+.shelf-plank { height: 14px; background: var(--ink); border-radius: 3px; margin-bottom: -2px; }
+.shelf-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 24px 20px;
+  padding: 28px 22px 40px;
+  background: var(--cream-deep);
+  border-radius: 4px 4px 24px 24px;
+  box-shadow: var(--u-card-shadow);
+  margin-bottom: 26px;
+}
+@media (max-width: 1100px) {
+  .shelf-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 640px) {
+  .shelf-grid { grid-template-columns: repeat(2, 1fr); gap: 16px 12px; padding: 20px 14px 28px; }
 }
 
 /* =====================================================================
@@ -2684,6 +2723,24 @@ body { padding-top: 84px; }
 .fnav-cta { flex: 0 0 auto; padding: 10px 18px; font-size: 13.5px; }
 .fnav-right { display: flex; align-items: center; gap: 12px; flex: 0 0 auto; }
 .fnav-crumbs { margin: 0 auto; font-size: 13px; }
+/* Compact back crumb — mobile-only stand-in once .fnav-crumbs/.fnav-links hide */
+.fnav-back {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+  white-space: nowrap;
+}
+/* App links inside the avatar menu — mobile-only nav once the pill links hide */
+.fnav-menu-links {
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1.5px dashed var(--paper-line);
+  font-size: 14px;
+}
 
 .fnav-avatar {
   width: 36px; height: 36px; border-radius: 50%;
@@ -2713,6 +2770,8 @@ body { padding-top: 84px; }
 @media (max-width: 720px) {
   .fnav-links, .fnav-crumbs { display: none; }
   .fnav-pill { max-width: 100%; justify-content: space-between; }
+  .fnav-back { display: inline-flex; }
+  .fnav-menu-links { display: flex; }
 }
 
 /* ---------- UMANO SECTION: full-bleed statement ---------- */
@@ -2720,6 +2779,9 @@ body { padding-top: 84px; }
   max-width: 1100px;
   margin: 0 auto;
   padding: 140px 48px;
+}
+@media (max-width: 640px) {
+  .u-statement { padding: 90px 24px; }
 }
 .u-statement p {
   font-family: var(--font-young-serif), serif;
@@ -2898,6 +2960,25 @@ body { padding-top: 84px; }
   margin: 6px 0 0;
   line-height: 1.45;
 }
+/* Mobile swap for the fan (rendered ≤720px by blueprints.tsx): a sticky stack —
+   each card pins under the nav, the next scrolls up over it, previous card
+   edges peek above like a growing pile. Scroll-native, so it needs no
+   reduced-motion branch. */
+.u-stories-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  max-width: 380px;
+  margin: 0 auto;
+  padding: 12px 24px 90px;
+}
+.u-stories-stack-item {
+  position: sticky;
+  top: calc(92px + var(--i, 0) * 12px); /* staggered pin: earlier cards peek above later ones */
+}
+.u-stories-stack-item:nth-child(2n) { transform: rotate(-1.1deg); }
+.u-stories-stack-item:nth-child(2n + 1) { transform: rotate(1.1deg); }
+.u-stories-stack .u-story-card { width: 100%; }
 
 /* ---------- Unified dark run: stories → pricing → FAQ ---------- */
 /* Full-bleed --twilight-deep (no side gutters); only the FAQ rounds its bottom
@@ -3047,6 +3128,17 @@ body { padding-top: 84px; }
   .u-faq { margin: 40px 12px; }
   .u-stories-fan { padding: 0 16px 70px; }
 }
+@media (max-width: 720px) {
+  /* the tight mobile deck sits under the intro — don't ride up over the sub text */
+  .u-stories-fan { margin-top: 0; }
+  /* FAQ renders PinnedPanel's static branch on phones (no 100vh pin). Keep it
+     full-bleed black so it reads as one continuous dark run, like desktop. */
+  .u-faq { margin: 0; border-radius: 0; padding: 64px 0 72px; }
+  .u-faq .u-dark-inner { padding: 0 24px; }
+  .u-faq-head { margin-bottom: 20px; }
+  .faq-q { font-size: 16.5px; padding: 18px 2px; gap: 12px; }
+  .faq-a { padding: 0 2px 20px 42px; font-size: 14.5px; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .fnav-pill { transition: none; }
@@ -3092,6 +3184,8 @@ body { padding-top: 84px; }
   z-index: 3;
 }
 .u-hero-head .eyebrow { justify-content: center; margin-bottom: 22px; color: rgba(20,9,6,0.72) !important; }
+/* orange dot + ring vanish on the orange panel — use the eyebrow's own ink */
+.u-hero-head .eyebrow .dot { background: rgba(20,9,6,0.72); box-shadow: none; }
 h1.u-hero-title {
   color: #140906;
   font-weight: 700;
@@ -3188,11 +3282,22 @@ h1.u-hero-title .highlight::after { display: none; }
 .u-hero-book-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; font-size: 14px; font-weight: 700; color: var(--ink-soft); }
 .u-hero-book-star { color: var(--u-orange); font-size: 20px; }
 
+@media (max-width: 960px) {
+  /* tighter throw so the shadow stays inside the inset panel at scrub end */
+  .u-hero-book { box-shadow: 0 14px 32px rgba(0, 0, 0, 0.18); }
+}
 @media (max-width: 720px) {
   .u-hero-head { top: 110px; }
   .u-hero-stage { width: 300px; margin-left: -150px; }
   .u-hero-book { width: 300px; }
-  .u-notify { right: -10px; max-width: 220px; }
+  /* lift the pill clear of the book's "Chapter one" line on narrow cards */
+  .u-notify { right: -10px; max-width: 220px; top: -58px; }
+  /* headline fills most of the short panel — stars would sit behind the text */
+  .u-hero-panel .u-bgstar { display: none; }
+}
+@media (max-width: 640px) {
+  .u-hero-ctas { flex-direction: column; align-items: stretch; width: min(300px, 100%); margin: 0 auto; }
+  .u-hero-ctas .btn { justify-content: center; text-align: center; }
 }
 
 /* =====================================================================
@@ -3649,6 +3754,41 @@ html.lenis, html.lenis body { height: auto; }
   .kp-hero-inner { grid-template-columns: 1fr; }
   .kp-hero-mocks { display: none; }
 }
+/* Keepsake grids — how-it-works steps, book picker (skeleton + real), orders */
+.kp-how-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.kp-pick-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 18px;
+  background: var(--cream-deep);
+  border-radius: 20px;
+  box-shadow: var(--u-card-shadow);
+  padding: 22px;
+}
+.kp-order-cols {
+  display: grid;
+  grid-template-columns: 60px 1.4fr 1fr 1fr 140px;
+  gap: 16px;
+  align-items: center;
+}
+@media (max-width: 1100px) {
+  .kp-pick-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 960px) {
+  .kp-how-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 720px) {
+  .kp-order-head { display: none; }
+  .kp-order-cols { grid-template-columns: 48px 1fr; row-gap: 10px; }
+  /* cover spine keeps column 1; title, status, date and actions stack in column 2 */
+  .kp-order-cols > :nth-child(n + 3) { grid-column: 2; }
+  .kp-order-cols > :last-child { justify-content: flex-start; }
+}
+@media (max-width: 640px) {
+  .kp-how-grid { grid-template-columns: 1fr; }
+  .kp-pick-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 14px; }
+}
+
 .kp-feat:hover { box-shadow: var(--u-card-shadow-lg) !important; }
 .kp-pick:hover .kp-pick-cov { box-shadow: 6px 7px 0 var(--ink); } /* BookCover keeps its hard-shadow motif */
 
