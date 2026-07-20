@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
 import { LoopVideo } from "./LoopVideo";
 import { useMediaQuery } from "../use-media-query";
+import { FeatureZoomMobile } from "./FeatureZoomMobile";
 
 export type FeatureCard = {
   icon: string;
@@ -121,24 +122,18 @@ export function FeatureZoom({ cards, head }: FeatureZoomProps) {
   // Hex literal (not a CSS var) — framer can only interpolate real color values.
   // Keep in sync with --twilight-deep in globals.css.
   const mediaBg = useTransform(scrollYProgress, [0.58, 0.92], ["#ffffff", "#0C0B0F"]);
-  // On mobile the pan distance is short so the card centres fast; give the caption
-  // more dwell time — fade starts AFTER the pan ends (0.6) not during it.
-  //
   // Function form (not the [in]→[out] array form) is deliberate: framer compiles
   // the array form into a native WAAPI animation on a ViewTimeline tied to this
-  // element's own viewport progress. That progress is NON-monotonic here (the cap
-  // is simultaneously translated by capY, covered by the zooming media, and the
-  // row barely pans on mobile) so the baked opacity flickered 1→0→1. The function
-  // form stays on the JS/rAF path driven by scrollYProgress (the section
-  // timeline), which is monotonic — no flicker.
-  const capFade = narrow ? [0.60, 0.76] : [0.46, 0.56];
+  // element's own viewport progress. That progress is non-monotonic here (the cap
+  // is translated by capY while the media zooms over it) so a baked opacity would
+  // flicker 1→0→1. The function form stays on the JS/rAF path driven by
+  // scrollYProgress (the section timeline), which is monotonic — no flicker.
   const capOpacity = useTransform(scrollYProgress, (p) => {
-    const [a, b] = capFade;
-    if (p <= a) return 1;
-    if (p >= b) return 0;
-    return 1 - (p - a) / (b - a);
+    if (p <= 0.46) return 1;
+    if (p >= 0.56) return 0;
+    return 1 - (p - 0.46) / (0.56 - 0.46);
   });
-  const capY = useTransform(scrollYProgress, narrow ? [0.60, 0.78] : [0.46, 0.58], [0, 120]);
+  const capY = useTransform(scrollYProgress, [0.46, 0.58], [0, 120]);
   const glyphOpacity = useTransform(scrollYProgress, [0.72, 0.9], [1, 0]);
   // Video fades as the zoom finishes so the darkened media bg (→ black) shows
   // through — screen is black before the next section, not the frozen frame.
@@ -146,18 +141,9 @@ export function FeatureZoom({ cards, head }: FeatureZoomProps) {
   // Veil closes to full black right at the pin end (also the ultrawide backstop).
   const veilOpacity = useTransform(scrollYProgress, [0.9, 1], [0, 1]);
 
-  // Phones can't hold the pinned horizontal pan+zoom (cards are ~78vw, the pan is
-  // tiny, and the scrubbed caption fade was fragile — see the WAAPI note above).
-  // Swap in a swipeable snap carousel: cards snap to centre, the centred one pops
-  // full-size while neighbours shrink + dim, with a dot pager. Pure CSS
-  // scroll-snap (JS only tracks the active index) — no scroll-scrubbed motion.
-  if (narrow) {
-    return <FeatureCarousel cards={cards} head={head} />;
-  }
-  // Reduced motion (wide): a plain horizontal-scroll row.
   if (reduce) {
     return (
-      <section id="how" className="u-fzoom-static">
+      <section id="how">
         <div className="u-track-head">{head}</div>
         <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
           <div style={{ display: "flex", gap: 28, padding: "0 48px" }}>
@@ -168,6 +154,12 @@ export function FeatureZoom({ cards, head }: FeatureZoomProps) {
         </div>
       </section>
     );
+  }
+
+  // Phones can't hold the horizontal row (cards overflow, captions clip) — play
+  // one full-width card at a time instead. Desktop keeps the pan+zoom below.
+  if (narrow) {
+    return <FeatureZoomMobile cards={cards} head={head} />;
   }
 
   return (
@@ -210,81 +202,6 @@ export function FeatureZoom({ cards, head }: FeatureZoomProps) {
         </motion.div>
 
         <motion.div className="u-fzoom-veil" style={{ opacity: veilOpacity }} aria-hidden />
-      </div>
-    </section>
-  );
-}
-
-/**
- * Mobile feature carousel (≤720px): a swipeable, centre-snapping row. The
- * centred card pops to full size while its neighbours shrink + dim; a dot pager
- * mirrors the active card and lets you jump. Snapping + focus scaling are pure
- * CSS (`scroll-snap` + a `.is-active` class); an IntersectionObserver watching a
- * thin centre band only tracks which card is active — no scroll-scrubbed motion,
- * so none of the WAAPI/ViewTimeline fragility the pinned zoom hit.
- */
-function FeatureCarousel({ cards, head }: FeatureZoomProps) {
-  const trackRef = useRef<HTMLDivElement | null>(null);
-  const reduce = useReducedMotion();
-  const [active, setActive] = useState(0);
-
-  useEffect(() => {
-    const track = trackRef.current;
-    if (!track) return;
-    const items = Array.from(track.querySelectorAll<HTMLElement>("[data-fc-item]"));
-    // Shrink the observer root to a thin central band (10% wide) so the card
-    // sitting under the centre is the one reported active.
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          if (e.isIntersecting) {
-            const i = items.indexOf(e.target as HTMLElement);
-            if (i >= 0) setActive(i);
-          }
-        }
-      },
-      { root: track, rootMargin: "0px -45% 0px -45%", threshold: 0 },
-    );
-    items.forEach((it) => io.observe(it));
-    return () => io.disconnect();
-  }, [cards.length]);
-
-  const goTo = (i: number) => {
-    const track = trackRef.current;
-    const item = track?.querySelectorAll<HTMLElement>("[data-fc-item]")[i];
-    item?.scrollIntoView({
-      behavior: reduce ? "auto" : "smooth",
-      inline: "center",
-      block: "nearest",
-    });
-  };
-
-  return (
-    <section id="how" className="u-fzoom-static">
-      <div className="u-track-head">{head}</div>
-      <div className="u-fcar" ref={trackRef}>
-        {cards.map((c, i) => (
-          <div
-            key={c.title}
-            data-fc-item
-            className={`u-fcar-item${i === active ? " is-active" : ""}`}
-          >
-            <Card c={c} />
-          </div>
-        ))}
-      </div>
-      <div className="u-fcar-dots" role="tablist" aria-label="Feature cards">
-        {cards.map((c, i) => (
-          <button
-            key={c.title}
-            type="button"
-            role="tab"
-            aria-selected={i === active}
-            aria-label={c.title}
-            className={`u-fcar-dot${i === active ? " is-active" : ""}`}
-            onClick={() => goTo(i)}
-          />
-        ))}
       </div>
     </section>
   );

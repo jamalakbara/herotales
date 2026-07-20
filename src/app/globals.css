@@ -2878,54 +2878,89 @@ body { padding-top: 84px; }
   pointer-events: none;
   z-index: 6;
 }
-/* Mobile swap for the pinned feature pan+zoom (rendered ≤720 by FeatureZoom):
-   a swipeable centre-snapping carousel — the centred card pops full-size while
-   neighbours shrink + dim, with a dot pager. Pure CSS scroll-snap + focus
-   scaling (JS only tracks the active index); no scroll-scrubbed motion, so none
-   of the WAAPI fragility the pin had. Hands into the dark stories section at a
-   clean edge. */
-.u-fzoom-static { max-width: none; margin: 0; padding: 0; width: 100%; }
-.u-fzoom-static .u-track-head { padding: 72px 24px 0; }
-.u-fcar {
-  display: flex;
-  gap: 18px;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  /* Side inset = (100vw − card)/2 so the first & last card can sit dead-centre. */
-  padding: 26px calc((100vw - 300px) / 2) 20px;
-  scroll-padding-inline: calc((100vw - 300px) / 2);
-}
-.u-fcar::-webkit-scrollbar { display: none; }
-.u-fcar-item {
-  flex: 0 0 300px;
-  scroll-snap-align: center;
-  transform: scale(0.88);
-  opacity: 0.5;
-  transition: transform 0.4s cubic-bezier(.22,1,.36,1), opacity 0.4s ease;
-}
-.u-fcar-item.is-active { transform: scale(1); opacity: 1; }
-.u-fcar-item .u-hcard { width: 100%; max-width: none; }
-.u-fcar-dots {
-  display: flex;
-  justify-content: center;
-  gap: 9px;
-  margin-top: 6px;
-}
-.u-fcar-dot {
-  width: 9px; height: 9px;
+
+/* ---------- Mobile feature stage (FeatureZoomMobile, narrow only) ---------- */
+/* One full-width card at a time: the section pins and each card scales/slides
+   into centre, holds readable, then out; the last card zooms to black. */
+.u-fzoom-m {
+  position: relative;
+  max-width: none;
+  margin: 0;
   padding: 0;
-  border-radius: 999px;
-  border: 2px solid var(--ink);
-  background: transparent;
-  cursor: pointer;
-  transition: background 0.25s ease, transform 0.25s ease;
+  width: 100%;
 }
-.u-fcar-dot.is-active { background: var(--moon); transform: scale(1.25); }
-@media (prefers-reduced-motion: reduce) {
-  .u-fcar-item { transition: none; transform: none; opacity: 1; }
-  .u-fcar-dot { transition: none; }
+.u-fzoom-m-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--cream);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.u-fzoom-m-head {
+  width: 100%;
+  padding: 78px 28px 0;
+  z-index: 4;
+}
+.u-fzoom-m-head .section-title { font-size: clamp(28px, 7.6vw, 40px); }
+.u-fzoom-m-stage {
+  flex: 1;
+  width: 100%;
+  display: grid;
+  place-items: center;   /* every card shares one grid cell, centred */
+  position: relative;
+}
+/* Ambient orange glow behind the active card — soft studio warmth. */
+.u-fzoom-m-stage::before {
+  content: "";
+  position: absolute;
+  width: 380px;
+  height: 380px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 105, 46, 0.16), transparent 70%);
+  filter: blur(18px);
+  pointer-events: none;
+}
+.u-fzoom-m-card {
+  grid-area: 1 / 1;          /* stack all cards in the same cell */
+  width: min(330px, 86vw);
+  will-change: transform, opacity;
+}
+.u-fzoom-m-media {
+  height: 360px;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: var(--u-card-shadow-lg);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-origin: center center;
+  will-change: transform;
+}
+/* Opaque cream so a card sliding up fully masks the caption of the one it
+   covers (cards share a grid cell; text-on-transparent would bleed through). */
+.u-fzoom-m-cap { margin-top: 18px; padding: 6px 2px 10px; background: var(--cream); }
+.u-fzoom-m-cap .u-hcard-title { margin-top: 0; }
+.u-fzoom-m-cap .u-hcard-desc { max-width: none; }
+.u-fzoom-m-dots {
+  position: absolute;
+  bottom: 28px;
+  left: 0;
+  right: 0;
+  display: flex;
+  gap: 9px;
+  justify-content: center;
+  z-index: 4;
+}
+.u-fzoom-m-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--u-orange);
+  display: block;
 }
 
 /* ---------- UMANO SECTION: dark client stories (fanned) ---------- */
