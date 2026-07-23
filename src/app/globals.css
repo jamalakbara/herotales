@@ -1545,6 +1545,12 @@ label.field-label .opt {
   align-items: center;
   justify-content: flex-end;
 }
+/* Small mobile: stack the buttons full-width so long labels (e.g. "Monthly
+   limit reached") don't wrap or crush "Randomize" against them. */
+@media (max-width: 640px) {
+  .action-right { flex-direction: column; align-items: stretch; }
+  .action-right .btn { width: 100%; justify-content: center; }
+}
 .coin {
   width: 26px; height: 26px;
   border-radius: 50%;
@@ -2354,6 +2360,87 @@ h1.story-title .script-em {
 }
 .dash-kid-tab:hover { transform: translateY(-2px); box-shadow: 3px 3px 0 var(--ink); }
 
+/* Hero filter strip: wraps on desktop; on mobile it becomes a single
+   horizontal-scroll row so a long hero list stays one tidy line, not a wall. */
+.shelf-kid-tabs { display: flex; gap: 10px; flex-wrap: wrap; }
+@media (max-width: 640px) {
+  /* Horizontal fade-scroll strip — a single non-wrapping row that scrolls
+     sideways with a soft edge fade instead of clipping or wrapping to 3 rows.
+     Shared by the kid-tab pills and the shelf filter chips. */
+  .fade-strip {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    /* Wide, eased multi-stop falloff (not a short linear ramp) so pills
+       dissolve in/out at both edges rather than hard-cutting. */
+    --edge-fade: linear-gradient(
+      to right,
+      transparent 0,
+      rgba(0, 0, 0, 0.15) 14px,
+      rgba(0, 0, 0, 0.55) 32px,
+      #000 56px,
+      #000 calc(100% - 56px),
+      rgba(0, 0, 0, 0.55) calc(100% - 32px),
+      rgba(0, 0, 0, 0.15) calc(100% - 14px),
+      transparent 100%
+    );
+    -webkit-mask-image: var(--edge-fade);
+    mask-image: var(--edge-fade);
+  }
+  .fade-strip::-webkit-scrollbar { display: none; }
+  .fade-strip > * { flex: 0 0 auto; }
+
+  .shelf-kid-tabs {
+    /* Room for the pill shadow so the scroll container doesn't clip it into a
+       hard line; negative top margin keeps the surrounding rhythm unchanged. */
+    padding: 8px 0 14px;
+    margin-top: -8px;
+  }
+  /* At the scroll extremes, drop the fade on the flush side (set by JS via
+     is-start / is-end) so the first / last pill isn't dimmed for no reason. */
+  .fade-strip.is-start {
+    --edge-fade: linear-gradient(
+      to right,
+      #000 0,
+      #000 calc(100% - 56px),
+      rgba(0, 0, 0, 0.55) calc(100% - 32px),
+      rgba(0, 0, 0, 0.15) calc(100% - 14px),
+      transparent 100%
+    );
+  }
+  .fade-strip.is-end {
+    --edge-fade: linear-gradient(
+      to right,
+      transparent 0,
+      rgba(0, 0, 0, 0.15) 14px,
+      rgba(0, 0, 0, 0.55) 32px,
+      #000 56px,
+      #000 100%
+    );
+  }
+  .fade-strip.is-start.is-end { --edge-fade: none; }
+  /* Lighter than the desktop u-card-shadow — the 12/32 blur reads as clipped
+     noise in the strip. Active pill keeps its flat look. */
+  .shelf-kid-tabs > .dash-kid-tab:not(.dash-kid-tab-active) {
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08) !important;
+  }
+
+  /* Shelf toolbar: search + view toggle share the top row, chip strip drops to
+     its own scrollable line below. Tighter padding than the desktop card. */
+  .shelf-toolbar { gap: 12px !important; padding: 12px 14px !important; }
+  .shelf-search { min-width: 0 !important; max-width: none !important; order: 1; }
+  .shelf-viewtoggle { order: 2; }
+  .shelf-fc-strip {
+    flex: 1 1 100% !important;
+    min-width: 0;
+    order: 3;
+    /* Small breathing room so the active chip's hard shadow isn't clipped. */
+    padding: 3px 0 5px;
+    margin-top: -3px;
+  }
+}
+
 /* Filter chips (dashboard + shelf, rendered via <FilterChips>) */
 .dash-fc {
   cursor: pointer; transition: background 0.12s ease;
@@ -2486,7 +2573,9 @@ h1.story-title .script-em {
   /* fill-mode must stay `backwards`: `both` keeps the 100% keyframe transform
      applied after the animation ends, which overrides the :hover lift */
   animation: bookRise 0.62s cubic-bezier(.22,1,.36,1) backwards;
-  animation-delay: calc(var(--i, 0) * 70ms + 120ms);
+  /* Cap the stagger so a long shelf's last cards don't lag ~1.2s behind — the
+     tail flattens after ~10 cards. */
+  animation-delay: calc(min(var(--i, 0), 10) * 45ms + 90ms);
   transform-origin: 50% 100%;
   will-change: transform, opacity;
 }
@@ -2614,6 +2703,66 @@ h1.story-title .script-em {
   .dash-nav-links { display: none !important; }
   .dash-shelf-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 14px !important; padding: 18px 14px 24px !important; }
   .dash-kids-row { grid-template-columns: 1fr !important; }
+  /* Trim the oversized desktop bottom padding so the last section sits close to
+     the footer on mobile. */
+  .dash-page { padding-bottom: 24px !important; }
+
+  /* Any .m-carousel section → swipe carousel: one full-width card per view,
+     snap-center each slide, hide the scrollbar, dot rail signals there's more.
+     overflow-x:auto forces overflow-y to clip, so any shadow past the padding
+     edge shears into a hard squared line. We size the padding on every side to
+     fully contain the (soft) card shadow — so it renders round, never sheared —
+     and no card peeks past a screen edge to leave a rough clipped sliver.
+     Negative margins re-collapse the padding so the box stays flush with the
+     page rhythm. */
+  .m-carousel {
+    display: flex !important;
+    grid-template-columns: none !important;
+    gap: 20px !important;
+    margin: -16px -20px -30px !important;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 20px 26px 40px;
+    scroll-padding: 0 26px;
+  }
+  .m-carousel::-webkit-scrollbar { display: none; }
+  .m-carousel > * {
+    flex: 0 0 100%;
+    min-width: 0;
+    scroll-snap-align: center;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
+  }
+  .m-carousel-dots { display: flex !important; }
+  /* Even the stacked-section rhythm: the dot rail carries the gap after every
+     carousel, so drop the desktop-only bottom margin some sections add. */
+  .dash-sec-gap { margin-bottom: 0 !important; }
+}
+
+/* Carousel dot rail — hidden on desktop, shown inside the mobile breakpoint.
+   Active dot follows the selection pattern: filled orange pill, not a colour
+   tweak (matches .age-chip.active et al.). */
+.m-carousel-dots {
+  display: none;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin: 14px 0 44px;
+}
+.m-carousel-dot {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: rgba(20, 9, 6, 0.22);
+  cursor: pointer;
+  transition: width 0.25s ease, background 0.25s ease;
+}
+.m-carousel-dot.active {
+  width: 22px;
+  background: var(--u-orange);
 }
 
 /* App page shell — responsive side padding shared by dashboard, shelf,
@@ -2721,14 +2870,23 @@ body { padding-top: 84px; }
 .fnav-cta { flex: 0 0 auto; padding: 10px 18px; font-size: 13.5px; }
 .fnav-right { display: flex; align-items: center; gap: 12px; flex: 0 0 auto; }
 .fnav-crumbs { margin: 0 auto; font-size: 13px; }
-/* Compact back crumb — mobile-only stand-in once .fnav-crumbs/.fnav-links hide */
-.fnav-back {
-  display: none;
+/* Mobile-only back link, rendered above a reader page's title once the crumb
+   trail hides (<ReaderBack>). Kept out of the nav pill on purpose. Shown by
+   default and hidden on desktop (fail-safe: if the hide rule is ever dropped it
+   surfaces on desktop rather than vanishing on mobile). */
+.reader-back {
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 13.5px;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink-soft);
   white-space: nowrap;
+  margin-bottom: 14px;
+  transition: color 0.15s ease;
 }
+.reader-back:hover { color: var(--berry); }
+@media (min-width: 721px) { .reader-back { display: none; } }
 /* App links inside the avatar menu — mobile-only nav once the pill links hide */
 .fnav-menu-links {
   display: none;
@@ -2767,9 +2925,12 @@ body { padding-top: 84px; }
 
 @media (max-width: 720px) {
   .fnav-links, .fnav-crumbs { display: none; }
-  .fnav-pill { max-width: 100%; justify-content: space-between; }
-  .fnav-back { display: inline-flex; }
+  /* Tighter pill so logo + action fit ≤390px without overflowing. */
+  .fnav-pill { max-width: 100%; justify-content: space-between; gap: 10px; padding: 9px 10px 9px 16px; }
   .fnav-menu-links { display: flex; }
+  .fnav-logo { font-size: 18px; }
+  .fnav-logo .logo-mark { width: 26px; height: 26px; }
+  .fnav-logo .logo-mark::before { width: 13px; height: 13px; }
 }
 
 /* ---------- UMANO SECTION: full-bleed statement ---------- */
@@ -3940,3 +4101,8 @@ html.lenis, html.lenis body { height: auto; }
   .wait-fill { transition: none; }
   .skeleton { animation: none; background-image: none; }
 }
+
+
+
+
+

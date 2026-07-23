@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
 import { AppFooter } from "@/components/app-footer";
-import { FloatingNav } from "@/components/floating-nav";
+import { FloatingNav, ReaderBack } from "@/components/floating-nav";
 import { Reveal } from "@/components/motion/Reveal";
 import { Skeleton } from "@/components/skeleton";
 import { getErrorMessage } from "@/lib/errors";
@@ -254,14 +254,16 @@ function CreateStoryPage() {
     setVoice(VOICES[Math.floor(Math.random() * VOICES.length)].name);
   }
 
+  const crumbs = [
+    { label: "Home", href: "/dashboard" },
+    { label: "Shelf", href: "/shelf" },
+    { label: "New story" },
+  ];
+
   return (
     <>
       <FloatingNav variant="reader"
-        crumbs={[
-          { label: "Home", href: "/dashboard" },
-          { label: "Shelf", href: "/shelf" },
-          { label: "New story" },
-        ]}
+        crumbs={crumbs}
         action={
           <a href="#" className="btn btn-ghost" style={{ fontSize: 14 }}>
             Save draft
@@ -270,6 +272,7 @@ function CreateStoryPage() {
       />
 
       <main className="page">
+        <ReaderBack crumbs={crumbs} />
         <Reveal className="page-title-row">
           <div>
             <span className="page-kicker">Craft tonight&apos;s story</span>

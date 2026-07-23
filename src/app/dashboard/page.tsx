@@ -6,6 +6,7 @@ import { BookCard, NewTaleCard } from "@/components/book-card";
 import { ErrorAlert } from "@/components/error-alert";
 import { FilterChips } from "@/components/filter-chips";
 import { FloatingNav } from "@/components/floating-nav";
+import { MobileCarousel } from "@/components/mobile-carousel";
 import { ShelfPlankGrid } from "@/components/shelf-grid";
 import { HeadAccent, SectionHeader } from "@/components/section-header";
 import { SectionKicker } from "@/components/section-kicker";
@@ -122,8 +123,9 @@ export default function DashboardPage() {
 
         {loadError && <ErrorAlert>{loadError}</ErrorAlert>}
 
-        {/* GREETING */}
-        <Reveal className="dash-greet" style={{ display: "grid", gridTemplateColumns: "1.15fr 0.85fr", gap: 36, marginBottom: 48, alignItems: "stretch" }}>
+        {/* GREETING — grid on desktop, swipe carousel on mobile */}
+        <Reveal className="dash-sec-gap" style={{ marginBottom: 48 }}>
+        <MobileCarousel className="dash-greet" style={{ display: "grid", gridTemplateColumns: "1.15fr 0.85fr", gap: 36, alignItems: "stretch" }}>
           <div className="u-card-lg" style={{ padding: "40px 44px", position: "relative", overflow: "hidden" }}>
             <span style={{ position: "absolute", top: 20, right: 32, fontFamily: "var(--font-caprasimo), serif", fontSize: 64, color: "var(--moon)", transform: "rotate(14deg)", opacity: 0.85, pointerEvents: "none" }}>✦</span>
             <SectionKicker style={{ marginBottom: 10 }}>{getGreetingTime()}</SectionKicker>
@@ -183,18 +185,19 @@ export default function DashboardPage() {
               </Link>
             </div>
           </div>
+        </MobileCarousel>
         </Reveal>
 
         {/* KIDS SECTION HEADER */}
-        <Reveal inView>
+        <Reveal inView={false}>
         <SectionHeader
           title={<>Your little <HeadAccent>heroes</HeadAccent></>}
           sub="Each child has their own character sketch and story shelf."
           action={<Link href="/shelf" className="dash-stat-link">See all stories →</Link>}
         />
 
-        {/* KIDS ROW */}
-        <div className="dash-kids-row" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 56 }}>
+        {/* KIDS ROW — grid on desktop, swipe carousel on mobile */}
+        <MobileCarousel className="dash-kids-row" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 56 }}>
           {loading && Array.from({ length: 3 }).map((_, i) => <SkeletonKidCard key={i} />)}
           {kidsView.map((kid, i) => (
             <div key={kid.id} className="dash-kid-card" onClick={() => setActiveKid(i)} style={{ background: activeKid === i ? "var(--u-orange)" : "#fff", borderRadius: 20, boxShadow: activeKid === i ? "var(--u-card-shadow-lg)" : "var(--u-card-shadow)", padding: 22 }}>
@@ -217,11 +220,11 @@ export default function DashboardPage() {
             <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 18, color: "var(--twilight)", marginTop: 12 }}>Add another hero</div>
             <div style={{ fontSize: 12, color: "var(--ink-soft)", marginTop: 4, fontWeight: 600 }}>Up to 3 on your Lantern plan</div>
           </Link>
-        </div>
+        </MobileCarousel>
         </Reveal>
 
         {/* SHELF HEADER */}
-        <Reveal inView>
+        <Reveal inView={false}>
         <SectionHeader
           align="center"
           title={<>{activeKidObj?.nickname ?? "Your"}<HeadAccent>{activeKidObj ? "'s shelf" : " shelf"}</HeadAccent></>}
@@ -246,9 +249,9 @@ export default function DashboardPage() {
         </ShelfPlankGrid>
         </Reveal>
 
-        {/* STATS ROW */}
-        <Reveal inView>
-        <div className="dash-stats-row" style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr 1fr", gap: 20, marginBottom: 56 }}>
+        {/* STATS ROW — grid on desktop, swipe carousel on mobile */}
+        <Reveal inView={false} className="dash-sec-gap" style={{ marginBottom: 56 }}>
+        <MobileCarousel className="dash-stats-row" style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr 1fr", gap: 20 }}>
           <StatCard
             variant="orange"
             label="Bedtime streak"
@@ -280,12 +283,12 @@ export default function DashboardPage() {
             </div>
             <Link href="/keepsake-books" className="dash-stat-link" style={{ color: "var(--u-orange)", marginTop: 14, display: "inline-block" }}>Learn more →</Link>
           </StatCard>
-        </div>
+        </MobileCarousel>
         </Reveal>
 
         {/* BLUEPRINT NUDGE */}
         {activeKidObj && (
-        <Reveal inView>
+        <Reveal inView={false}>
         <div style={{ background: "var(--u-orange)", color: "var(--ink-warm)", borderRadius: 28, boxShadow: "var(--u-card-shadow-lg)", padding: "36px 40px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 28, flexWrap: "wrap", position: "relative", overflow: "hidden", marginBottom: 40 }}>
           <AmbientDecor variant="orange" fireflies={[]} />
           <div style={{ position: "relative", maxWidth: 560 }}>

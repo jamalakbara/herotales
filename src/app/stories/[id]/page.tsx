@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { motion, useScroll, useReducedMotion } from "framer-motion";
 import { AppFooter } from "@/components/app-footer";
-import { FloatingNav } from "@/components/floating-nav";
+import { FloatingNav, ReaderBack } from "@/components/floating-nav";
 import { AmbientDecor } from "@/components/motion/AmbientDecor";
 import { Reveal } from "@/components/motion/Reveal";
 import { Skeleton } from "@/components/skeleton";
@@ -228,14 +228,16 @@ export default function StoryReaderPage() {
   const heroTitle = story.title ?? `${heroName} & the ${blueprint} Tale`;
   const chapterImage = imageByIndex.get(cur) ?? null;
 
+  const crumbs = [
+    { label: "Dashboard", href: "/dashboard" },
+    { label: "Shelf", href: "/shelf" },
+    { label: heroTitle },
+  ];
+
   return (
     <>
       <FloatingNav variant="reader"
-        crumbs={[
-          { label: "Dashboard", href: "/dashboard" },
-          { label: "Shelf", href: "/shelf" },
-          { label: heroTitle },
-        ]}
+        crumbs={crumbs}
         action={
           <button
             className={`btn ${story.favorite ? "btn-berry" : "btn-ghost"}`}
@@ -250,6 +252,7 @@ export default function StoryReaderPage() {
       {!reduce && <motion.div className="read-progress" style={{ scaleX: scrollYProgress }} aria-hidden />}
 
       <main className="page">
+        <ReaderBack crumbs={crumbs} />
         <Reveal className="gen-banner">
           <span className="check">✓</span>
           <span>Your story is ready.</span>

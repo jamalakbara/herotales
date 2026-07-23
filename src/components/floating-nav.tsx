@@ -135,16 +135,9 @@ function AppInner() {
 }
 
 function ReaderInner({ crumbs, action }: { crumbs: Crumb[]; action?: ReactNode }) {
-  // Compact back link shown ≤720px, where the full crumb trail is hidden.
-  const back = [...crumbs].reverse().find((c) => c.href);
   return (
     <>
       <SiteLogo href="/dashboard" />
-      {back?.href && (
-        <Link href={back.href} className="fnav-link fnav-back">
-          ← {back.label}
-        </Link>
-      )}
       <div className="nav-crumbs fnav-crumbs">
         {crumbs.map((c, i) => (
           <Fragment key={i}>
@@ -159,6 +152,21 @@ function ReaderInner({ crumbs, action }: { crumbs: Crumb[]; action?: ReactNode }
       </div>
       <div className="fnav-right">{action ?? <span />}</div>
     </>
+  );
+}
+
+/**
+ * Mobile-only back link that stands in for the crumb trail (hidden ≤720px).
+ * Render at the top of a reader page's content, above the title — pass the same
+ * `crumbs` given to <FloatingNav variant="reader">. Targets the last linked crumb.
+ */
+export function ReaderBack({ crumbs }: { crumbs: Crumb[] }) {
+  const back = [...crumbs].reverse().find((c) => c.href);
+  if (!back?.href) return null;
+  return (
+    <Link href={back.href} className="reader-back">
+      ← {back.label}
+    </Link>
   );
 }
 

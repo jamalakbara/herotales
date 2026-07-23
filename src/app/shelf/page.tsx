@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useMemo, useState, CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, CSSProperties } from "react";
 import { AppFooter } from "@/components/app-footer";
 import { BookCard, NewTaleCard } from "@/components/book-card";
 import { accentColors } from "@/components/book-cover";
@@ -19,16 +19,18 @@ import { BLUEPRINTS } from "@/lib/types";
 
 type APIKid = { id: string; nickname: string; tales: number; favorites: number };
 
-function ShelfSection({ label, count, books }: { label: string; count: string; books: BookView[] }) {
-  const craftIdx = books.length;
+function ShelfSection({ label, count, books, order = 0 }: { label: string; count: string; books: BookView[]; order?: number }) {
   return (
-    <Reveal inView>
+    // Mount-based (not inView): these grids are tall, so an inView gate at
+    // amount 0.25 leaves the top section invisible until the user scrolls —
+    // reading as a late blank-then-pop. Firing on mount (right after data
+    // lands) plus the per-card bookRise stagger keeps the entrance immediate.
+    <Reveal delay={order * 0.08}>
       <div className="dash-shelf-label-anim" style={{ fontFamily: "var(--font-caprasimo), serif", fontSize: 18, color: "var(--twilight)", marginTop: 28, marginBottom: 14, display: "flex", alignItems: "baseline", gap: 12 }}>
         {label} <span style={{ fontFamily: "var(--font-nunito), sans-serif", fontWeight: 700, fontSize: 13, color: "var(--ink-soft)" }}>· {count}</span>
       </div>
       <ShelfPlankGrid plankClassName="dash-shelf-plank-anim">
         {books.map((b, i) => <BookCard key={b.id} book={b} size="md" index={i} />)}
-        {label === "Earlier this month" && <NewTaleCard href="/stories/new" size="md" index={craftIdx} />}
       </ShelfPlankGrid>
     </Reveal>
   );
@@ -53,11 +55,33 @@ function BookRow({ b, index }: { b: BookView; index: number }) {
   );
 }
 
+// How many tales to reveal per "Load more" press (and the initial page) —
+// smaller on mobile where cards are 2-up and scrolling is cheaper.
+const PAGE_SIZE_MOBILE = 6;
+const PAGE_SIZE_DESKTOP = 12;
+
+const MOBILE_MQ = "(max-width: 640px)";
+// Hydration-safe media query (server snapshot = desktop, matching SSR); avoids
+// setState-in-effect. Books are client-only (fetched), so no hydration risk.
+function useIsMobile() {
+  return useSyncExternalStore(
+    (cb) => {
+      const mq = window.matchMedia(MOBILE_MQ);
+      mq.addEventListener("change", cb);
+      return () => mq.removeEventListener("change", cb);
+    },
+    () => window.matchMedia(MOBILE_MQ).matches,
+    () => false,
+  );
+}
+
 export default function ShelfPage() {
   const [activeTab, setActiveTab] = useState("all");
   const [activeFilter, setActiveFilter] = useState("All");
   const [activeView, setActiveView] = useState("Shelf");
   const [search, setSearch] = useState("");
+  const pageSize = useIsMobile() ? PAGE_SIZE_MOBILE : PAGE_SIZE_DESKTOP;
+  const [visibleCount, setVisibleCount] = useState(pageSize);
 
   const [kids, setKids] = useState<APIKid[]>([]);
   const [stories, setStories] = useState<StoryListItem[]>([]);
@@ -97,6 +121,29 @@ export default function ShelfPage() {
     ];
   }, [kids]);
 
+  // Mobile scroll strips (hero tabs + filter chips): only fade the edge that
+  // still has hidden pills, so the first/last pill sits flush at the scroll
+  // extremes instead of looking clipped. Applies to every `.fade-strip`.
+  const stripHost = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const host = stripHost.current;
+    if (!host) return;
+    const strips = Array.from(host.querySelectorAll<HTMLElement>(".fade-strip"));
+    const update = () => {
+      for (const el of strips) {
+        el.classList.toggle("is-start", el.scrollLeft <= 1);
+        el.classList.toggle("is-end", el.scrollLeft >= el.scrollWidth - el.clientWidth - 1);
+      }
+    };
+    update();
+    strips.forEach((el) => el.addEventListener("scroll", update, { passive: true }));
+    window.addEventListener("resize", update);
+    return () => {
+      strips.forEach((el) => el.removeEventListener("scroll", update));
+      window.removeEventListener("resize", update);
+    };
+  }, [kidTabs, loading]);
+
   const filtered = useMemo(() => {
     let xs = stories;
     if (activeTab !== "all") xs = xs.filter((s) => s.child_id === activeTab);
@@ -113,24 +160,41 @@ export default function ShelfPage() {
     return xs;
   }, [stories, activeTab, activeFilter, search]);
 
+  // Reset the page when the filter/tab/search changes so a new, shorter result
+  // set doesn't strand you deep-paged. Adjust-state-during-render (not an
+  // effect) — see react.dev "You Might Not Need an Effect".
+  // pageSize is in the key too: when the breakpoint flips (e.g. mobile detected
+  // after hydration), the page resets to the correct size.
+  const filterKey = `${activeTab}|${activeFilter}|${search}|${pageSize}`;
+  const [pagedKey, setPagedKey] = useState(filterKey);
+  if (pagedKey !== filterKey) {
+    setPagedKey(filterKey);
+    setVisibleCount(pageSize);
+  }
+
+  const hasMore = filtered.length > visibleCount;
+
   const { recentBooks, favBooks, monthBooks, listBooks } = useMemo(() => {
     const cutoff = nowMs - 14 * 86400000;
-    const recentList = filtered.filter((s) => new Date(s.created_at).getTime() >= cutoff);
-    const favList = filtered.filter((s) => s.favorite);
-    const olderList = filtered.filter((s) => new Date(s.created_at).getTime() < cutoff && !s.favorite);
+    // Page over the whole filtered set newest-first, then bucket only the
+    // visible slice into the date sections — "Load more" reveals the next batch.
     const sorted = [...filtered].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    const visible = sorted.slice(0, visibleCount);
+    const recentList = visible.filter((s) => new Date(s.created_at).getTime() >= cutoff);
+    const favList = visible.filter((s) => s.favorite);
+    const olderList = visible.filter((s) => new Date(s.created_at).getTime() < cutoff && !s.favorite);
     return {
       recentBooks: recentList.map((s, i) => storyToBook(s, i)),
       favBooks: favList.map((s, i) => storyToBook(s, i, { badge: { text: "♡", accent: "moon" } })),
       monthBooks: olderList.map((s, i) => storyToBook(s, i)),
-      listBooks: sorted.map((s, i) => storyToBook(s, i)),
+      listBooks: visible.map((s, i) => storyToBook(s, i)),
     };
-  }, [filtered, nowMs]);
+  }, [filtered, nowMs, visibleCount]);
 
   return (
     <>
       <FloatingNav variant="app" />
-      <main className="app-main" style={{ maxWidth: 1400, margin: "0 auto", padding: "10px 48px 80px", position: "relative", zIndex: 2 }}>
+      <main ref={stripHost} className="app-main" style={{ maxWidth: 1400, margin: "0 auto", padding: "10px 48px 80px", position: "relative", zIndex: 2 }}>
 
         <div style={{ marginBottom: 32, display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 24, flexWrap: "wrap" }}>
           <div>
@@ -147,8 +211,8 @@ export default function ShelfPage() {
           <Link href="/stories/new" className="dash-btn dash-btn-berry dash-shelf-top-btn dash-shelf-head-anim dash-shelf-head-delay-3">+ Craft a new tale</Link>
         </div>
 
-        {/* Kid tabs */}
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 28 }}>
+        {/* Kid tabs — wrap on desktop, single horizontal-scroll strip on mobile */}
+        <div className="shelf-kid-tabs fade-strip" style={{ marginBottom: 28 }}>
           {loading && Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} variant="pill" />)}
           {!loading && kidTabs.map(t => {
             const palette = t.paletteIdx >= 0 ? KID_PALETTES[t.paletteIdx % KID_PALETTES.length] : { bg: "var(--twilight)", color: "#fff" };
@@ -165,15 +229,15 @@ export default function ShelfPage() {
         {loadError && <ErrorAlert style={{ marginBottom: 16 }}>{loadError}</ErrorAlert>}
 
         {/* Toolbar */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 14, padding: "14px 18px", background: "#fff", borderRadius: 18, boxShadow: "var(--u-card-shadow)", marginBottom: 28 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, background: "var(--cream-deep)", borderRadius: 999, padding: "8px 16px", flex: 1, minWidth: 220, maxWidth: 420 }}>
+        <div className="shelf-toolbar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 14, padding: "14px 18px", background: "#fff", borderRadius: 18, boxShadow: "var(--u-card-shadow)", marginBottom: 28 }}>
+          <div className="shelf-search" style={{ display: "flex", alignItems: "center", gap: 10, background: "var(--cream-deep)", borderRadius: 999, padding: "8px 16px", flex: 1, minWidth: 220, maxWidth: 420 }}>
             <span style={{ fontSize: 15, color: "var(--ink-soft)" }}>⌕</span>
-            <input type="text" placeholder="Search by title, hero, or lesson…" value={search} onChange={(e) => setSearch(e.target.value)} style={{ border: "none", background: "transparent", outline: "none", fontFamily: "var(--font-nunito), sans-serif", fontWeight: 600, fontSize: 14, color: "var(--ink)", flex: 1 }} />
+            <input type="text" placeholder="Search by title, hero, or lesson…" value={search} onChange={(e) => setSearch(e.target.value)} style={{ border: "none", background: "transparent", outline: "none", fontFamily: "var(--font-nunito), sans-serif", fontWeight: 600, fontSize: 13, color: "var(--ink)", flex: 1 }} />
           </div>
-          <FilterChips options={filters} active={activeFilter} onSelect={setActiveFilter} size="sm" />
-          <div style={{ display: "flex", borderRadius: 999, overflow: "hidden", background: "var(--cream-deep)" }}>
+          <FilterChips options={filters} active={activeFilter} onSelect={setActiveFilter} size="sm" className="fade-strip shelf-fc-strip" />
+          <div className="shelf-viewtoggle" style={{ display: "flex", borderRadius: 999, overflow: "hidden", background: "var(--cream-deep)" }}>
             {["Shelf", "List"].map(v => (
-              <button key={v} onClick={() => setActiveView(v)} className="dash-view-btn" style={{ border: "none", background: activeView === v ? "var(--ink)" : "transparent", padding: "8px 14px", fontFamily: "var(--font-nunito), sans-serif", fontWeight: 800, fontSize: 12.5, color: activeView === v ? "#fff" : "var(--ink-soft)", cursor: "pointer" }}>{v}</button>
+              <button key={v} onClick={() => setActiveView(v)} className="dash-view-btn" style={{ border: "none", background: activeView === v ? "var(--ink)" : "transparent", padding: "8px 14px", fontFamily: "var(--font-nunito), sans-serif", fontWeight: 800, fontSize: 13, color: activeView === v ? "#fff" : "var(--ink-soft)", cursor: "pointer" }}>{v}</button>
             ))}
           </div>
         </div>
@@ -191,13 +255,36 @@ export default function ShelfPage() {
         ) : (
           <>
             {recentBooks.length > 0 && (
-              <ShelfSection label="Recently read" count={`${recentBooks.length} ${recentBooks.length === 1 ? "tale" : "tales"} · last 2 weeks`} books={recentBooks} />
+              <ShelfSection order={0} label="Recently read" count={`${recentBooks.length} ${recentBooks.length === 1 ? "tale" : "tales"} · last 2 weeks`} books={recentBooks} />
             )}
             {favBooks.length > 0 && (
-              <ShelfSection label="Favorites" count={`${favBooks.length} ${favBooks.length === 1 ? "keeper" : "keepers"}`} books={favBooks} />
+              <ShelfSection order={1} label="Favorites" count={`${favBooks.length} ${favBooks.length === 1 ? "keeper" : "keepers"}`} books={favBooks} />
             )}
-            <ShelfSection label="Earlier this month" count={`${monthBooks.length} ${monthBooks.length === 1 ? "tale" : "tales"}`} books={monthBooks} />
+            {monthBooks.length > 0 && (
+              <ShelfSection order={2} label="Earlier this month" count={`${monthBooks.length} ${monthBooks.length === 1 ? "tale" : "tales"}`} books={monthBooks} />
+            )}
           </>
+        )}
+
+        {!loading && hasMore && (
+          <div style={{ display: "flex", justifyContent: "center", marginTop: 28 }}>
+            <button className="dash-btn dash-btn-ghost" onClick={() => setVisibleCount((c) => c + pageSize)}>
+              Load more <span style={{ fontWeight: 700, color: "var(--ink-soft)" }}>· {filtered.length - visibleCount} left</span>
+            </button>
+          </div>
+        )}
+
+        {/* Terminal "add" tile — always the last thing on the shelf (below any
+            Load more), so it's persistently reachable and never sits above the
+            paginate control. Shelf view only; List view has its own flow. */}
+        {!loading && activeView !== "List" && filtered.length > 0 && (
+          <Reveal>
+            <div style={{ marginTop: 28 }}>
+              <ShelfPlankGrid plankClassName="dash-shelf-plank-anim">
+                <NewTaleCard href="/stories/new" size="md" index={0} />
+              </ShelfPlankGrid>
+            </div>
+          </Reveal>
         )}
 
         {filtered.length === 0 && !loading && !loadError && (

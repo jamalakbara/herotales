@@ -45,6 +45,10 @@ export default function RootLayout({
       <html
         lang="en"
         className={`${playfair.variable} ${playfairAccent.variable} ${inter.variable}`}
+        // Browser extensions (e.g. Google Tag Assistant) inject data-* attrs on
+        // <html> before hydration; suppress the resulting top-level attribute
+        // mismatch. Only silences <html>'s own attrs, not the tree below.
+        suppressHydrationWarning
       >
         <body>
           <SmoothScroll>{children}</SmoothScroll>

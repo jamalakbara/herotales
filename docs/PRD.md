@@ -44,13 +44,13 @@ HeroTales AI is a specialized Micro SaaS designed for parents to create personal
 - **Text (Claude Haiku, JSON mode; OpenAI `gpt-4o` fallback):** Generate a 5-chapter story based on the selected Blueprint. Output validated against `StoryDocSchema` (Zod).
 - **Visuals (BytePlus Seedream; OpenAI `dall-e-3` fallback):** Generate 1 image per chapter.
 - **Consistency Logic:** A persistent Character Master Description (generated first) is threaded into every chapter image prompt to keep the child’s appearance stable.
-- **Orchestration:** the whole flow runs as an **Inngest** function (`generate-story`) built from idempotent `step.run` stages: load story/child → character description → generate text → per-chapter image → upload to Supabase Storage → mark ready.
+- **Orchestration:** the whole flow runs as an **Inngest** function (`generate-story`) built from idempotent `step.run` stages: load story/child → character description → generate text → per-chapter image → upload to Cloudinary (private) → mark ready.
 
 > **Implementation note:** the model wrapper is `src/lib/vertexai.ts` (filename is historical — not Google Vertex). It routes each stage to a default provider with an OpenAI fallback: text → Claude Haiku (`src/lib/anthropic.ts`) else `gpt-4o`; images → BytePlus Seedream (`src/lib/byteplus.ts`) else `dall-e-3`. OpenAI client is `src/lib/openai.ts`.
 
 ### 4.3 Image Persistence Pipeline
 - **Problem:** AI image URLs expire within 1 hour.
-- **Requirement:** The system must automatically download the DALL-E image and upload it to **Supabase Storage** for permanent hosting.
+- **Requirement:** The system must automatically download the generated image and upload it to **Cloudinary** (as `type: authenticated`, private) for permanent hosting, served via signed delivery URLs.
 
 ### 4.4 Audio Narrator
 - **Feature:** A "Read to Me" button.
@@ -63,9 +63,9 @@ HeroTales AI is a specialized Micro SaaS designed for parents to create personal
 | Layer | Technology |
 | :--- | :--- |
 | **Framework** | Next.js 16 (App Router), React 19, TypeScript |
-| **Database** | Supabase (PostgreSQL) |
-| **Storage** | Supabase Storage — private `story-assets` bucket, 1-hour signed URLs |
-| **Authentication** | Supabase Auth (route protection via `src/proxy.ts` middleware) |
+| **Database** | Neon Postgres via Drizzle ORM (`DATABASE_URL`, no RLS — queries scoped by `userId`) |
+| **Storage** | Cloudinary — private images (`type: authenticated`), signed delivery URLs |
+| **Authentication** | Clerk (`@clerk/nextjs`; route protection via `clerkMiddleware` in `src/proxy.ts`) |
 | **Async pipeline** | Inngest (`generate-story` function, served at `/api/inngest`) |
 | **AI Models** | Text: Claude Haiku → OpenAI `gpt-4o` fallback. Images: BytePlus Seedream → `dall-e-3` fallback. ElevenLabs (audio) *deferred* |
 | **Validation** | Zod v4 (`src/lib/types.ts`) |
@@ -79,7 +79,7 @@ HeroTales AI is a specialized Micro SaaS designed for parents to create personal
 - **Users Table:** ID, Email, Stripe_Subscription_Status.
 - **Children Table:** ID, Parent_ID, Nickname, Character_Description, Age.
 - **Stories Table:** ID, Child_ID, Theme, Full_Text (JSON), Created_At.
-- **Images Table:** ID, Story_ID, Chapter_Index, Supabase_URL, Gen_ID.
+- **Images Table:** ID, Story_ID, Chapter_Index, Storage_Path (Cloudinary public id), Gen_ID.
 
 ---
 
@@ -98,6 +98,6 @@ HeroTales AI is a specialized Micro SaaS designed for parents to create personal
 ---
 
 ## 9. Roadmap
-- **Phase 1 (MVP):** Text generation + Character-consistent images + Supabase integration.
+- **Phase 1 (MVP):** Text generation + Character-consistent images + Clerk / Neon / Cloudinary integration.
 - **Phase 2:** Audio narration and mobile-web optimization.
 - **Phase 3:** Stripe integration and "Print-on-Demand" book ordering.

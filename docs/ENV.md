@@ -1,6 +1,6 @@
 # Environment & Setup
 
-This project pairs Next.js 16 (App Router) with Supabase (Auth + Postgres + Storage), OpenAI (text + images), and Inngest (async story-generation pipeline). Stripe and ElevenLabs are deliberately deferred.
+This project pairs Next.js 16 (App Router) with Clerk (auth), Neon Postgres via Drizzle ORM, Cloudinary (private image storage), Anthropic/BytePlus/OpenAI (text + images), and Inngest (async story-generation pipeline). Stripe and ElevenLabs are deliberately deferred.
 
 ---
 
@@ -10,9 +10,11 @@ Create `.env.local` at the repo root with the following keys.
 
 | Var | Where used | Notes |
 | --- | --- | --- |
-| `NEXT_PUBLIC_SUPABASE_URL` | Browser + server Supabase clients | `https://<project-ref>.supabase.co` |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser + server (RLS-respecting) clients | Public anon key from Supabase project settings |
-| `SUPABASE_SERVICE_ROLE_KEY` | `src/lib/supabase/admin.ts` (Inngest only) | **Never** import the admin client from any code that ships to the browser. |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Browser + server Clerk SDK (`@clerk/nextjs`) | Public publishable key from the Clerk dashboard. |
+| `CLERK_SECRET_KEY` | Server/Inngest Clerk backend client (`clerkClient`) | **Server-only** — never ships to the browser. Used by `POST /api/user/delete` to delete the Clerk user. |
+| `NEXT_PUBLIC_CLERK_SIGN_IN_URL` / `NEXT_PUBLIC_CLERK_SIGN_UP_URL` | Clerk redirect config | Point at the in-app `/sign-in` and `/sign-up` routes. |
+| `DATABASE_URL` | Neon Postgres via Drizzle (`src/lib/db/index.ts`) | Neon connection string (`postgresql://…`). Drizzle `neon-http` client; **no RLS** — the app scopes every query by the Clerk `userId`. |
+| `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` | Cloudinary image storage (`src/lib/cloudinary.ts`) | **API secret is server/Inngest-only.** Story images upload as `type: authenticated` (private), served via signed delivery URLs. |
 | `ANTHROPIC_API_KEY` | `src/lib/anthropic.ts` (default story-text provider, via `vertexai.ts`) | Claude Haiku for story text. If unset, every text call falls back to OpenAI. |
 | `ANTHROPIC_TEXT_MODEL` | `src/lib/anthropic.ts` | Optional. Overrides the Haiku model id. Default `claude-haiku-4-5`. |
 | `BYTEPLUS_API_KEY` | `src/lib/byteplus.ts` (default image provider, via `vertexai.ts`) | BytePlus ModelArk (Seedream) for chapter art. If unset, every image call falls back to DALL-E. |
@@ -28,18 +30,23 @@ Do **not** commit `.env.local`. Vercel/your host should hold the same set as pro
 
 ---
 
-## One-time Supabase setup
+## One-time backend setup
 
-1. Create a new Supabase project. Note the project ref + anon key + service-role key.
-2. Apply the schema:
-   - `supabase db push` (CLI), **or**
-   - paste `supabase/migrations/0001_init.sql` into the SQL editor.
-3. Verify the `handle_new_user` trigger fires on `auth.users` insert (creates a `profiles` row).
-4. Storage → create bucket **`story-assets`**:
-   - Public: **off**
-   - The app mints 1-hour signed URLs on read; never set this bucket public.
-5. Auth → Providers → Email: enable email + password. Disable email confirmations only if you want frictionless local testing.
-6. Auth → URL Configuration → set Site URL to `NEXT_PUBLIC_APP_URL` and add your production origin to allowed redirect URLs.
+### Clerk (auth)
+1. Create a Clerk application; copy the publishable + secret keys into env.
+2. Enable Email + Password (and any social providers you want) under **User & Authentication**.
+3. Set the sign-in/sign-up URLs to the in-app routes (`/sign-in`, `/sign-up`) via `NEXT_PUBLIC_CLERK_SIGN_IN_URL` / `NEXT_PUBLIC_CLERK_SIGN_UP_URL`. Route protection is handled in `src/proxy.ts` (`clerkMiddleware` + `createRouteMatcher`).
+
+### Neon Postgres (database)
+1. Create a Neon project; copy the pooled connection string into `DATABASE_URL`.
+2. Apply the Drizzle schema (`src/lib/db/schema.ts`):
+   - `npm run db:generate` then `npm run db:migrate`, **or**
+   - `npm run db:push` to sync the schema directly (dev).
+3. There is **no RLS** — access control lives in app code, so every query is scoped by the authenticated Clerk `userId`. A `profiles` row is created for a user on first authenticated use.
+
+### Cloudinary (image storage)
+1. Create a Cloudinary account; copy cloud name + API key + API secret into env.
+2. No public folder/bucket config needed: story images upload as `type: authenticated` (private) and are served only through signed delivery URLs (`signedImageUrl`). The API secret must stay server/Inngest-only.
 
 ---
 
@@ -87,7 +94,7 @@ Then:
 2. From `/stories/new`, fill the form → POST `/api/stories` returns `{ story_id }` → redirected to `/stories/[id]`.
 3. Reader polls every 2 s; the Inngest pipeline fills `full_text` + `chapter_images` rows. Within ~30–60 s the page hydrates with 5 chapters of art.
 4. Toggle favorite, browse `/shelf`, preview `/keepsake-books`.
-5. `POST /api/user/delete` wipes storage + DB + auth user (COPPA compliance).
+5. `POST /api/user/delete` wipes Cloudinary images + DB profile (FK-cascades children/stories/chapter_images) + the Clerk user (COPPA compliance).
 
 ---
 
