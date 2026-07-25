@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSignIn, useSignUp } from "@clerk/nextjs";
 import { FloatingNav } from "@/components/floating-nav";
@@ -26,7 +25,6 @@ export function AuthForm({
   initialMode: Mode;
   next: string;
 }) {
-  const router = useRouter();
   const { isLoaded: siLoaded, signIn, setActive: setSignInActive } = useSignIn();
   const { isLoaded: suLoaded, signUp, setActive: setSignUpActive } = useSignUp();
 
@@ -116,8 +114,12 @@ export function AuthForm({
       try {
         const res = await signIn.create({ identifier: email, password });
         if (res.status === "complete") {
-          await setSignInActive({ session: res.createdSessionId });
-          router.push(next);
+          // Let Clerk own the post-auth navigation: it waits for the session
+          // cookie to commit before redirecting. A manual router.push races the
+          // cookie write — on mobile the server middleware runs before the
+          // cookie lands, bounces back to /sign-in, and the next attempt throws
+          // "You're already signed in".
+          await setSignInActive({ session: res.createdSessionId, redirectUrl: next });
         } else {
           setError("Additional verification is required to sign in.");
         }
@@ -137,8 +139,8 @@ export function AuthForm({
     try {
       const res = await signUp.attemptEmailAddressVerification({ code });
       if (res.status === "complete") {
-        await setSignUpActive({ session: res.createdSessionId });
-        router.push(next);
+        // Same cookie-commit race as sign-in: let Clerk handle the redirect.
+        await setSignUpActive({ session: res.createdSessionId, redirectUrl: next });
       } else {
         setError("That code didn't work. Try again.");
       }
