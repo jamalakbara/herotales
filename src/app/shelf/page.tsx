@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore, CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, CSSProperties, ReactNode } from "react";
 import { AppFooter } from "@/components/app-footer";
 import { BookCard, NewTaleCard } from "@/components/book-card";
 import { accentColors } from "@/components/book-cover";
@@ -19,7 +19,7 @@ import { BLUEPRINTS } from "@/lib/types";
 
 type APIKid = { id: string; nickname: string; tales: number; favorites: number };
 
-function ShelfSection({ label, count, books, order = 0 }: { label: string; count: string; books: BookView[]; order?: number }) {
+function ShelfSection({ label, count, books, order = 0, trailing }: { label: string; count: string; books: BookView[]; order?: number; trailing?: ReactNode }) {
   return (
     // Mount-based (not inView): these grids are tall, so an inView gate at
     // amount 0.25 leaves the top section invisible until the user scrolls —
@@ -31,6 +31,7 @@ function ShelfSection({ label, count, books, order = 0 }: { label: string; count
       </div>
       <ShelfPlankGrid plankClassName="dash-shelf-plank-anim">
         {books.map((b, i) => <BookCard key={b.id} book={b} size="md" index={i} />)}
+        {trailing}
       </ShelfPlankGrid>
     </Reveal>
   );
@@ -52,6 +53,103 @@ function BookRow({ b, index }: { b: BookView; index: number }) {
       </div>
       <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ink-soft)", flexShrink: 0 }}>{b.label}</span>
     </Link>
+  );
+}
+
+type KidTab = { id: string; paletteIdx: number; nm: string; ct: number; label: string };
+
+function tabPalette(paletteIdx: number) {
+  return paletteIdx >= 0 ? KID_PALETTES[paletteIdx % KID_PALETTES.length] : { bg: "var(--twilight)", color: "#fff" };
+}
+
+// Single source for the hero-filter pill (both the pinned row and — its avatar
+// — the overflow popover rows), so a style tweak lands once.
+function HeroTabPill({ t, active, onSelect }: { t: KidTab; active: boolean; onSelect: () => void }) {
+  const palette = tabPalette(t.paletteIdx);
+  return (
+    <button onClick={onSelect} className={`dash-kid-tab${active ? " dash-kid-tab-active" : ""}`} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 18px 10px 10px", background: active ? "var(--u-orange)" : "#fff", borderRadius: 999, color: active ? "#fff" : "var(--ink)", boxShadow: active ? "none" : "var(--u-card-shadow)" }}>
+      <div style={{ width: 30, height: 30, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: t.id === "all" ? 12 : 14, background: palette.bg, color: palette.color }}>{t.label}</div>
+      <span style={{ fontWeight: 800, fontSize: 14 }}>{t.nm}</span>
+      <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 7px", background: active ? "rgba(255,255,255,0.22)" : "rgba(28,21,64,0.08)", borderRadius: 999 }}>{t.ct}</span>
+    </button>
+  );
+}
+
+// How many hero pills stay pinned in the quick-pick row before the rest fold
+// into the searchable "More heroes" popover — keeps the strip one tidy line
+// even with hundreds of heroes.
+const PINNED_HEROES = 5;
+
+function HeroPicker({ tabs, activeTab, onSelect }: { tabs: KidTab[]; activeTab: string; onSelect: (id: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const popRef = useRef<HTMLDivElement>(null);
+
+  const all = tabs[0];
+  const heroes = useMemo(() => tabs.slice(1), [tabs]);
+  const { pinned, overflow } = useMemo(() => {
+    const ranked = [...heroes].sort((a, b) => b.ct - a.ct); // most-told first
+    const pinnedIds = new Set(ranked.slice(0, PINNED_HEROES).map((t) => t.id));
+    if (heroes.some((t) => t.id === activeTab)) pinnedIds.add(activeTab); // keep active visible
+    return {
+      pinned: heroes.filter((t) => pinnedIds.has(t.id)),
+      overflow: heroes.filter((t) => !pinnedIds.has(t.id)),
+    };
+  }, [heroes, activeTab]);
+
+  const shown = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    return needle ? overflow.filter((t) => t.nm.toLowerCase().includes(needle)) : overflow;
+  }, [overflow, q]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => { if (popRef.current && !popRef.current.contains(e.target as Node)) setOpen(false); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("mousedown", onDoc); document.removeEventListener("keydown", onKey); };
+  }, [open]);
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 28 }}>
+      {/* Pinned quick-pick pills — scrolls sideways on mobile via .fade-strip */}
+      <div className="shelf-kid-tabs fade-strip" style={{ flex: "1 1 auto", minWidth: 0, marginBottom: 0 }}>
+        {all && <HeroTabPill t={all} active={activeTab === "all"} onSelect={() => onSelect("all")} />}
+        {pinned.map((t) => <HeroTabPill key={t.id} t={t} active={activeTab === t.id} onSelect={() => onSelect(t.id)} />)}
+      </div>
+      {/* Overflow: searchable popover — kept outside the scroll strip so it isn't clipped */}
+      {overflow.length > 0 && (
+        <div ref={popRef} style={{ position: "relative", flexShrink: 0 }}>
+          <button className="dash-kid-tab" onClick={() => setOpen((o) => !o)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", background: "#fff", borderRadius: 999, color: "var(--ink)", boxShadow: "var(--u-card-shadow)", fontWeight: 800, fontSize: 14, whiteSpace: "nowrap" }}>
+            More heroes
+            <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 7px", background: "rgba(28,21,64,0.08)", borderRadius: 999 }}>{overflow.length}</span>
+            <span style={{ display: "inline-block", transition: "transform 0.15s ease", transform: open ? "rotate(180deg)" : "none" }}>▾</span>
+          </button>
+          {open && (
+            <div className="shelf-hero-pop">
+              <div className="shelf-hero-pop-search">
+                <span style={{ fontSize: 15, color: "var(--ink-soft)" }}>⌕</span>
+                <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search hero…" />
+              </div>
+              <div className="shelf-hero-pop-list">
+                {shown.map((t) => {
+                  const palette = tabPalette(t.paletteIdx);
+                  return (
+                    <button key={t.id} className={`shelf-hero-pop-row${activeTab === t.id ? " is-active" : ""}`} onClick={() => { onSelect(t.id); setOpen(false); setQ(""); }}>
+                      <div className="shelf-hero-pop-av" style={{ background: palette.bg, color: palette.color }}>{t.label}</div>
+                      <span style={{ flex: 1, textAlign: "left", fontWeight: 800 }}>{t.nm}</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "var(--ink-soft)" }}>{t.ct}</span>
+                    </button>
+                  );
+                })}
+                {shown.length === 0 && <div className="shelf-hero-pop-empty">No hero matches</div>}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -211,20 +309,14 @@ export default function ShelfPage() {
           <Link href="/stories/new" className="dash-btn dash-btn-berry dash-shelf-top-btn dash-shelf-head-anim dash-shelf-head-delay-3">+ Craft a new tale</Link>
         </div>
 
-        {/* Kid tabs — wrap on desktop, single horizontal-scroll strip on mobile */}
-        <div className="shelf-kid-tabs fade-strip" style={{ marginBottom: 28 }}>
-          {loading && Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} variant="pill" />)}
-          {!loading && kidTabs.map(t => {
-            const palette = t.paletteIdx >= 0 ? KID_PALETTES[t.paletteIdx % KID_PALETTES.length] : { bg: "var(--twilight)", color: "#fff" };
-            return (
-              <button key={t.id} onClick={() => setActiveTab(t.id)} className={`dash-kid-tab${activeTab === t.id ? " dash-kid-tab-active" : ""}`} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 18px 10px 10px", background: activeTab === t.id ? "var(--u-orange)" : "#fff", borderRadius: 999, color: activeTab === t.id ? "#fff" : "var(--ink)", boxShadow: activeTab === t.id ? "none" : "var(--u-card-shadow)" }}>
-                <div style={{ width: 30, height: 30, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: t.id === "all" ? 12 : 14, background: palette.bg, color: palette.color }}>{t.label}</div>
-                <span style={{ fontWeight: 800, fontSize: 14 }}>{t.nm}</span>
-                <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 7px", background: activeTab === t.id ? "rgba(255,255,255,0.22)" : "rgba(28,21,64,0.08)", borderRadius: 999, opacity: 1 }}>{t.ct}</span>
-              </button>
-            );
-          })}
-        </div>
+        {/* Hero filter — pinned quick-pick pills + searchable "More heroes" popover */}
+        {loading ? (
+          <div className="shelf-kid-tabs fade-strip" style={{ marginBottom: 28 }}>
+            {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} variant="pill" />)}
+          </div>
+        ) : (
+          <HeroPicker tabs={kidTabs} activeTab={activeTab} onSelect={setActiveTab} />
+        )}
 
         {loadError && <ErrorAlert style={{ marginBottom: 16 }}>{loadError}</ErrorAlert>}
 
@@ -252,19 +344,29 @@ export default function ShelfPage() {
               {listBooks.map((b, i) => <BookRow key={i} b={b} index={i} />)}
             </div>
           )
-        ) : (
-          <>
-            {recentBooks.length > 0 && (
-              <ShelfSection order={0} label="Recently read" count={`${recentBooks.length} ${recentBooks.length === 1 ? "tale" : "tales"} · last 2 weeks`} books={recentBooks} />
-            )}
-            {favBooks.length > 0 && (
-              <ShelfSection order={1} label="Favorites" count={`${favBooks.length} ${favBooks.length === 1 ? "keeper" : "keepers"}`} books={favBooks} />
-            )}
-            {monthBooks.length > 0 && (
-              <ShelfSection order={2} label="Earlier this month" count={`${monthBooks.length} ${monthBooks.length === 1 ? "tale" : "tales"}`} books={monthBooks} />
-            )}
-          </>
-        )}
+        ) : (() => {
+          // Terminal "add" tile rides the last populated section's plank so it
+          // sits flush beside the final book — one shelf, not a lonely card on
+          // its own plank below Load more. Only when everything's revealed
+          // (!hasMore) and in Shelf view; while paging, the top "Craft a new
+          // tale" button carries the action.
+          const showTerminal = activeView !== "List" && !hasMore;
+          const lastKey = monthBooks.length > 0 ? "month" : favBooks.length > 0 ? "fav" : "recent";
+          const terminal = <NewTaleCard href="/stories/new" size="md" index={0} />;
+          return (
+            <>
+              {recentBooks.length > 0 && (
+                <ShelfSection order={0} label="Recently read" count={`${recentBooks.length} ${recentBooks.length === 1 ? "tale" : "tales"} · last 2 weeks`} books={recentBooks} trailing={showTerminal && lastKey === "recent" ? terminal : undefined} />
+              )}
+              {favBooks.length > 0 && (
+                <ShelfSection order={1} label="Favorites" count={`${favBooks.length} ${favBooks.length === 1 ? "keeper" : "keepers"}`} books={favBooks} trailing={showTerminal && lastKey === "fav" ? terminal : undefined} />
+              )}
+              {monthBooks.length > 0 && (
+                <ShelfSection order={2} label="Earlier this month" count={`${monthBooks.length} ${monthBooks.length === 1 ? "tale" : "tales"}`} books={monthBooks} trailing={showTerminal && lastKey === "month" ? terminal : undefined} />
+              )}
+            </>
+          );
+        })()}
 
         {!loading && hasMore && (
           <div style={{ display: "flex", justifyContent: "center", marginTop: 28 }}>
@@ -272,19 +374,6 @@ export default function ShelfPage() {
               Load more <span style={{ fontWeight: 700, color: "var(--ink-soft)" }}>· {filtered.length - visibleCount} left</span>
             </button>
           </div>
-        )}
-
-        {/* Terminal "add" tile — always the last thing on the shelf (below any
-            Load more), so it's persistently reachable and never sits above the
-            paginate control. Shelf view only; List view has its own flow. */}
-        {!loading && activeView !== "List" && filtered.length > 0 && (
-          <Reveal>
-            <div style={{ marginTop: 28 }}>
-              <ShelfPlankGrid plankClassName="dash-shelf-plank-anim">
-                <NewTaleCard href="/stories/new" size="md" index={0} />
-              </ShelfPlankGrid>
-            </div>
-          </Reveal>
         )}
 
         {filtered.length === 0 && !loading && !loadError && (

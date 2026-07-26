@@ -10,7 +10,8 @@ import { Children, useRef, useState, type CSSProperties, type ReactNode } from "
  * + `style`; the mobile rules override with `!important`. See the "Mobile swipe
  * carousel + dot rail" entry in docs/DESIGN_SYSTEM.md.
  */
-export function MobileCarousel({ className, style, children }: {
+export function MobileCarousel({ id, className, style, children }: {
+  id?: string;
   className?: string;
   style?: CSSProperties;
   children: ReactNode;
@@ -35,7 +36,7 @@ export function MobileCarousel({ className, style, children }: {
 
   return (
     <>
-      <div ref={ref} onScroll={onScroll} className={`m-carousel${className ? ` ${className}` : ""}`} style={style}>
+      <div ref={ref} id={id} onScroll={onScroll} className={`m-carousel${className ? ` ${className}` : ""}`} style={style}>
         {children}
       </div>
       <div className="m-carousel-dots">

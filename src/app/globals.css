@@ -1879,18 +1879,6 @@ h1.story-title .script-em {
   color: var(--twilight);
   z-index: 3;
 }
-.illus .tag-ai {
-  position: absolute; top: 18px; right: 18px;
-  padding: 5px 12px;
-  background: rgba(251,243,227,0.15);
-  border: 1.5px solid rgba(251,243,227,0.35);
-  border-radius: 999px;
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-size: 10.5px;
-  color: var(--cream);
-  z-index: 3;
-  letter-spacing: 0.05em;
-}
 .illus .moon-big {
   position: absolute; top: 70px; right: 70px;
   width: 84px; height: 84px;
@@ -1947,19 +1935,6 @@ h1.story-title .script-em {
   0%,100% { box-shadow: 0 0 32px 8px rgba(245,184,65,0.45); }
   50% { box-shadow: 0 0 48px 14px rgba(245,184,65,0.75); }
 }
-.illus .caption-strip {
-  position: absolute; bottom: 14px; left: 14px; right: 14px;
-  padding: 8px 14px;
-  background: rgba(28,21,64,0.6);
-  border: 1px solid rgba(251,243,227,0.25);
-  backdrop-filter: blur(6px);
-  border-radius: 10px;
-  color: var(--cream);
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-size: 10.5px;
-  letter-spacing: 0.06em;
-}
-
 .illus-thumbs {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -2239,6 +2214,8 @@ h1.story-title .script-em {
   color: var(--ink-soft);
 }
 .chap-counter .now { color: var(--berry); font-size: 26px; }
+/* Swipe affordance — only meaningful on touch, so desktop hides it (shown ≤640). */
+.swipe-hint { display: none; }
 
 .end-actions {
   margin-top: 36px;
@@ -2276,6 +2253,13 @@ h1.story-title .script-em {
   .reader { grid-template-columns: 1fr; }
   .illus-col { position: static; }
   .story-col { padding: 28px; }
+  /* Decorative left margin-rule only reads as a notebook margin at desktop
+     padding; once the column narrows it hugs the text as a stray vertical
+     line. Drop it in the single-column layout — and remove the body text's
+     left inset that only existed to clear that rule, so paragraphs align with
+     the title/drop-cap instead of hanging 18px to the right. */
+  .story-col::before { display: none; }
+  .story-text { padding-left: 0; }
   .chap-title { font-size: 30px; }
   .story-text { font-size: 18px; }
 }
@@ -2288,6 +2272,18 @@ h1.story-title .script-em {
   .chap-nav { flex-wrap: wrap; gap: 10px; }
   .nav-chip { padding: 9px 14px; }
   .nav-chip .nv-ttl { display: none; }
+  /* Chapter swipe is enabled on touch — surface the affordance under the counter. */
+  .chap-counter { display: flex; flex-direction: column; align-items: center; line-height: 1.1; }
+  .swipe-hint {
+    display: block;
+    font-family: var(--font-nunito), sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--ink-soft);
+    opacity: 0.75;
+    margin-top: 4px;
+  }
 }
 
 /* =====================================================================
@@ -2359,6 +2355,42 @@ h1.story-title .script-em {
   border: none; font-family: var(--font-nunito), sans-serif;
 }
 .dash-kid-tab:hover { transform: translateY(-2px); box-shadow: 3px 3px 0 var(--ink); }
+
+/* "More heroes" overflow popover — signature elevated surface (2px ink border +
+   hard offset shadow) anchored under the trigger pill. Holds a search field and
+   a scrollable list of the heroes that didn't fit the pinned quick-pick row. */
+.shelf-hero-pop {
+  position: absolute; top: calc(100% + 10px); right: 0; z-index: 30;
+  width: 300px; max-width: 80vw;
+  background: #fff; border: 2px solid var(--ink);
+  border-radius: 20px; box-shadow: 6px 6px 0 var(--ink);
+  padding: 12px;
+}
+.shelf-hero-pop-search {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--cream-deep); border-radius: 999px;
+  padding: 8px 14px; margin-bottom: 10px;
+}
+.shelf-hero-pop-search input {
+  border: none; background: transparent; outline: none; flex: 1; min-width: 0;
+  font-family: var(--font-nunito), sans-serif; font-weight: 600; font-size: 13px; color: var(--ink);
+}
+.shelf-hero-pop-list { display: flex; flex-direction: column; gap: 4px; max-height: 300px; overflow-y: auto; }
+.shelf-hero-pop-row {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 8px 10px; border: none; background: transparent; border-radius: 12px;
+  cursor: pointer; font-family: var(--font-nunito), sans-serif; color: var(--ink);
+  transition: background 0.12s ease;
+}
+.shelf-hero-pop-row:hover { background: var(--cream-deep); }
+.shelf-hero-pop-row.is-active { background: var(--u-orange); color: #fff; }
+.shelf-hero-pop-row.is-active .shelf-hero-pop-av { box-shadow: 0 0 0 2px rgba(255,255,255,0.5); }
+.shelf-hero-pop-av {
+  width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-caprasimo), serif; font-size: 13px;
+}
+.shelf-hero-pop-empty { padding: 14px; text-align: center; color: var(--ink-soft); font-size: 13px; font-weight: 600; }
 
 /* Hero filter strip: wraps on desktop; on mobile it becomes a single
    horizontal-scroll row so a long hero list stays one tidy line, not a wall. */
@@ -2925,8 +2957,23 @@ body { padding-top: 84px; }
 
 @media (max-width: 720px) {
   .fnav-links, .fnav-crumbs { display: none; }
-  /* Tighter pill so logo + action fit ≤390px without overflowing. */
-  .fnav-pill { max-width: 100%; justify-content: space-between; gap: 10px; padding: 9px 10px 9px 16px; }
+  /* Float the pill on mobile too: inset from the edges with a top gap and the
+     signature hard offset shadow, matching the desktop nav language. */
+  .fnav-shell { top: 12px; padding: 0 12px; }
+  .fnav-pill {
+    max-width: 100%;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px 10px 16px !important;
+    border-radius: 999px !important;
+    background: var(--cream) !important;
+    box-shadow: 4px 4px 0 var(--ink) !important;
+  }
+  /* Keep the hard shadow on scroll — umano's condensed rule swaps in a big
+     floating shadow otherwise. Higher specificity so it wins. */
+  .fnav-pill.fnav-condensed { box-shadow: 3px 3px 0 var(--ink) !important; }
+  /* Reading-progress hairline clears the floating pill (top gap + bar height). */
+  .read-progress { top: 74px; }
   .fnav-menu-links { display: flex; }
   .fnav-logo { font-size: 18px; }
   .fnav-logo .logo-mark { width: 26px; height: 26px; }
@@ -3921,7 +3968,6 @@ html.lenis, html.lenis body { height: auto; }
 .gen-banner .check { border: none; }
 .illus { border: none; box-shadow: var(--u-card-shadow-lg); }
 .illus .tag-chap { border: none; background: var(--u-orange); color: #fff; }
-.illus .tag-ai { border: none; }
 .illus-thumbs .thumb { border: none; }
 .illus-thumbs .thumb:hover { box-shadow: var(--u-card-shadow); }
 .illus-thumbs .thumb.active { outline: 3px solid var(--u-orange); box-shadow: var(--u-card-shadow); }
@@ -4100,6 +4146,113 @@ html.lenis, html.lenis body { height: auto; }
   .u-chip:hover, .kid-pick:hover { transform: none; }
   .wait-fill { transition: none; }
   .skeleton { animation: none; background-image: none; }
+}
+
+/* =====================================================================
+   FLIP-BOOK READER — react-pageflip page-curl (src/components/flip-reader.tsx)
+   ===================================================================== */
+.fb-meta {
+  max-width: 900px;
+  margin: 0 auto 18px;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.fb-wrap { display: flex; flex-direction: column; align-items: center; }
+.fb-stage { width: 100%; max-width: 840px; margin: 0 auto; min-height: 620px; }
+.fb-book, .fb-stage .stf__parent { margin: 0 auto; }
+
+/* Page surface = paper. The library draws the fold/curl shadows itself. */
+.fb-page {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #fff;
+  overflow: hidden;
+  cursor: grab;
+}
+/* Text pages are selectable by default; starting a drag on them triggers text
+   selection and swallows the pointer before the flip engine sees it — so a
+   back-drag (the left page is usually text) never fired. Kill selection. */
+.fb-page, .fb-page * {
+  user-select: none;
+  -webkit-user-select: none;
+}
+.fb-page img { -webkit-user-drag: none; }
+/* Illustration face fills the whole page (drop the standalone .illus card frame). */
+.fb-illus { position: absolute; inset: 0; }
+.fb-page .illus {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+.fb-illus-inner { position: absolute; inset: 0; }
+
+/* Text face */
+.fb-text { position: absolute; inset: 0; }
+.fb-text-inner {
+  height: 100%;
+  padding: 44px 40px 46px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+/* Auto-fit: TextFace sets --fb-scale (≤1) so the whole chapter fits one page. */
+.fb-text .chap-title { font-size: calc(38px * var(--fb-scale, 1)); }
+.fb-text .story-text {
+  padding-left: 0;
+  flex: 1;
+  font-size: calc(20px * var(--fb-scale, 1));
+}
+.fb-text .story-text p:first-child::first-letter {
+  font-size: calc(68px * var(--fb-scale, 1));
+}
+/* Drop cap only on a chapter's first text page — neutralise it on continuations. */
+.fb-text .story-text:not(.fb-firsttext) p:first-child::first-letter {
+  font-family: inherit;
+  float: none;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+  margin: 0;
+}
+.fb-end {
+  margin-top: 14px;
+  text-align: center;
+  font-family: var(--font-caprasimo), serif;
+  color: var(--u-orange);
+  font-size: 18px;
+}
+.fb-folio {
+  position: absolute;
+  bottom: 14px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--ink-soft);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.fb-controls { margin-top: 22px; width: 100%; max-width: 640px; }
+.fb-controls .nav-chip { cursor: pointer; background: var(--cream-deep); }
+.fb-audio { max-width: 720px; margin: 22px auto 0; }
+
+/* Reduced-motion / no-flip fallback: plain vertical stack of chapters. */
+.fb-fallback { display: flex; flex-direction: column; gap: 40px; }
+.fb-fallback-ch { display: grid; grid-template-columns: 1fr; gap: 20px; }
+.fb-illus-static { position: relative; }
+.fb-illus-static .illus { position: relative; aspect-ratio: 4/7; }
+
+@media (max-width: 720px) {
+  .fb-text-inner { padding: 30px 26px 40px; }
+  .fb-stage { min-height: 460px; }
 }
 
 

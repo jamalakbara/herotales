@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { motion, useScroll, useReducedMotion } from "framer-motion";
@@ -8,7 +7,7 @@ import { AppFooter } from "@/components/app-footer";
 import { FloatingNav, ReaderBack } from "@/components/floating-nav";
 import { AmbientDecor } from "@/components/motion/AmbientDecor";
 import { Reveal } from "@/components/motion/Reveal";
-import { Skeleton } from "@/components/skeleton";
+import { FlipReader } from "@/components/flip-reader";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type Chapter = {
@@ -37,15 +36,6 @@ type ImageRow = { chapter_index: number; url: string | null };
 
 const SPEEDS = ["0.75×", "1×", "1.25×", "1.5×"];
 
-const STAR_POSITIONS: Array<React.CSSProperties> = [
-  { top: 50, left: 60, width: 6, height: 6, animationDelay: "0s" },
-  { top: 90, left: 130, width: 4, height: 4, animationDelay: "0.6s" },
-  { top: 130, left: 50, width: 5, height: 5, animationDelay: "1.1s" },
-  { top: 70, right: 40, width: 4, height: 4, animationDelay: "1.4s" },
-  { top: 180, right: 110, width: 5, height: 5, animationDelay: "0.3s" },
-  { top: 220, left: 100, width: 3, height: 3, animationDelay: "1.8s" },
-];
-
 function pickChild(children: StoryRow["children"]) {
   if (!children) return null;
   return Array.isArray(children) ? children[0] ?? null : children;
@@ -60,10 +50,8 @@ export default function StoryReaderPage() {
 
   const [story, setStory] = useState<StoryRow | null>(null);
   const [images, setImages] = useState<ImageRow[]>([]);
-  const [loadedImgs, setLoadedImgs] = useState<Set<string>>(new Set());
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  const [cur, setCur] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [spIdx, setSpIdx] = useState(1);
   const [fillPct, setFillPct] = useState(0);
@@ -115,9 +103,6 @@ export default function StoryReaderPage() {
   const readMins = lengthMap[lengthLabel] ?? "7 min";
 
   const chapters = story?.full_text ?? [];
-  const chapter: Chapter | null = chapters[cur] ?? null;
-  const prevIdx = cur > 0 ? cur - 1 : null;
-  const nextIdx = chapters.length > 0 && cur < chapters.length - 1 ? cur + 1 : null;
   const ready = story?.status === "ready" && chapters.length > 0;
 
   const voiceDesc = useMemo(() => {
@@ -135,11 +120,6 @@ export default function StoryReaderPage() {
     for (const img of images) if (img.url) map.set(img.chapter_index, img.url);
     return map;
   }, [images]);
-
-  function render(i: number) {
-    setCur(i);
-    if (chapters.length) setFillPct(((i + 1) / chapters.length) * 100);
-  }
 
   function onProgClick(e: React.MouseEvent<HTMLDivElement>) {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -226,7 +206,6 @@ export default function StoryReaderPage() {
   }
 
   const heroTitle = story.title ?? `${heroName} & the ${blueprint} Tale`;
-  const chapterImage = imageByIndex.get(cur) ?? null;
 
   const crumbs = [
     { label: "Dashboard", href: "/dashboard" },
@@ -273,167 +252,61 @@ export default function StoryReaderPage() {
           </div>
         </Reveal>
 
-        <div className="reader">
-          {/* LEFT: ILLUSTRATION */}
-          <Reveal className="illus-col" index={2}>
-            <div className="illus" style={{ position: "relative", overflow: "hidden" }}>
-              <div className="tag-chap">{chapter?.chip ?? `Chapter ${cur + 1}`}</div>
-              <div className="tag-ai">AI · CHARACTER-CONSISTENT</div>
-              <motion.div
-                key={cur}
-                style={{ position: "absolute", inset: 0 }}
-                initial={reduce ? false : { opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-              >
-                {chapterImage ? (
-                  <>
-                    <Image
-                      src={chapterImage}
-                      alt={chapter?.title ?? `Chapter ${cur + 1}`}
-                      fill
-                      sizes="(max-width: 900px) 100vw, 600px"
-                      style={{ objectFit: "cover", borderRadius: "inherit" }}
-                      priority={cur === 0}
-                      onLoad={() =>
-                        setLoadedImgs((prev) =>
-                          prev.has(chapterImage) ? prev : new Set(prev).add(chapterImage),
-                        )
-                      }
-                    />
-                    {!loadedImgs.has(chapterImage) && <Skeleton variant="media" />}
-                  </>
-                ) : (
-                  <>
-                    <div className="moon-big" />
-                    {STAR_POSITIONS.map((s, i) => (
-                      <div key={i} className="star" style={s} />
-                    ))}
-                    <div className="tree" style={{ left: "12%" }} />
-                    <div className="mountain" />
-                    <AmbientDecor
-                      variant="dark"
-                      stars={[]}
-                      fireflies={[
-                        { left: "22%", bottom: "26%", delay: "0s", dur: "8s" },
-                        { left: "72%", bottom: "18%", delay: "1.2s", dur: "7s" },
-                      ]}
-                    />
-                  </>
-                )}
-                <div className="caption-strip">{chapter?.caption ?? ""}</div>
-              </motion.div>
+        <Reveal className="story-head fb-meta" index={2}>
+          <div className="chip-row">
+            <span className="chip berry">{blueprint}</span>
+            <span className="chip moon">For {heroName} · {heroAge}</span>
+            <span className="chip">{readMins} read</span>
+          </div>
+          <div className="head-actions">
+            <div
+              className={`icon-btn${story.favorite ? " active" : ""}`}
+              title="Save"
+              onClick={toggleFavorite}
+            >
+              ♡
             </div>
+            <div className="icon-btn" title="Print">⎙</div>
+            <div className="icon-btn" title="Share">↗</div>
+          </div>
+        </Reveal>
 
-            <div className="illus-thumbs">
-              {chapters.map((_, i) => (
-                <div
-                  key={i}
-                  className={`thumb ch${i + 1}${cur === i ? " active" : ""}`}
-                  onClick={() => render(i)}
-                >
-                  <span className="num">{i + 1}</span>
-                </div>
-              ))}
+        <FlipReader
+          chapters={chapters}
+          imageByIndex={imageByIndex}
+          reduce={!!reduce}
+          onEnd={() => router.push("/dashboard")}
+        />
+
+        {/* AUDIO BAR — narration TODO: ElevenLabs (Phase 2) */}
+        <div className="audio-bar fb-audio" style={{ opacity: 0.6 }}>
+          <div
+            className={`play-btn${playing ? " playing" : ""}`}
+            onClick={() => setPlaying((v) => !v)}
+            title="Narration arrives in a future update"
+          >
+            <div className="play-tri" />
+          </div>
+          <div className="audio-meta">
+            <div className="audio-title">Read to {heroName} — {voice}&apos;s voice</div>
+            <div className="audio-sub">{voiceDesc}</div>
+            <div className="audio-prog" onClick={onProgClick}>
+              <div className="fill" style={{ width: `${fillPct}%` }} />
             </div>
-          </Reveal>
-
-          {/* RIGHT: STORY TEXT */}
-          <Reveal className="story-col" index={3}>
-            <div className="story-head">
-              <div className="chip-row">
-                <span className="chip berry">{blueprint}</span>
-                <span className="chip moon">For {heroName} · {heroAge}</span>
-                <span className="chip">{readMins} read</span>
-              </div>
-              <div className="head-actions">
-                <div
-                  className={`icon-btn${story.favorite ? " active" : ""}`}
-                  title="Save"
-                  onClick={toggleFavorite}
-                >
-                  ♡
-                </div>
-                <div className="icon-btn" title="Print">⎙</div>
-                <div className="icon-btn" title="Share">↗</div>
-              </div>
+            <div className="audio-time">
+              <span>—</span>
+              <span>—</span>
             </div>
-
-            <span className="chap-label">{chapter?.label}</span>
-            <h2 className="chap-title">{chapter?.title}</h2>
-
-            <motion.div
-              className="story-text"
-              key={cur}
-              initial={reduce ? false : { opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-              dangerouslySetInnerHTML={{
-                __html: (chapter?.paras ?? []).map((p) => `<p>${p}</p>`).join(""),
-              }}
-            />
-
-            {/* AUDIO BAR — narration TODO: ElevenLabs (Phase 2) */}
-            <div className="audio-bar" style={{ opacity: 0.6 }}>
-              <div
-                className={`play-btn${playing ? " playing" : ""}`}
-                onClick={() => setPlaying((v) => !v)}
-                title="Narration arrives in a future update"
-              >
-                <div className="play-tri" />
-              </div>
-              <div className="audio-meta">
-                <div className="audio-title">Read to {heroName} — {voice}&apos;s voice</div>
-                <div className="audio-sub">{voiceDesc}</div>
-                <div className="audio-prog" onClick={onProgClick}>
-                  <div className="fill" style={{ width: `${fillPct}%` }} />
-                </div>
-                <div className="audio-time">
-                  <span>—</span>
-                  <span>—</span>
-                </div>
-              </div>
-              <div className="audio-tools">
-                <div
-                  className="speed-pill"
-                  onClick={() => setSpIdx((i) => (i + 1) % SPEEDS.length)}
-                >
-                  {SPEEDS[spIdx]}
-                </div>
-                <div className="speed-pill" title="Sleep timer">⏾ 20m</div>
-              </div>
+          </div>
+          <div className="audio-tools">
+            <div
+              className="speed-pill"
+              onClick={() => setSpIdx((i) => (i + 1) % SPEEDS.length)}
+            >
+              {SPEEDS[spIdx]}
             </div>
-
-            {/* CHAPTER NAV */}
-            <div className="chap-nav">
-              <div
-                className="nav-chip"
-                style={{ visibility: prevIdx === null ? "hidden" : "visible" }}
-                onClick={() => prevIdx !== null && render(prevIdx)}
-              >
-                <span className="big">←</span>
-                <div className="nv-lbl">
-                  Previous
-                  <span className="nv-ttl">{prevIdx !== null ? chapters[prevIdx].title : ""}</span>
-                </div>
-              </div>
-              <div className="chap-counter">
-                <span className="now">{cur + 1}</span> / {chapters.length}
-              </div>
-              <div
-                className="nav-chip next"
-                onClick={() => nextIdx !== null ? render(nextIdx) : router.push('/dashboard')}
-              >
-                <div className="nv-lbl">
-                  {nextIdx !== null ? "Next chapter" : "The end"}
-                  <span className="nv-ttl">
-                    {nextIdx !== null ? chapters[nextIdx].title : "You finished it ✦"}
-                  </span>
-                </div>
-                <span className="big">→</span>
-              </div>
-            </div>
-          </Reveal>
+            <div className="speed-pill" title="Sleep timer">⏾ 20m</div>
+          </div>
         </div>
 
         {/* END CTA — keepsake checkout TODO: Stripe (Phase 3) */}

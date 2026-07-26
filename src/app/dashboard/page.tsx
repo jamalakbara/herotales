@@ -79,6 +79,7 @@ function StatCard({ variant, label, value, unit, children }: {
 export default function DashboardPage() {
   const { data, error: loadError, loading } = useFetchJson<APIDashboard>("/api/dashboard", "Dashboard load failed");
   const [activeKid, setActiveKid] = useState(0);
+  const [showAllKids, setShowAllKids] = useState(false);
   const [activeFilter, setActiveFilter] = useState("All");
   const kids = data?.kids ?? [];
   const recent = data?.recent_stories ?? [];
@@ -104,6 +105,7 @@ export default function DashboardPage() {
   const nudgeBlueprint = BLUEPRINTS.find((b) => !usedBlueprints.has(b)) ?? null;
 
   const kidsView = kids.map((k, i) => ({
+    idx: i,
     id: k.id,
     name: k.nickname,
     age: `${k.age} years · ${k.pronouns}`,
@@ -115,6 +117,18 @@ export default function DashboardPage() {
   }));
 
   const booksView = filteredStories.map((s, i) => storyToBook(s, i));
+
+  // Keep the hero row tidy when a parent has many kids: show the first row
+  // collapsed, reveal the rest on demand. Active hero is always pinned in.
+  const HERO_CAP = 7;
+  const overCap = kidsView.length > HERO_CAP;
+  const visibleKids = !overCap || showAllKids
+    ? kidsView
+    : (() => {
+        const head = kidsView.slice(0, HERO_CAP);
+        if (activeKid >= HERO_CAP) head[HERO_CAP - 1] = kidsView[activeKid];
+        return head;
+      })();
 
   return (
     <>
@@ -193,14 +207,23 @@ export default function DashboardPage() {
         <SectionHeader
           title={<>Your little <HeadAccent>heroes</HeadAccent></>}
           sub="Each child has their own character sketch and story shelf."
-          action={<Link href="/shelf" className="dash-stat-link">See all stories →</Link>}
+          action={
+            <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+              {overCap && (
+                <button type="button" onClick={() => setShowAllKids((v) => !v)} className="dash-stat-link" style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+                  {showAllKids ? "Show fewer ↑" : `Show all ${kidsView.length} →`}
+                </button>
+              )}
+              <Link href="/shelf" className="dash-stat-link">See all stories →</Link>
+            </div>
+          }
         />
 
         {/* KIDS ROW — grid on desktop, swipe carousel on mobile */}
         <MobileCarousel className="dash-kids-row" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 56 }}>
           {loading && Array.from({ length: 3 }).map((_, i) => <SkeletonKidCard key={i} />)}
-          {kidsView.map((kid, i) => (
-            <div key={kid.id} className="dash-kid-card" onClick={() => setActiveKid(i)} style={{ background: activeKid === i ? "var(--u-orange)" : "#fff", borderRadius: 20, boxShadow: activeKid === i ? "var(--u-card-shadow-lg)" : "var(--u-card-shadow)", padding: 22 }}>
+          {visibleKids.map((kid) => (
+            <div key={kid.id} className="dash-kid-card" onClick={() => setActiveKid(kid.idx)} style={{ background: activeKid === kid.idx ? "var(--u-orange)" : "#fff", borderRadius: 20, boxShadow: activeKid === kid.idx ? "var(--u-card-shadow-lg)" : "var(--u-card-shadow)", padding: 22 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 16 }}>
                 <div style={{ width: 54, height: 54, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 24, background: kid.avBg, color: kid.avCol, flexShrink: 0 }}>{kid.name[0]}</div>
                 <div>

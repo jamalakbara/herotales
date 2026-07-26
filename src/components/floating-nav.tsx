@@ -24,7 +24,6 @@ const MARKETING_SECTIONS = [
 const APP_LINKS = [
   { href: "/dashboard", label: "Home" },
   { href: "/shelf", label: "Shelf" },
-  { href: "/stories/new", label: "New story" },
   { href: "/keepsake-books", label: "Keepsake books" },
 ];
 

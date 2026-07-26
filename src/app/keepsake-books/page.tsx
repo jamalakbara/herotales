@@ -6,6 +6,7 @@ import { BookCard } from "@/components/book-card";
 import { EmptyState } from "@/components/empty-state";
 import { FloatingNav } from "@/components/floating-nav";
 import { HeadAccent, SectionHeader } from "@/components/section-header";
+import { MobileCarousel } from "@/components/mobile-carousel";
 import { AmbientDecor } from "@/components/motion/AmbientDecor";
 import { FannedCards } from "@/components/motion/FannedCards";
 import { PinnedPanel } from "@/components/motion/PinnedPanel";
@@ -153,7 +154,7 @@ export default function KeepsakeBooksPage() {
 
         {/* FEATURES */}
         <Reveal inView>
-        <div id="how" className="kp-how-grid" style={{ marginBottom: 56 }}>
+        <MobileCarousel id="how" className="kp-how-grid" style={{ marginBottom: 56 }}>
           {features.map((f, i) => {
             // berry/sage fold to orange in the umano skin — rotate distinct surfaces
             const featBg = ["#fff", "var(--u-orange)", "var(--twilight)", "var(--lilac)"][i];
@@ -170,7 +171,7 @@ export default function KeepsakeBooksPage() {
               </div>
             );
           })}
-        </div>
+        </MobileCarousel>
         </Reveal>
 
         {/* PICK A STORY */}
