@@ -16,6 +16,8 @@ import { getErrorMessage } from "@/lib/errors";
 import { KID_PALETTES } from "@/lib/hero-palette";
 import { pickName, storyToBook, type BookView, type StoryListItem } from "@/lib/story-view";
 import { PlusIcon } from "@/components/ui/plus";
+import { SearchIcon } from "@/components/ui/search";
+import { ChevronDownIcon } from "@/components/ui/chevron-down";
 import { AxeIcon } from "@/components/ui/axe";
 import { HeartHandshakeIcon } from "@/components/ui/heart-handshake";
 import { FishSymbolIcon } from "@/components/ui/fish-symbol";
@@ -138,12 +140,12 @@ function HeroPicker({ tabs, activeTab, onSelect }: { tabs: KidTab[]; activeTab: 
           <button className="dash-kid-tab" onClick={() => setOpen((o) => !o)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", borderRadius: 999, color: "var(--ink)", fontWeight: 800, fontSize: 14, whiteSpace: "nowrap" }}>
             More heroes
             <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 7px", background: "rgba(28,21,64,0.08)", borderRadius: 999 }}>{overflow.length}</span>
-            <span style={{ display: "inline-block", transition: "transform 0.15s ease", transform: open ? "rotate(180deg)" : "none" }}>▾</span>
+            <span style={{ display: "inline-flex", transition: "transform 0.15s ease", transform: open ? "rotate(180deg)" : "none" }}><ChevronDownIcon size={14} /></span>
           </button>
           {open && (
             <div className="shelf-hero-pop">
               <div className="shelf-hero-pop-search">
-                <span style={{ fontSize: 15, color: "var(--ink-soft)" }}>⌕</span>
+                <SearchIcon size={15} style={{ color: "var(--ink-soft)", flexShrink: 0 }} />
                 <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search hero…" />
               </div>
               <div className="shelf-hero-pop-list">
@@ -337,7 +339,7 @@ export default function ShelfPage() {
         {/* Toolbar */}
         <div className="shelf-toolbar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 14, padding: "14px 18px", borderRadius: 18, marginBottom: 28 }}>
           <div className="shelf-search" style={{ display: "flex", alignItems: "center", gap: 10, background: "var(--cream-deep)", borderRadius: 999, padding: "8px 16px", flex: 1, minWidth: 220, maxWidth: 420 }}>
-            <span style={{ fontSize: 15, color: "var(--ink-soft)" }}>⌕</span>
+            <SearchIcon size={15} style={{ color: "var(--ink-soft)", flexShrink: 0 }} />
             <input type="text" placeholder="Search by title, hero, or lesson…" value={search} onChange={(e) => setSearch(e.target.value)} style={{ border: "none", background: "transparent", outline: "none", fontFamily: "var(--font-nunito), sans-serif", fontWeight: 600, fontSize: 13, color: "var(--ink)", flex: 1 }} />
           </div>
           <FilterChips options={filters} active={activeFilter} onSelect={setActiveFilter} size="sm" className="fade-strip shelf-fc-strip" />

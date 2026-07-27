@@ -18,6 +18,10 @@ import { storyToBook, type BookView, type StoryListItem } from "@/lib/story-view
 import { BookTextIcon } from "@/components/ui/book-text";
 import { ChevronDownIcon } from "@/components/ui/chevron-down";
 import { ChevronUpIcon } from "@/components/ui/chevron-up";
+import { HeartIcon } from "@/components/ui/heart";
+import { MoonIcon } from "@/components/ui/moon";
+import { HeartHandshakeIcon } from "@/components/ui/heart-handshake";
+import { FishSymbolIcon } from "@/components/ui/fish-symbol";
 import { SnowflakeIcon } from "@/components/ui/snowflake";
 import { SendIcon } from "@/components/ui/send";
 import { SparklesIcon } from "@/components/ui/sparkles";
@@ -130,9 +134,9 @@ export default function KeepsakeBooksPage() {
                 pinned panel), spring-lifts on hover */}
             <FannedCards className="kp-hero-mocks" minHeight={380} spread={0.55} staticSpread>
               {[
-                { bg: "var(--u-orange)", col: "#fff", lbl: "Chapter 1", title: "Ada & the", script: "Honest Fox", scriptCol: "#fff", meta: "Honesty", star: "✦", d: "0s" },
-                { bg: "var(--cream)", col: "var(--twilight)", lbl: "Keepsake edition", title: "The Smallest", script: "Friend at School", scriptCol: "var(--u-orange)", meta: "Kindness · hardcover", star: "♡", d: "-2.3s" },
-                { bg: "var(--twilight)", col: "var(--cream)", lbl: "Linen spine", title: "The Garden That", script: "Grew Slowly", scriptCol: "var(--u-orange)", meta: "Patience", star: "☾", d: "-4.6s" },
+                { bg: "var(--u-orange)", col: "#fff", lbl: "Chapter 1", title: "Ada & the", script: "Honest Fox", scriptCol: "#fff", meta: "Honesty", star: <HeartHandshakeIcon size={16} />, d: "0s" },
+                { bg: "var(--cream)", col: "var(--twilight)", lbl: "Keepsake edition", title: "The Smallest", script: "Friend at School", scriptCol: "var(--u-orange)", meta: "Kindness · hardcover", star: <HeartIcon size={16} />, d: "-2.3s" },
+                { bg: "var(--twilight)", col: "var(--cream)", lbl: "Linen spine", title: "The Garden That", script: "Grew Slowly", scriptCol: "var(--u-orange)", meta: "Patience", star: <FishSymbolIcon size={16} />, d: "-4.6s" },
               ].map((bm, i) => {
                 const wrapVars = { "--d": bm.d } as CSSProperties;
                 return (
@@ -147,7 +151,7 @@ export default function KeepsakeBooksPage() {
                     </div>
                     <div style={{ fontSize: 11, fontWeight: 700, opacity: 0.85, display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
                       <span>{bm.meta}</span>
-                      <div style={{ width: 36, height: 36, borderRadius: "50%", background: bm.bg === "var(--cream)" ? "rgba(28,21,64,0.1)" : "rgba(255,255,255,0.16)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 16 }}>{bm.star}</div>
+                      <div style={{ width: 36, height: 36, borderRadius: "50%", background: bm.bg === "var(--cream)" ? "rgba(28,21,64,0.1)" : "rgba(255,255,255,0.16)", display: "flex", alignItems: "center", justifyContent: "center" }}>{bm.star}</div>
                     </div>
                   </div>
                 );

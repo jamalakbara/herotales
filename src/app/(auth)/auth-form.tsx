@@ -14,6 +14,7 @@ import { CheckIcon } from "@/components/ui/check";
 import { IdCardIcon } from "@/components/ui/id-card";
 import { AtSignIcon } from "@/components/ui/at-sign";
 import { EyeIcon } from "@/components/ui/eye";
+import { MoonIcon } from "@/components/ui/moon";
 import { EyeOffIcon } from "@/components/ui/eye-off";
 
 type Mode = "sign-in" | "sign-up";
@@ -438,7 +439,7 @@ export function AuthForm({
               </div>
               <div className="meta">
                 <span>Patience</span>
-                <div className="star">☾</div>
+                <div className="star"><MoonIcon size={16} /></div>
               </div>
             </div>
 
@@ -469,7 +470,7 @@ export function AuthForm({
             </div>
 
             <div className={styles.tonightStrip}>
-              <div className={styles.tonightIcon}>☾</div>
+              <div className={styles.tonightIcon}><MoonIcon size={20} /></div>
               <div className={styles.tonightText}>
                 <strong>Tonight&apos;s blueprint: Patience</strong>
                 A gentle 5-chapter tale, ready in under a minute.

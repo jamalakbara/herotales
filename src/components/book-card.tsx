@@ -71,6 +71,7 @@ export function BookCard({
           size={size}
           coverClassName="kp-pick-cov"
           accent={book.accent}
+          coverUrl={book.coverUrl}
           selected={selected}
           label={book.label}
           title={book.title}

@@ -15,6 +15,7 @@ import { ArrowLeftIcon } from "@/components/ui/arrow-left";
 import { ArrowRightIcon } from "@/components/ui/arrow-right";
 import { ArrowUpRightIcon } from "@/components/ui/arrow-up-right";
 import { FolderDownIcon } from "@/components/ui/folder-down";
+import { TimerIcon } from "@/components/ui/timer";
 
 type Chapter = {
   label: string;
@@ -349,7 +350,7 @@ export default function StoryReaderPage() {
             >
               {SPEEDS[spIdx]}
             </div>
-            <div className="speed-pill" title="Sleep timer">⏾ 20m</div>
+            <div className="speed-pill" title="Sleep timer" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><TimerIcon size={14} /> 20m</div>
           </div>
         </div>
 

@@ -15,6 +15,7 @@ import { SparklesIcon } from "@/components/ui/sparkles";
 import { CheckIcon } from "@/components/ui/check";
 import { ArrowRightIcon } from "@/components/ui/arrow-right";
 import { AxeIcon } from "@/components/ui/axe";
+import { HourglassIcon } from "@/components/ui/hourglass";
 import { HeartHandshakeIcon } from "@/components/ui/heart-handshake";
 import { FishSymbolIcon } from "@/components/ui/fish-symbol";
 import { BicepsFlexedIcon } from "@/components/ui/biceps-flexed";
@@ -666,7 +667,7 @@ function CreateStoryPage() {
 
             <div className="action-bar">
               <div className="action-left">
-                <span className="coin">⌛</span>
+                <span className="coin"><HourglassIcon size={16} /></span>
                 <span>
                   Uses{" "}
                   <strong style={{ color: "var(--twilight)" }}>1 story credit</strong>
