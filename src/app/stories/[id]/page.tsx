@@ -258,8 +258,7 @@ export default function StoryReaderPage() {
         crumbs={crumbs}
         action={
           <button
-            className={`btn ${story.favorite ? "btn-berry" : "btn-ghost"}`}
-            style={{ padding: "10px 18px", fontSize: 13.5 }}
+            className={`btn btn-sm ${story.favorite ? "btn-berry" : "btn-ghost"}`}
             onClick={toggleFavorite}
           >
             {story.favorite ? "Saved ♥" : "Save to shelf ♡"}

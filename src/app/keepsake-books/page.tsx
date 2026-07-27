@@ -180,7 +180,7 @@ export default function KeepsakeBooksPage() {
           id="pick"
           title={<>Pick a tale to <HeadAccent>print</HeadAccent></>}
           sub="Only completed stories can be printed. Select one, then choose a binding below."
-          action={<Link href="/shelf" className="btn btn-ghost" style={{ fontSize: 13, padding: "8px 16px" }}>Browse full shelf →</Link>}
+          action={<Link href="/shelf" className="btn btn-ghost btn-sm">Browse full shelf →</Link>}
         />
 
         {loadError && (

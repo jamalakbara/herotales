@@ -43,6 +43,17 @@
   --u-card-shadow: 0 12px 32px rgba(0,0,0,0.10);
   --u-card-shadow-lg: 0 16px 48px rgba(0,0,0,0.14);
   --u-radius: 16px;
+  /* Spacing scale (8px grid) — use these for all new gaps/padding */
+  --sp-1:  4px;
+  --sp-2:  8px;
+  --sp-3:  12px;
+  --sp-4:  16px;
+  --sp-5:  20px;
+  --sp-6:  24px;
+  --sp-7:  32px;
+  --sp-8:  40px;
+  --sp-9:  48px;
+  --sp-10: 80px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -96,6 +107,7 @@ a { color: inherit; text-decoration: none; }
   border-radius: 50%;
   box-shadow: inset -6px -2px 0 var(--twilight);
 }
+/* dead — replaced by .fnav-links; remove in CSS cleanup pass */
 .nav-links {
   display: flex;
   gap: 36px;
@@ -386,7 +398,7 @@ section {
 .progress-pill {
   display: inline-flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   padding: 12px 18px 12px 20px;
   background: var(--cream-deep);
   border: 2px solid var(--ink);
@@ -478,7 +490,7 @@ h1.page-title em { font-family: var(--font-caprasimo), serif; font-style: normal
 .form-step {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   margin-bottom: 20px;
   padding-bottom: 16px;
   border-bottom: 1.5px dashed var(--paper-line);
@@ -536,7 +548,7 @@ label.field-label .opt {
 .portrait-row {
   display: grid;
   grid-template-columns: 116px 1fr;
-  gap: 18px;
+  gap: 20px;
   align-items: center;
 }
 .portrait {
@@ -779,7 +791,7 @@ label.field-label .opt {
 .option-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  gap: 16px;
 }
 
 .voice-opt {
@@ -840,7 +852,7 @@ label.field-label .opt {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 14px;
+  gap: 16px;
   margin-top: 36px;
   padding-top: 24px;
   border-top: 1.5px dashed var(--paper-line);
@@ -1045,7 +1057,7 @@ label.field-label .opt {
   box-shadow: 4px 4px 0 var(--ink);
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
 }
 .estimator .spark {
   width: 40px; height: 40px;
@@ -1129,7 +1141,7 @@ label.field-label .opt {
    STORY READER PAGE
    ===================================================================== */
 .gen-banner {
-  display: flex; align-items: center; gap: 14px;
+  display: flex; align-items: center; gap: 16px;
   background: var(--sage);
   color: var(--cream);
   padding: 12px 20px;
@@ -2179,7 +2191,7 @@ body { padding-top: 84px; }
 .fnav-links {
   display: flex;
   align-items: center;
-  gap: 30px;
+  gap: 32px;
   margin: 0 auto;
   font-weight: 700;
   font-size: 14.5px;
@@ -2553,7 +2565,7 @@ body { padding-top: 84px; }
 .u-stories-stack {
   display: flex;
   flex-direction: column;
-  gap: 30px;
+  gap: 32px;
   max-width: 380px;
   margin: 0 auto;
   padding: 12px 24px 90px;
@@ -2915,6 +2927,7 @@ body { background: #FAFAFA; }
 .btn-ghost { background: transparent !important; color: var(--ink) !important; }
 .btn-ghost:hover { background: rgba(0,0,0,0.05) !important; }
 .btn-lg { padding: 14px 28px; font-size: 17px; }
+.btn-sm { padding: 8px 16px; font-size: 13.5px; }
 
 /* Logo → umano wordmark (Inter bold) + orange dot mark, no hard shadow */
 .logo { font-family: var(--font-nunito), sans-serif !important; font-weight: 800 !important; color: var(--ink) !important; letter-spacing: -0.02em; }
@@ -3398,7 +3411,7 @@ html.lenis, html.lenis body { height: auto; }
 .kp-pick-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 18px;
+  gap: 20px;
   background: var(--cream-deep);
   border-radius: 20px;
   box-shadow: var(--u-card-shadow);

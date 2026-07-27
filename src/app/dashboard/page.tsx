@@ -166,7 +166,7 @@ export default function DashboardPage() {
   return (
     <>
       <FloatingNav variant="app" />
-      <main className="dash-page app-main" style={{ maxWidth: 1400, margin: "0 auto", padding: "10px 48px 80px", position: "relative", zIndex: 2 }}>
+      <main className="dash-page app-main" style={{ maxWidth: 1400, margin: "0 auto", padding: "20px 48px 80px", position: "relative", zIndex: 2 }}>
 
         {loadError && <ErrorAlert>{loadError}</ErrorAlert>}
         {deleteError && <ErrorAlert>{deleteError}</ErrorAlert>}

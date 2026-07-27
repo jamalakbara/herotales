@@ -357,14 +357,12 @@ function CreateStoryPage() {
                 <div className="portrait-actions">
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                     <button
-                      className="btn"
-                      style={{ padding: "10px 16px", fontSize: 13.5 }}
+                      className="btn btn-sm"
                     >
                       Upload a photo
                     </button>
                     <button
-                      className={`btn${describeOpen ? "" : " btn-ghost"}`}
-                      style={{ padding: "10px 14px", fontSize: 13.5 }}
+                      className={`btn btn-sm${describeOpen ? "" : " btn-ghost"}`}
                       onClick={() => setDescribeOpen((v) => !v)}
                     >
                       {describeOpen ? "Cancel description" : "Describe in words"}
