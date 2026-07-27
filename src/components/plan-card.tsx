@@ -1,5 +1,6 @@
 "use client";
 import type { ReactNode } from "react";
+import { CheckIcon } from "@/components/ui/check";
 
 export type PlanCta = { label: string; variant?: "berry" } & (
   | { href: string }
@@ -39,6 +40,9 @@ export function PlanCard({ name, price, per, tag, feats, badge, featured, onSele
       <ul className="plan-feats">
         {feats.map((feat, i) => (
           <li key={i} className="plan-feat">
+            <span style={{ flexShrink: 0, width: 20, height: 20, borderRadius: "50%", background: "var(--u-orange)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", marginTop: 1 }}>
+              <CheckIcon size={12} />
+            </span>
             {feat}
           </li>
         ))}

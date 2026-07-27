@@ -5,6 +5,9 @@ import HTMLFlipBook from "react-pageflip";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AmbientDecor } from "@/components/motion/AmbientDecor";
 import { Skeleton } from "@/components/skeleton";
+import { SparklesIcon } from "@/components/ui/sparkles";
+import { ArrowLeftIcon } from "@/components/ui/arrow-left";
+import { ArrowRightIcon } from "@/components/ui/arrow-right";
 
 export type FlipChapter = {
   label: string;
@@ -123,7 +126,7 @@ function TextFace({ chapter, isEnd }: { chapter: FlipChapter; isEnd: boolean }) 
         className="story-text fb-firsttext"
         dangerouslySetInnerHTML={{ __html: parasHtml(chapter.paras) }}
       />
-      {isEnd && <div className="fb-end">✦ The end</div>}
+      {isEnd && <div className="fb-end" style={{ display: "flex", alignItems: "center", gap: 6 }}><SparklesIcon size={14} /> The end</div>}
     </div>
   );
 }
@@ -263,7 +266,7 @@ export function FlipReader({ chapters, imageByIndex, reduce, onEnd, onChapter }:
           style={{ visibility: atStart ? "hidden" : "visible" }}
           onClick={() => flip(-1)}
         >
-          <span className="big">←</span>
+          <span className="big"><ArrowLeftIcon size={24} /></span>
           <div className="nv-lbl">Previous</div>
         </button>
         <div className="chap-counter">
@@ -276,7 +279,7 @@ export function FlipReader({ chapters, imageByIndex, reduce, onEnd, onChapter }:
           onClick={() => (atEnd ? onEnd?.() : flip(1))}
         >
           <div className="nv-lbl">{atEnd ? "The end" : "Next"}</div>
-          <span className="big">→</span>
+          <span className="big"><ArrowRightIcon size={24} /></span>
         </button>
       </div>
     </div>

@@ -9,8 +9,16 @@ import { FloatingNav, ReaderBack } from "@/components/floating-nav";
 import { Reveal } from "@/components/motion/Reveal";
 import { Skeleton } from "@/components/skeleton";
 import { getErrorMessage } from "@/lib/errors";
-import { BLUEPRINT_ICONS, timeAgo } from "@/lib/story-view";
+import { timeAgo } from "@/lib/story-view";
 import { CHILD_AGES } from "@/lib/types";
+import { SparklesIcon } from "@/components/ui/sparkles";
+import { CheckIcon } from "@/components/ui/check";
+import { ArrowRightIcon } from "@/components/ui/arrow-right";
+import { AxeIcon } from "@/components/ui/axe";
+import { HeartHandshakeIcon } from "@/components/ui/heart-handshake";
+import { FishSymbolIcon } from "@/components/ui/fish-symbol";
+import { BicepsFlexedIcon } from "@/components/ui/biceps-flexed";
+import { HeartIcon } from "@/components/ui/heart";
 import { Suspense, useEffect, useMemo, useState } from "react";
 
 type ExistingChild = {
@@ -31,6 +39,14 @@ type ShelfStory = {
   created_at: string;
 };
 
+const BLUEPRINT_ICONS_MAP: Record<string, React.ReactNode> = {
+  Bravery: <AxeIcon size={20} />,
+  Honesty: <HeartHandshakeIcon size={20} />,
+  Patience: <FishSymbolIcon size={20} />,
+  Kindness: <HeartIcon size={20} />,
+  Persistence: <BicepsFlexedIcon size={20} />,
+};
+
 // Page-specific copy per blueprint; glyphs come from the shared BLUEPRINT_ICONS map.
 const BLUEPRINTS = [
   { name: "Bravery", desc: "Facing the dark", hook: "Brave Lantern" },
@@ -38,7 +54,7 @@ const BLUEPRINTS = [
   { name: "Patience", desc: "Letting it grow", hook: "Patient Seed" },
   { name: "Kindness", desc: "Seeing others", hook: "Little Kindness" },
   { name: "Persistence", desc: "Try, tumble, try", hook: "Long Climb" },
-].map((b) => ({ ...b, icon: BLUEPRINT_ICONS[b.name] }));
+].map((b) => ({ ...b, icon: BLUEPRINT_ICONS_MAP[b.name] }));
 const PRONOUNS = ["she / her", "he / him", "they / them", "let me type"] as const;
 const DETAIL_TAGS = [
   "curly hair",
@@ -290,7 +306,7 @@ function CreateStoryPage() {
               <span className="cur" />
               <span />
             </div>
-            <span style={{ opacity: 0.7 }}>→ Pages appear</span>
+            <span style={{ opacity: 0.7, display: "inline-flex", alignItems: "center", gap: 4 }}><ArrowRightIcon size={14} /> Pages appear</span>
           </div>
         </Reveal>
 
@@ -352,7 +368,7 @@ function CreateStoryPage() {
               <div className="portrait-row">
                 <div className="portrait">
                   <span>{initial}</span>
-                  <div className="sparkle-tag">✦</div>
+                  <div className="sparkle-tag"><SparklesIcon size={14} /></div>
                 </div>
                 <div className="portrait-actions">
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -544,7 +560,7 @@ function CreateStoryPage() {
                     className={`bp-opt${blueprint === bp.name ? " active" : ""}`}
                     onClick={() => setBlueprint(bp.name)}
                   >
-                    <div className="bp-check">✓</div>
+                    <div className="bp-check"><CheckIcon size={14} /></div>
                     <div className="bp-ic">{bp.icon}</div>
                     <div className="bp-nm">{bp.name}</div>
                     <div className="bp-dc">{bp.desc}</div>
@@ -685,7 +701,7 @@ function CreateStoryPage() {
                     ? "Conjuring…"
                     : outOfQuota
                       ? "Monthly limit reached"
-                      : "Generate story →"}
+                      : <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>Generate story <ArrowRightIcon size={14} /></span>}
                 </a>
               </div>
               {submitError && (
@@ -743,7 +759,7 @@ function CreateStoryPage() {
                     <span className="dot-sep">·</span>
                     <span>{lengthMeta.mins} read</span>
                   </div>
-                  <div className="prev-sig">✦</div>
+                  <div className="prev-sig"><SparklesIcon size={16} /></div>
                 </div>
               </div>
 
@@ -766,7 +782,7 @@ function CreateStoryPage() {
             </div>
 
             <div className="estimator">
-              <div className="spark">✦</div>
+              <div className="spark"><SparklesIcon size={16} /></div>
               <div className="est-body">
                 <div className="est-t">~40 seconds to conjure</div>
                 <div className="est-s">
@@ -779,7 +795,7 @@ function CreateStoryPage() {
             <div className="recents">
               <div className="recents-head">
                 <span>On {displayName}&apos;s shelf</span>
-                <Link href="/shelf">See all →</Link>
+                <Link href="/shelf" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>See all <ArrowRightIcon size={12} /></Link>
               </div>
               {shelfLoading ? (
                 <ul aria-hidden>

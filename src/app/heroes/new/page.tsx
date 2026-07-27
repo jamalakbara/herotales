@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { AppFooter } from "@/components/app-footer";
 import { FloatingNav } from "@/components/floating-nav";
 import { AmbientDecor } from "@/components/motion/AmbientDecor";
@@ -12,6 +12,19 @@ import { Skeleton } from "@/components/skeleton";
 import { getErrorMessage } from "@/lib/errors";
 import { AVATAR_SWATCHES } from "@/lib/hero-palette";
 import { CHILD_AGES } from "@/lib/types";
+import { HeartIcon } from "@/components/ui/heart";
+import { AxeIcon } from "@/components/ui/axe";
+import { FishSymbolIcon } from "@/components/ui/fish-symbol";
+import { BicepsFlexedIcon } from "@/components/ui/biceps-flexed";
+import { HeartHandshakeIcon } from "@/components/ui/heart-handshake";
+import { SparklesIcon } from "@/components/ui/sparkles";
+import { MoonIcon } from "@/components/ui/moon";
+import { LeafIcon } from "@/components/ui/leaf";
+import { HomeIcon } from "@/components/ui/home";
+import { PlayIcon } from "@/components/ui/play";
+import { CheckIcon } from "@/components/ui/check";
+import { ArrowRightIcon } from "@/components/ui/arrow-right";
+import { PlusIcon } from "@/components/ui/plus";
 
 type ExistingChild = {
   id: string;
@@ -44,15 +57,15 @@ const LOVES = [
   "bugs",
 ];
 
-const TRAITS = [
-  { icon: "♡", label: "Kindness" },
-  { icon: "★", label: "Bravery" },
-  { icon: "⟲", label: "Patience" },
-  { icon: "↑", label: "Persistence" },
-  { icon: "✦", label: "Honesty" },
-  { icon: "☾", label: "Calm" },
-  { icon: "✿", label: "Curiosity" },
-  { icon: "⌂", label: "Belonging" },
+const TRAITS: { icon: ReactNode; label: string }[] = [
+  { icon: <HeartIcon size={16} />, label: "Kindness" },
+  { icon: <AxeIcon size={16} />, label: "Bravery" },
+  { icon: <FishSymbolIcon size={16} />, label: "Patience" },
+  { icon: <BicepsFlexedIcon size={16} />, label: "Persistence" },
+  { icon: <HeartHandshakeIcon size={16} />, label: "Honesty" },
+  { icon: <MoonIcon size={16} />, label: "Calm" },
+  { icon: <LeafIcon size={16} />, label: "Curiosity" },
+  { icon: <HomeIcon size={16} />, label: "Belonging" },
 ];
 
 const VOICES = [
@@ -238,13 +251,13 @@ export default function AddHeroPage() {
             ))}
             {!kidsLoading && (
               <>
-                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: 8, fontFamily: "var(--font-caprasimo), serif", fontSize: 14, background: "var(--u-orange)", color: "#fff" }}>+</span>
+                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: 8, background: "var(--u-orange)", color: "#fff" }}><PlusIcon size={14} /></span>
                 {Array.from({ length: Math.max(0, seatsRemaining - 1) }).map((_, i) => (
                   <span key={`e${i}`} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: 8, border: "1.5px dashed var(--paper-line)", fontFamily: "var(--font-caprasimo), serif", fontSize: 14, color: "var(--twilight)" }}>·</span>
                 ))}
               </>
             )}
-            <a href="#" style={{ color: "var(--u-orange)", marginLeft: "auto" }}>Need more? Constellation →</a>
+            <a href="#" style={{ color: "var(--u-orange)", marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 4 }}>Need more? Constellation <ArrowRightIcon size={12} /></a>
           </div>
         </Reveal>
 
@@ -299,7 +312,7 @@ export default function AddHeroPage() {
                       className={`hero-av-sw${on ? " is-on" : ""}`}
                       style={{ aspectRatio: "1", border: "none", borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 22, cursor: "pointer", color: s.color, background: s.bg, position: "relative" }}>
                       {previewLetter}
-                      {on && <span style={{ position: "absolute", top: -8, right: -6, color: "var(--moon)", fontFamily: "var(--font-caprasimo), serif", fontSize: 14 }}>✦</span>}
+                      {on && <span style={{ position: "absolute", top: -8, right: -6, color: "var(--moon)" }}><SparklesIcon size={14} /></span>}
                     </button>
                   );
                 })}
@@ -361,7 +374,7 @@ export default function AddHeroPage() {
                     <button type="button" key={v.name} onClick={() => setVoice(v.name)}
                       className={`hero-narr${on ? " is-on" : ""}`}
                       style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", border: "none", borderRadius: 14, background: on ? "var(--u-orange)" : "var(--cream-deep)", cursor: "pointer", textAlign: "left" }}>
-                      <span style={{ width: 36, height: 36, borderRadius: "50%", background: "var(--twilight)", color: "var(--u-orange)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, flexShrink: 0 }}>▶</span>
+                      <span style={{ width: 36, height: 36, borderRadius: "50%", background: "var(--twilight)", color: "var(--u-orange)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><PlayIcon size={16} /></span>
                       <span>
                         <span style={{ display: "block", fontFamily: "var(--font-young-serif), serif", fontSize: 16, color: on ? "#fff" : "var(--twilight)", lineHeight: 1.05 }}>{v.name}</span>
                         <span style={{ display: "block", fontSize: 11, fontWeight: 700, color: on ? "rgba(255,255,255,0.8)" : "var(--ink-soft)", letterSpacing: "0.04em", textTransform: "uppercase", marginTop: 2 }}>{v.desc}</span>
@@ -397,7 +410,7 @@ export default function AddHeroPage() {
               </div>
 
               <div style={{ marginTop: 8, background: "var(--cream-deep)", borderRadius: 14, padding: "14px 16px", fontSize: 13, color: "var(--ink-soft)", fontWeight: 600, display: "flex", gap: 12, alignItems: "flex-start" }}>
-                <div style={{ width: 28, height: 28, borderRadius: "50%", background: "var(--u-orange)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", color: "#fff", fontSize: 14, flexShrink: 0 }}>✦</div>
+                <div style={{ width: 28, height: 28, borderRadius: "50%", background: "var(--u-orange)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", flexShrink: 0 }}><SparklesIcon size={14} /></div>
                 <div>
                   <strong style={{ color: "var(--twilight)", display: "block", marginBottom: 2, fontFamily: "var(--font-young-serif), serif", fontSize: 14, fontWeight: 400 }}>Stored privately, just for you.</strong>
                   Nothing about your child trains our models. You can <a href="#" style={{ color: "var(--berry)", fontWeight: 800 }}>delete this hero</a> any time and everything goes with them.
@@ -414,7 +427,7 @@ export default function AddHeroPage() {
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                 <Link href="/dashboard" className="dash-btn dash-btn-ghost">Cancel</Link>
                 <button type="button" disabled={submitting || !canSubmit} onClick={() => submit(false)} className="dash-btn dash-btn-ghost">Save for later</button>
-                <button type="button" disabled={submitting || !canSubmit} onClick={() => submit(true)} className="dash-btn dash-btn-berry">{submitting ? "Saving…" : "Create hero & first story →"}</button>
+                <button type="button" disabled={submitting || !canSubmit} onClick={() => submit(true)} className="dash-btn dash-btn-berry" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>{submitting ? "Saving…" : <><span>Create hero &amp; first story</span> <ArrowRightIcon size={14} /></>}</button>
               </div>
             </div>
           </form>
@@ -465,7 +478,7 @@ export default function AddHeroPage() {
                   { h: "Keepsake-ready", d: "Any story can become a hardcover with their name on the spine." },
                 ].map((p) => (
                   <li key={p.h} style={{ display: "flex", gap: 12, alignItems: "flex-start", fontSize: 13.5, color: "var(--ink-soft)", fontWeight: 600, lineHeight: 1.4 }}>
-                    <div style={{ width: 22, height: 22, borderRadius: "50%", background: "var(--u-orange)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#fff", fontFamily: "var(--font-caprasimo), serif", flexShrink: 0, marginTop: 1 }}>✓</div>
+                    <div style={{ width: 22, height: 22, borderRadius: "50%", background: "var(--u-orange)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", flexShrink: 0, marginTop: 1 }}><CheckIcon size={12} /></div>
                     <div>
                       <strong style={{ color: "var(--twilight)", fontFamily: "var(--font-young-serif), serif", fontWeight: 400, fontSize: 14.5, display: "block", marginBottom: 1 }}>{p.h}</strong>
                       {p.d}
@@ -476,7 +489,7 @@ export default function AddHeroPage() {
             </div>
 
             <div className="hero-tip" style={{ borderRadius: 18, padding: "16px 18px", fontSize: 13.5, color: "var(--ink-warm)", fontWeight: 600, lineHeight: 1.45, transform: "rotate(-1deg)" }}>
-              <span style={{ fontFamily: "var(--font-caprasimo), serif", color: "#fff", marginRight: 6 }}>Tip ✦</span>
+              <span style={{ color: "#fff", marginRight: 6, display: "inline-flex", alignItems: "center", gap: 4 }}>Tip <SparklesIcon size={13} /></span>
               Keep loves &amp; quirks small and specific — &ldquo;names the moon Pip&rdquo; makes a better story than &ldquo;loves space.&rdquo;
             </div>
           </aside>

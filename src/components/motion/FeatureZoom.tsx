@@ -7,7 +7,7 @@ import { useMediaQuery } from "../use-media-query";
 import { FeatureZoomMobile } from "./FeatureZoomMobile";
 
 export type FeatureCard = {
-  icon: string;
+  icon: React.ReactNode;
   title: string;
   desc: string;
   tint: string;

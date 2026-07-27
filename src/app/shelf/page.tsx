@@ -15,6 +15,20 @@ import { Skeleton, SkeletonBookItem } from "@/components/skeleton";
 import { getErrorMessage } from "@/lib/errors";
 import { KID_PALETTES } from "@/lib/hero-palette";
 import { pickName, storyToBook, type BookView, type StoryListItem } from "@/lib/story-view";
+import { PlusIcon } from "@/components/ui/plus";
+import { AxeIcon } from "@/components/ui/axe";
+import { HeartHandshakeIcon } from "@/components/ui/heart-handshake";
+import { FishSymbolIcon } from "@/components/ui/fish-symbol";
+import { BicepsFlexedIcon } from "@/components/ui/biceps-flexed";
+import { HeartIcon } from "@/components/ui/heart";
+import { SparklesIcon } from "@/components/ui/sparkles";
+const COVER_STAR_ICONS: Record<string, ReactNode> = {
+  Bravery: <AxeIcon size={14} />,
+  Honesty: <HeartHandshakeIcon size={14} />,
+  Patience: <FishSymbolIcon size={14} />,
+  Kindness: <HeartIcon size={14} />,
+  Persistence: <BicepsFlexedIcon size={14} />,
+};
 import { BLUEPRINTS } from "@/lib/types";
 
 type APIKid = { id: string; nickname: string; tales: number; favorites: number };
@@ -42,7 +56,7 @@ function BookRow({ b, index }: { b: BookView; index: number }) {
   const cover = accentColors(b.accent);
   return (
     <Link href={b.href} className="dash-book-card-anim dash-list-row" style={{ ...styleVars, textDecoration: "none", display: "flex", alignItems: "center", gap: 16, padding: "12px 16px", borderRadius: 16 }}>
-      <div style={{ width: 44, height: 56, flexShrink: 0, borderRadius: "4px 8px 8px 4px", border: "2px solid var(--ink)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 18, ...cover }}>{b.star}</div>
+      <div style={{ width: 44, height: 56, flexShrink: 0, borderRadius: "4px 8px 8px 4px", border: "2px solid var(--ink)", display: "flex", alignItems: "center", justifyContent: "center", ...cover }}>{COVER_STAR_ICONS[b.theme] ?? <SparklesIcon size={16} />}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 16, color: "var(--twilight)", lineHeight: 1.15, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{b.infoTitle}</div>
         <div style={{ fontSize: 12, color: "var(--ink-soft)", fontWeight: 600, display: "flex", gap: 6, alignItems: "center", marginTop: 2 }}>
@@ -56,7 +70,7 @@ function BookRow({ b, index }: { b: BookView; index: number }) {
   );
 }
 
-type KidTab = { id: string; paletteIdx: number; nm: string; ct: number; label: string };
+type KidTab = { id: string; paletteIdx: number; nm: string; ct: number; label: ReactNode };
 
 function tabPalette(paletteIdx: number) {
   return paletteIdx >= 0 ? KID_PALETTES[paletteIdx % KID_PALETTES.length] : { bg: "var(--twilight)", color: "#fff" };
@@ -214,7 +228,7 @@ export default function ShelfPage() {
   const kidTabs = useMemo(() => {
     const total = kids.reduce((acc, k) => acc + k.tales, 0);
     return [
-      { id: "all", paletteIdx: -1, nm: "All heroes", ct: total, label: "★" },
+      { id: "all", paletteIdx: -1, nm: "All heroes", ct: total, label: <SparklesIcon size={12} /> },
       ...kids.map((k, i) => ({ id: k.id, paletteIdx: i, nm: k.nickname, ct: k.tales, label: k.nickname[0]?.toUpperCase() ?? "·" })),
     ];
   }, [kids]);
@@ -306,7 +320,7 @@ export default function ShelfPage() {
                 : <>{stories.length} {stories.length === 1 ? "story" : "stories"} across {kids.length} little {kids.length === 1 ? "hero" : "heroes"}. Favorites are always yours to keep.</>}
             </div>
           </div>
-          <Link href="/stories/new" className="dash-btn dash-btn-berry dash-shelf-top-btn dash-shelf-head-anim dash-shelf-head-delay-3">+ Craft a new tale</Link>
+          <Link href="/stories/new" className="dash-btn dash-btn-berry dash-shelf-top-btn dash-shelf-head-anim dash-shelf-head-delay-3" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><PlusIcon size={14} /> Craft a new tale</Link>
         </div>
 
         {/* Hero filter — pinned quick-pick pills + searchable "More heroes" popover */}
@@ -383,7 +397,7 @@ export default function ShelfPage() {
             title={stories.length === 0 ? "Your shelf is waiting" : "No tales match"}
             sub={stories.length === 0 ? "Spin your first story to begin." : "Try a different filter or hero."}
             cta={stories.length === 0 && (
-              <Link href="/stories/new" className="btn" style={{ display: "inline-block" }}>+ Craft a tale</Link>
+              <Link href="/stories/new" className="btn" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><PlusIcon size={14} /> Craft a tale</Link>
             )}
           />
           </Reveal>

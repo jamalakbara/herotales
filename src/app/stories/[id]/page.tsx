@@ -9,6 +9,12 @@ import { AmbientDecor } from "@/components/motion/AmbientDecor";
 import { Reveal } from "@/components/motion/Reveal";
 import { FlipReader } from "@/components/flip-reader";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { CheckIcon } from "@/components/ui/check";
+import { HeartIcon } from "@/components/ui/heart";
+import { ArrowLeftIcon } from "@/components/ui/arrow-left";
+import { ArrowRightIcon } from "@/components/ui/arrow-right";
+import { ArrowUpRightIcon } from "@/components/ui/arrow-up-right";
+import { FolderDownIcon } from "@/components/ui/folder-down";
 
 type Chapter = {
   label: string;
@@ -158,7 +164,7 @@ export default function StoryReaderPage() {
         <h1 style={{ fontFamily: "var(--font-young-serif), serif", color: "var(--twilight)", fontSize: 32 }}>
           {loadError}
         </h1>
-        <Link href="/dashboard" className="btn" style={{ marginTop: 16 }}>← Back to dashboard</Link>
+        <Link href="/dashboard" className="btn" style={{ marginTop: 16, display: "inline-flex", alignItems: "center", gap: 6 }}><ArrowLeftIcon size={14} /> Back to dashboard</Link>
       </main>
     );
   }
@@ -233,8 +239,8 @@ export default function StoryReaderPage() {
                 </button>
               )}
               {failed && (
-                <Link href="/stories/new" className="btn btn-berry" style={{ whiteSpace: "nowrap", fontSize: 14.5 }}>
-                  Try a new tale →
+                <Link href="/stories/new" className="btn btn-berry" style={{ whiteSpace: "nowrap", fontSize: 14.5, display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  Try a new tale <ArrowRightIcon size={14} />
                 </Link>
               )}
             </div>
@@ -261,7 +267,7 @@ export default function StoryReaderPage() {
             className={`btn btn-sm ${story.favorite ? "btn-berry" : "btn-ghost"}`}
             onClick={toggleFavorite}
           >
-            {story.favorite ? "Saved ♥" : "Save to shelf ♡"}
+            {story.favorite ? <>Saved <HeartIcon size={14} /></> : <>Save to shelf <HeartIcon size={14} /></>}
           </button>
         }
       />
@@ -271,7 +277,7 @@ export default function StoryReaderPage() {
       <main className="page">
         <ReaderBack crumbs={crumbs} />
         <Reveal className="gen-banner">
-          <span className="check">✓</span>
+          <span className="check"><CheckIcon size={14} /></span>
           <span>Your story is ready.</span>
         </Reveal>
 
@@ -302,10 +308,10 @@ export default function StoryReaderPage() {
               title="Save"
               onClick={toggleFavorite}
             >
-              ♡
+              <HeartIcon size={18} />
             </div>
-            <div className="icon-btn" title="Print">⎙</div>
-            <div className="icon-btn" title="Share">↗</div>
+            <div className="icon-btn" title="Download"><FolderDownIcon size={18} /></div>
+            <div className="icon-btn" title="Share"><ArrowUpRightIcon size={18} /></div>
           </div>
         </Reveal>
 
@@ -359,15 +365,15 @@ export default function StoryReaderPage() {
             </div>
           </div>
           <div className="ea-btns">
-            <button className="btn" onClick={toggleFavorite}>
-              {story.favorite ? "Saved ♥" : "Save to shelf"}
+            <button className="btn" onClick={toggleFavorite} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+              {story.favorite ? <>Saved <HeartIcon size={14} /></> : <>Save to shelf <HeartIcon size={14} /></>}
             </button>
             <span
               className="btn btn-berry"
-              style={{ opacity: 0.6, pointerEvents: "none" }}
+              style={{ opacity: 0.6, pointerEvents: "none", display: "inline-flex", alignItems: "center", gap: 6 }}
               title="Keepsake books arrive in a future update"
             >
-              Order the keepsake book →
+              Order the keepsake book <ArrowRightIcon size={14} />
             </span>
           </div>
         </Reveal>

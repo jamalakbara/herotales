@@ -7,6 +7,14 @@ import { AmbientDecor } from "@/components/motion/AmbientDecor";
 import { Reveal } from "@/components/motion/Reveal";
 import { getErrorMessage } from "@/lib/errors";
 import styles from "./auth-form.module.css";
+import { ArrowRightIcon } from "@/components/ui/arrow-right";
+import { SparklesIcon } from "@/components/ui/sparkles";
+import { LockIcon } from "@/components/ui/lock";
+import { CheckIcon } from "@/components/ui/check";
+import { IdCardIcon } from "@/components/ui/id-card";
+import { AtSignIcon } from "@/components/ui/at-sign";
+import { EyeIcon } from "@/components/ui/eye";
+import { EyeOffIcon } from "@/components/ui/eye-off";
 
 type Mode = "sign-in" | "sign-up";
 
@@ -36,6 +44,8 @@ export function AuthForm({
   const [oauthPending, setOauthPending] = useState(false);
   const [pendingVerification, setPendingVerification] = useState(false);
   const [code, setCode] = useState("");
+  const [termsChecked, setTermsChecked] = useState(false);
+  const [rememberChecked, setRememberChecked] = useState(true);
 
   const isSignUp = mode === "sign-up";
 
@@ -200,7 +210,7 @@ export function AuthForm({
                   </div>
                 </div>
                 <button type="submit" className={styles.submit} disabled={pending}>
-                  {pending ? <span>Verifying…</span> : (<><span>Verify &amp; open my shelf</span><span className={styles.arr}>→</span></>)}
+                  {pending ? <span>Verifying…</span> : (<><span>Verify &amp; open my shelf</span><span className={styles.arr}><ArrowRightIcon size={16} /></span></>)}
                 </button>
               </form>
             ) : (
@@ -268,7 +278,7 @@ export function AuthForm({
                 <div className={styles.field}>
                   <label htmlFor="name">Your name</label>
                   <div className={styles.inputShell}>
-                    <svg className="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></svg>
+                    <IdCardIcon size={18} className="lead" />
                     <input type="text" id="name" name="name" autoComplete="name" placeholder="e.g. Ramona" />
                   </div>
                 </div>
@@ -277,7 +287,7 @@ export function AuthForm({
               <div className={styles.field}>
                 <label htmlFor="email">Email</label>
                 <div className={styles.inputShell}>
-                  <svg className="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 7l9 6 9-6" /></svg>
+                  <AtSignIcon size={18} className="lead" />
                   <input type="email" id="email" name="email" autoComplete="email" placeholder="grownup@bedtime.co" required />
                 </div>
               </div>
@@ -298,7 +308,7 @@ export function AuthForm({
                   )}
                 </label>
                 <div className={styles.inputShell}>
-                  <svg className="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
+                  <LockIcon size={18} className="lead" />
                   <input
                     type={showPw ? "text" : "password"}
                     id="password"
@@ -316,18 +326,7 @@ export function AuthForm({
                     aria-label={showPw ? "Hide password" : "Show password"}
                     onClick={() => setShowPw((v) => !v)}
                   >
-                    {showPw ? (
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M2 12s3.5-7 10-7c2.4 0 4.4.7 6 1.7M22 12s-3.5 7-10 7c-2.4 0-4.4-.7-6-1.7" />
-                        <path d="M3 3l18 18" />
-                        <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />
-                      </svg>
-                    ) : (
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
-                        <circle cx="12" cy="12" r="3" />
-                      </svg>
-                    )}
+                    {showPw ? <EyeOffIcon size={18} /> : <EyeIcon size={18} />}
                   </button>
                 </div>
                 {isSignUp && (
@@ -349,14 +348,14 @@ export function AuthForm({
               <div className={styles.rowLine}>
                 {isSignUp ? (
                   <label className={styles.check}>
-                    <input type="checkbox" name="terms" required />
-                    <span className={styles.checkBox} />
+                    <input type="checkbox" name="terms" required checked={termsChecked} onChange={e => setTermsChecked(e.target.checked)} />
+                    <span className={styles.checkBox}>{termsChecked && <CheckIcon size={14} />}</span>
                     <span>I agree to the <a href="#" style={{ color: "var(--berry)" }}>terms</a> &amp; <a href="#" style={{ color: "var(--berry)" }}>privacy</a></span>
                   </label>
                 ) : (
                   <label className={styles.check}>
-                    <input type="checkbox" name="remember" defaultChecked />
-                    <span className={styles.checkBox} />
+                    <input type="checkbox" name="remember" checked={rememberChecked} onChange={e => setRememberChecked(e.target.checked)} />
+                    <span className={styles.checkBox}>{rememberChecked && <CheckIcon size={14} />}</span>
                     Keep me cozy &amp; signed in
                   </label>
                 )}
@@ -371,7 +370,7 @@ export function AuthForm({
                 ) : (
                   <>
                     <span>{isSignUp ? "Create my shelf" : "Open my shelf"}</span>
-                    <span className={styles.arr}>→</span>
+                    <span className={styles.arr}><ArrowRightIcon size={16} /></span>
                   </>
                 )}
               </button>
@@ -401,11 +400,11 @@ export function AuthForm({
               </p>
 
               <div className={styles.coppa}>
-                <div className={styles.coppaMark}>✦</div>
+                <div className={styles.coppaMark}><SparklesIcon size={16} /></div>
                 <div>
                   <strong style={{ color: "var(--ink)", fontWeight: 800 }}>For grown-ups only.</strong>{" "}
                   TellTales is a parent-managed account. We never collect data on children directly — heroes are added by you, the grown-up, and stay safely on your shelf.{" "}
-                  <a href="#" style={{ color: "var(--u-orange)", fontWeight: 700 }}>Read our COPPA promise →</a>
+                  <a href="#" style={{ color: "var(--u-orange)", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 4 }}>Read our COPPA promise <ArrowRightIcon size={12} /></a>
                 </div>
               </div>
             </form>

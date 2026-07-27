@@ -311,7 +311,6 @@ section {
 .plan.featured .plan-name { color: var(--moon); }
 .plan.featured .plan-price { color: var(--cream); }
 .plan.featured .plan-feat { color: rgba(251,243,227,0.88); }
-.plan.featured .plan-feat::before { background: var(--moon); border-color: var(--moon); }
 
 .plan-badge {
   position: absolute;
@@ -347,18 +346,6 @@ section {
   display: flex; align-items: flex-start; gap: 10px;
   font-size: 14.5px; font-weight: 500;
   color: var(--ink);
-}
-.plan-feat::before {
-  content: '✓';
-  flex-shrink: 0;
-  width: 20px; height: 20px; border-radius: 50%;
-  background: var(--sage);
-  border: 1.5px solid var(--ink);
-  color: var(--cream);
-  font-size: 11px;
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 800;
-  margin-top: 1px;
 }
 .plan-cta { width: 100%; justify-content: center; }
 
@@ -3062,7 +3049,6 @@ h1.u-hero-title .sparkle { color: #fff !important; }
 .plan.featured:hover .plan-badge { transform: rotate(-3deg) scale(1.06); }
 /* --sage is repointed to orange in the umano skin, so the base sage-disc +
    orange-check combo was orange-on-orange (invisible). White check instead. */
-.plan-feat::before { background: var(--u-orange) !important; border: none !important; color: #fff !important; }
 .plan-cta { width: 100%; justify-content: center; margin-top: auto; }
 /* Click-to-feature cards (keepsake bindings): whole card is a select target. */
 .plan-selectable { cursor: pointer; }

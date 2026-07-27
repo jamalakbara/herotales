@@ -1,6 +1,11 @@
+"use client";
+
 import { FeatureZoom, type FeatureCard } from "./motion/FeatureZoom";
 import { Reveal } from "./motion/Reveal";
 import { cardLoop, cardPoster } from "@/lib/landing-media";
+import { SparklesIcon } from "@/components/ui/sparkles";
+import { AudioLinesIcon } from "@/components/ui/audio-lines";
+import { SquareStackIcon } from "@/components/ui/square-stack";
 
 // Seamless-loop card art — Seedream still → Seedance i2v → Cloudinary boomerang
 // so the loop has no cut frame. See scripts/gen-card.ts. URLs from landing-media.
@@ -22,7 +27,7 @@ const CARDS: FeatureCard[] = [
     poster: cardPoster("card-pick-lesson", "1784396872"),
   },
   {
-    icon: "✦",
+    icon: <SparklesIcon size={18} />,
     title: "One consistent face",
     desc: "Character-consistency magic keeps your little hero looking like themselves in every illustration — the same freckles, the same chin.",
     tint: "var(--sage)",
@@ -30,7 +35,7 @@ const CARDS: FeatureCard[] = [
     poster: cardPoster("card-consistent-face", "1784397172"),
   },
   {
-    icon: "♪",
+    icon: <AudioLinesIcon size={18} />,
     title: "Warm voice, soft eyelids",
     desc: "Every story arrives with a storyteller's narration — warm, unhurried, tuned to send wiggly listeners gently off to sleep.",
     tint: "var(--lilac)",
@@ -38,7 +43,7 @@ const CARDS: FeatureCard[] = [
     poster: cardPoster("card-warm-voice", "1784397664"),
   },
   {
-    icon: "❑",
+    icon: <SquareStackIcon size={18} />,
     title: "A real hardcover keepsake",
     desc: "Turn any favourite tale into a linen-spined, glossy-page book. Printed on demand, shipped to your door, kept forever.",
     tint: "var(--twilight)",

@@ -75,8 +75,8 @@ export function BookCover({
   script?: string;
   /** Bottom-left text (usually the blueprint / value). */
   theme?: string;
-  /** Bottom-right star glyph, rendered in a circle. Omit for `footerRight`. */
-  star?: string;
+  /** Bottom-right icon/glyph in a circle. Omit for `footerRight`. */
+  star?: ReactNode;
   /** Bottom-right plain content when there's no star (e.g. child name). */
   footerRight?: ReactNode;
   size?: SizeKey;
@@ -136,7 +136,7 @@ export function BookCover({
           {star ? (
             <div
               className={animated ? "dash-bc-star-anim" : undefined}
-              style={{ width: s.star, height: s.star, borderRadius: "50%", background: starBg, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: s.starFont }}
+              style={{ width: s.star, height: s.star, borderRadius: "50%", background: starBg, display: "flex", alignItems: "center", justifyContent: "center" }}
             >{star}</div>
           ) : footerRight != null ? <span>{footerRight}</span> : null}
         </div>

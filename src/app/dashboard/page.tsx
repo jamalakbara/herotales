@@ -19,6 +19,25 @@ import { getErrorMessage } from "@/lib/errors";
 import { KID_PALETTES } from "@/lib/hero-palette";
 import { BLUEPRINT_ICONS, pickName, storyToBook, timeAgo, type StoryListItem } from "@/lib/story-view";
 import { BLUEPRINTS } from "@/lib/types";
+import { SparklesIcon } from "@/components/ui/sparkles";
+import { PlayIcon } from "@/components/ui/play";
+import { ArrowUpIcon } from "@/components/ui/arrow-up";
+import { ArrowRightIcon } from "@/components/ui/arrow-right";
+import { DeleteIcon } from "@/components/ui/delete";
+import { PlusIcon } from "@/components/ui/plus";
+import { AxeIcon } from "@/components/ui/axe";
+import { HeartHandshakeIcon } from "@/components/ui/heart-handshake";
+import { FishSymbolIcon } from "@/components/ui/fish-symbol";
+import { BicepsFlexedIcon } from "@/components/ui/biceps-flexed";
+import { HeartIcon } from "@/components/ui/heart";
+
+const BLUEPRINT_ICON_COMPONENTS: Record<string, ReactNode> = {
+  Bravery: <AxeIcon size={20} />,
+  Honesty: <HeartHandshakeIcon size={20} />,
+  Patience: <FishSymbolIcon size={20} />,
+  Kindness: <HeartIcon size={20} />,
+  Persistence: <BicepsFlexedIcon size={20} />,
+};
 
 type APIChild = {
   id: string;
@@ -175,7 +194,7 @@ export default function DashboardPage() {
         <Reveal className="dash-sec-gap" style={{ marginBottom: 48 }}>
         <MobileCarousel className="dash-greet" style={{ display: "grid", gridTemplateColumns: "1.15fr 0.85fr", gap: 36, alignItems: "stretch" }}>
           <div className="u-card-lg" style={{ padding: "40px 44px", position: "relative", overflow: "hidden" }}>
-            <span style={{ position: "absolute", top: 20, right: 32, fontFamily: "var(--font-caprasimo), serif", fontSize: 64, color: "var(--moon)", transform: "rotate(14deg)", opacity: 0.85, pointerEvents: "none" }}>✦</span>
+            <span style={{ position: "absolute", top: 20, right: 32, color: "var(--moon)", transform: "rotate(14deg)", opacity: 0.85, pointerEvents: "none" }}><SparklesIcon size={64} /></span>
             <SectionKicker style={{ marginBottom: 10 }}>{getGreetingTime()}</SectionKicker>
             <h1 style={{ fontFamily: "var(--font-young-serif), serif", fontSize: "clamp(36px, 3.6vw, 50px)", lineHeight: 1.02, letterSpacing: "-0.02em", color: "var(--twilight)", maxWidth: 560, marginBottom: 14 }}>
               Welcome back, <span style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--berry)" }}>{greetingFirstName}</span>. The woods are ready when you are.
@@ -193,7 +212,7 @@ export default function DashboardPage() {
               </p>
             )}
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <Link href={newStoryHref} className="dash-btn dash-btn-berry">Start tonight&apos;s story →</Link>
+              <Link href={newStoryHref} className="dash-btn dash-btn-berry" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>Start tonight&apos;s story <ArrowRightIcon size={14} /></Link>
               {inProgress && (
                 <Link href={`/stories/${inProgress.id}`} className="dash-btn dash-btn-ghost">Re-read last night&apos;s</Link>
               )}
@@ -237,7 +256,7 @@ export default function DashboardPage() {
               </div>
             )}
             <div style={{ display: "flex", gap: 14, alignItems: "center", position: "relative", zIndex: 1, visibility: loading ? "hidden" : "visible" }}>
-              <div className="dash-play-icon" style={{ width: 56, height: 56, borderRadius: 14, background: "var(--u-orange)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontFamily: "var(--font-caprasimo), serif", fontSize: 22, flexShrink: 0 }}>▶</div>
+              <div className="dash-play-icon" style={{ width: 56, height: 56, borderRadius: 14, background: "var(--u-orange)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", flexShrink: 0 }}><PlayIcon size={22} /></div>
               <div style={{ flex: 1, minWidth: 0, fontSize: 12, opacity: 0.7 }}>
                 <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 18, color: "var(--cream)", opacity: 1, marginBottom: 2 }}>
                   {inProgress ? inProgress.blueprint : "5-chapter bedtime adventure"}
@@ -260,11 +279,11 @@ export default function DashboardPage() {
           action={
             <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
               {overCap && (
-                <button type="button" onClick={() => setShowAllKids((v) => !v)} className="dash-stat-link" style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-                  {showAllKids ? "Show fewer ↑" : `Show all ${kidsView.length} →`}
+                <button type="button" onClick={() => setShowAllKids((v) => !v)} className="dash-stat-link" style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                  {showAllKids ? <>Show fewer <ArrowUpIcon size={12} /></> : <>Show all {kidsView.length} <ArrowRightIcon size={12} /></>}
                 </button>
               )}
-              <Link href="/shelf" className="dash-stat-link">See all stories →</Link>
+              <Link href="/shelf" className="dash-stat-link" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>See all stories <ArrowRightIcon size={12} /></Link>
             </div>
           }
         />
@@ -283,7 +302,7 @@ export default function DashboardPage() {
                 disabled={deletingId === kid.id}
                 style={{ position: "absolute", top: 12, right: 12 }}
               >
-                {deletingId === kid.id ? "…" : "×"}
+                {deletingId === kid.id ? "…" : <DeleteIcon size={14} />}
               </button>
               <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 16 }}>
                 <div style={{ position: "relative", overflow: "hidden", width: 54, height: 54, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 24, background: kid.avBg, color: kid.avCol, flexShrink: 0 }}>
@@ -302,7 +321,7 @@ export default function DashboardPage() {
             </div>
           ))}
           <Link href="/heroes/new" className="dash-kid-add" style={{ background: "transparent", border: "2.5px dashed var(--paper-line)", borderRadius: 20, padding: "22px 16px", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", textAlign: "center", color: "var(--ink-soft)", textDecoration: "none" }}>
-            <div style={{ width: 54, height: 54, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30, fontWeight: 400, background: "var(--cream-deep)", color: "var(--ink-soft)" }}>+</div>
+            <div style={{ width: 54, height: 54, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--cream-deep)", color: "var(--ink-soft)" }}><PlusIcon size={28} /></div>
             <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 18, color: "var(--twilight)", marginTop: 12 }}>Add another hero</div>
             <div style={{ fontSize: 12, color: "var(--ink-soft)", marginTop: 4, fontWeight: 600 }}>Up to 3 on your Lantern plan</div>
           </Link>
@@ -361,13 +380,13 @@ export default function DashboardPage() {
             <div style={{ fontSize: 13, color: "var(--ink-soft)", fontWeight: 600, marginTop: 8, maxWidth: 280, lineHeight: 1.4 }}>
               {quota ? `${quota.remaining} ${quota.remaining === 1 ? "story" : "stories"} left this period.` : "Loading…"}
             </div>
-            <span className="dash-stat-link" style={{ marginTop: 12, display: "inline-block", opacity: 0.6 }} title="Upgrades arrive in a future update">Upgrades coming soon →</span>
+            <span className="dash-stat-link" style={{ marginTop: 12, display: "inline-flex", alignItems: "center", gap: 4, opacity: 0.6 }} title="Upgrades arrive in a future update">Upgrades coming soon <ArrowRightIcon size={12} /></span>
           </StatCard>
           <StatCard variant="dark" label="Keepsake book" value="Coming soon">
             <div style={{ fontSize: 13, fontWeight: 600, opacity: 0.75, marginTop: 8, lineHeight: 1.4, maxWidth: 240 }}>
               Turn your stories into a printed keepsake book — available soon.
             </div>
-            <Link href="/keepsake-books" className="dash-stat-link" style={{ color: "var(--u-orange)", marginTop: 14, display: "inline-block" }}>Learn more →</Link>
+            <Link href="/keepsake-books" className="dash-stat-link" style={{ color: "var(--u-orange)", marginTop: 14, display: "inline-flex", alignItems: "center", gap: 4 }}>Learn more <ArrowRightIcon size={12} /></Link>
           </StatCard>
         </MobileCarousel>
         </Reveal>
@@ -403,7 +422,7 @@ export default function DashboardPage() {
             {BLUEPRINTS.filter((b) => !usedBlueprints.has(b)).slice(0, 3).map((label) => {
               return (
                 <Link key={label} href={newStoryHref} className="dash-bpc" style={{ padding: "12px 14px", borderRadius: 14, fontFamily: "var(--font-young-serif), serif", fontSize: 13, textAlign: "center", minWidth: 84 }}>
-                  <span style={{ display: "block", fontFamily: "var(--font-caprasimo), serif", fontSize: 20, color: "var(--u-orange)", marginBottom: 4 }}>{BLUEPRINT_ICONS[label]}</span>
+                  <span style={{ display: "flex", justifyContent: "center", color: "var(--u-orange)", marginBottom: 4 }}>{BLUEPRINT_ICON_COMPONENTS[label]}</span>
                   {label}
                 </Link>
               );

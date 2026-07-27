@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useState, useMemo, CSSProperties } from "react";
+import { useState, useMemo, type CSSProperties, type ReactNode } from "react";
 import { AppFooter } from "@/components/app-footer";
 import { BookCard } from "@/components/book-card";
 import { EmptyState } from "@/components/empty-state";
@@ -15,12 +15,19 @@ import { Reveal } from "@/components/motion/Reveal";
 import { SkeletonBookItem } from "@/components/skeleton";
 import { useFetchJson } from "@/components/use-fetch-json";
 import { storyToBook, type BookView, type StoryListItem } from "@/lib/story-view";
+import { BookTextIcon } from "@/components/ui/book-text";
+import { ChevronDownIcon } from "@/components/ui/chevron-down";
+import { ChevronUpIcon } from "@/components/ui/chevron-up";
+import { SnowflakeIcon } from "@/components/ui/snowflake";
+import { SendIcon } from "@/components/ui/send";
+import { SparklesIcon } from "@/components/ui/sparkles";
+import { ArrowRightIcon } from "@/components/ui/arrow-right";
 
-const features = [
-  { icon: "⌾", title: "Linen-spined hardcover", sub: "Sturdy 8.5 × 8.5\" square, foil-pressed title, built for small hands and bedtime re-reads." },
-  { icon: "✺", title: "Every chapter illustrated", sub: "Five full-page illustrations printed on thick, glossy paper. Your hero stays consistent across every spread." },
-  { icon: "✉", title: "A dedication page", sub: "Add a \"For Ada, always brave — Love, Mum\" message on the inside cover. Free." },
-  { icon: "✦", title: "Printed in 3 days, shipped in 5", sub: "Carbon-neutral print-on-demand — we wait until you order, so no books sit on a shelf." },
+const features: { icon: ReactNode; title: string; sub: string }[] = [
+  { icon: <BookTextIcon size={20} />, title: "Linen-spined hardcover", sub: "Sturdy 8.5 × 8.5\" square, foil-pressed title, built for small hands and bedtime re-reads." },
+  { icon: <SnowflakeIcon size={20} />, title: "Every chapter illustrated", sub: "Five full-page illustrations printed on thick, glossy paper. Your hero stays consistent across every spread." },
+  { icon: <SendIcon size={20} />, title: "A dedication page", sub: "Add a \"For Ada, always brave — Love, Mum\" message on the inside cover. Free." },
+  { icon: <SparklesIcon size={20} />, title: "Printed in 3 days, shipped in 5", sub: "Carbon-neutral print-on-demand — we wait until you order, so no books sit on a shelf." },
 ];
 
 // TODO: Phase 3 — Stripe. Real keepsake orders backed by `keepsake_orders` table.
@@ -115,7 +122,7 @@ export default function KeepsakeBooksPage() {
               </h1>
               <p className="kp-hero-fade kp-hero-fade-d2" style={{ fontSize: 17, color: "rgba(251,243,227,0.82)", maxWidth: 480, lineHeight: 1.5, fontWeight: 500, marginBottom: 28 }}>Any story on your shelf becomes a linen-spined, glossy-page book — printed on demand, shipped to your door in 5–7 days, and kept on their shelf forever.</p>
               <div className="kp-hero-fade kp-hero-fade-d3" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                <a href="#pick" className="btn btn-berry btn-lg">Pick a tale →</a>
+                <a href="#pick" className="btn btn-berry btn-lg" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>Pick a tale <ArrowRightIcon size={14} /></a>
                 <a href="#how" className="btn btn-lg" style={{ background: "rgba(251,243,227,0.12)", color: "var(--cream)" }}>See what&apos;s inside</a>
               </div>
             </div>
@@ -180,7 +187,7 @@ export default function KeepsakeBooksPage() {
           id="pick"
           title={<>Pick a tale to <HeadAccent>print</HeadAccent></>}
           sub="Only completed stories can be printed. Select one, then choose a binding below."
-          action={<Link href="/shelf" className="btn btn-ghost btn-sm">Browse full shelf →</Link>}
+          action={<Link href="/shelf" className="btn btn-ghost btn-sm" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>Browse full shelf <ArrowRightIcon size={12} /></Link>}
         />
 
         {loadError && (
@@ -199,7 +206,7 @@ export default function KeepsakeBooksPage() {
             style={{ marginBottom: 56 }}
             title="No printable tales yet"
             sub="Finish a story first — every completed tale lands here for keepsake printing."
-            cta={<Link href="/stories/new" className="btn btn-berry">Start a new tale →</Link>}
+            cta={<Link href="/stories/new" className="btn btn-berry" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>Start a new tale <ArrowRightIcon size={14} /></Link>}
           />
         ) : (
         <div className="kp-pick-grid" style={{ marginBottom: 56 }}>
@@ -252,7 +259,7 @@ export default function KeepsakeBooksPage() {
               <div key={i} className="kp-order-row kp-order-cols" style={{ ...styleVars, padding: "18px 22px", borderBottom: i < orders.length - 1 ? "1.5px dashed var(--paper-line)" : "none" }}>
                 <div style={{ width: 44, height: 56, background: spineBg[o.spineCls], border: "2px solid var(--ink)", borderRadius: "3px 6px 6px 3px", position: "relative", flexShrink: 0 }}>
                   <div style={{ position: "absolute", left: 4, top: 6, bottom: 6, width: 2, background: "rgba(251,243,227,0.3)" }} />
-                  <span style={{ position: "absolute", top: 18, left: "50%", transform: "translateX(-50%)", color: "var(--moon)", fontFamily: "var(--font-caprasimo), serif", fontSize: 12 }}>✦</span>
+                  <span style={{ position: "absolute", top: 18, left: "50%", transform: "translateX(-50%)", color: "var(--moon)" }}><SparklesIcon size={12} /></span>
                 </div>
                 <div>
                   <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 17, color: "var(--twilight)", lineHeight: 1.1 }}>{o.title}</div>
@@ -293,7 +300,7 @@ export default function KeepsakeBooksPage() {
                 <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 17, color: "var(--twilight)", lineHeight: 1.3 }}>{f.q}</div>
                 <div className="kp-faq-answer" style={{ fontSize: 14, color: "var(--ink-soft)", fontWeight: 500, lineHeight: 1.5, maxWidth: 680 }}>{f.a}</div>
               </div>
-              <div className="kp-faq-toggle" style={{ fontFamily: "var(--font-caprasimo), serif", fontSize: 22, color: "var(--berry)", flexShrink: 0 }}>+</div>
+              <div className="kp-faq-toggle" style={{ color: "var(--berry)", flexShrink: 0 }}>{openFaq === i ? <ChevronUpIcon size={20} /> : <ChevronDownIcon size={20} />}</div>
             </div>
           ))}
         </div>

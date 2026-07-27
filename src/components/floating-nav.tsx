@@ -5,6 +5,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useScroll, useMotionValueEvent } from "framer-motion";
 import { useClerk, useUser } from "@clerk/nextjs";
+import { ArrowLeftIcon } from "@/components/ui/arrow-left";
+import { PlusIcon } from "@/components/ui/plus";
 
 export type Crumb = { label: string; href?: string };
 
@@ -124,8 +126,8 @@ function AppInner() {
         ))}
       </div>
       <div className="fnav-right">
-        <Link href="/stories/new" className="btn btn-berry fnav-cta">
-          + New story
+        <Link href="/stories/new" className="btn btn-berry fnav-cta" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+          <PlusIcon size={14} /> New story
         </Link>
         <UserMenu />
       </div>
@@ -163,8 +165,8 @@ export function ReaderBack({ crumbs }: { crumbs: Crumb[] }) {
   const back = [...crumbs].reverse().find((c) => c.href);
   if (!back?.href) return null;
   return (
-    <Link href={back.href} className="reader-back">
-      ← {back.label}
+    <Link href={back.href} className="reader-back" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+      <ArrowLeftIcon size={16} /> {back.label}
     </Link>
   );
 }
@@ -174,8 +176,8 @@ function AuthInner() {
     <>
       <SiteLogo href="/" />
       <div className="fnav-right" style={{ marginLeft: "auto" }}>
-        <Link href="/" className="btn btn-ghost fnav-cta">
-          ← Back home
+        <Link href="/" className="btn btn-ghost fnav-cta" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+          <ArrowLeftIcon size={16} /> Back home
         </Link>
       </div>
     </>

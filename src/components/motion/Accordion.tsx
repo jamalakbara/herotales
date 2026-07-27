@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { ChevronDownIcon } from "@/components/ui/chevron-down";
+import { ChevronUpIcon } from "@/components/ui/chevron-up";
 
 export type AccordionItem = {
   q: string;
@@ -36,7 +38,7 @@ export function Accordion({ items, defaultOpen = 0, className }: AccordionProps)
               onClick={() => setOpen(isOpen ? -1 : i)}
             >
               <span className="faq-toggle" aria-hidden>
-                {isOpen ? "−" : "+"}
+                {isOpen ? <ChevronUpIcon size={18} /> : <ChevronDownIcon size={18} />}
               </span>
               <span>{item.q}</span>
             </button>

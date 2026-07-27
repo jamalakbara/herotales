@@ -12,6 +12,9 @@ import {
 import { AmbientDecor, type DecorStar, type DecorFirefly } from "./motion/AmbientDecor";
 import { LoopVideo } from "./motion/LoopVideo";
 import { useMediaQuery } from "./use-media-query";
+import { SparklesIcon } from "@/components/ui/sparkles";
+import { ArrowRightIcon } from "@/components/ui/arrow-right";
+import { AxeIcon } from "@/components/ui/axe";
 
 const easeOut = cubicBezier(0.22, 1, 0.36, 1);
 
@@ -94,8 +97,8 @@ export function Hero() {
             face, their bravery — illustrated and narrated in a warm voice.
           </p>
           <div className="hero-ctas u-hero-ctas">
-            <Link href="/stories/new" className="btn btn-lg">
-              Make tonight&apos;s story →
+            <Link href="/stories/new" className="btn btn-lg" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+              Make tonight&apos;s story <ArrowRightIcon size={16} />
             </Link>
             <a href="#how" className="btn btn-lg u-hero-ghost">
               See how it works
@@ -109,7 +112,7 @@ export function Hero() {
           style={reduce ? { y: settleY, scale: 1 } : { y: cardY, scale: cardScale }}
         >
           <div className="u-notify">
-            <div className="u-notify-mark">✦</div>
+            <div className="u-notify-mark"><SparklesIcon size={16} /></div>
             <div>
               <div className="u-notify-kicker">Tuck-in time</div>
               <div className="u-notify-title">Tonight&apos;s tale is ready</div>
@@ -130,7 +133,7 @@ export function Hero() {
             </div>
             <div className="u-hero-book-meta">
               <span>Bravery · Ages 4–6</span>
-              <span className="u-hero-book-star">★</span>
+              <span className="u-hero-book-star"><AxeIcon size={18} /></span>
             </div>
           </div>
         </motion.div>

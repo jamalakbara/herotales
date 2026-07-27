@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowRightIcon } from "@/components/ui/arrow-right";
 
 export function Footer() {
   return (
@@ -48,8 +49,8 @@ export function Footer() {
             <div style={{ fontSize: 13, color: "var(--ink-soft)", fontWeight: 700 }}>
               © 2026 TellTales. Sweet dreams guaranteed.
             </div>
-            <Link href="/stories/new" className="btn btn-twilight">
-              Start free tale →
+            <Link href="/stories/new" className="btn btn-twilight" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+              Start free tale <ArrowRightIcon size={14} />
             </Link>
           </div>
         </div>
