@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { CSSProperties, ReactNode } from "react";
 
 /**
@@ -50,6 +51,7 @@ const BADGE: Record<BadgeAccent, { bg: string; fg: string }> = {
 
 export function BookCover({
   accent,
+  coverUrl,
   label,
   title,
   script,
@@ -66,6 +68,8 @@ export function BookCover({
   style,
 }: {
   accent: CoverAccent;
+  /** Generated illustration shown as the cover art; falls back to the solid accent when absent. */
+  coverUrl?: string | null;
   label: string;
   title: string;
   script?: string;
@@ -91,9 +95,13 @@ export function BookCover({
 }) {
   const a = ACCENT[accent];
   const s = SIZE[size];
-  const spineCol = a.light ? "rgba(28,21,64,0.2)" : "rgba(255,255,255,0.3)";
-  const starBg = a.light ? "rgba(28,21,64,0.12)" : "rgba(255,255,255,0.18)";
-  const scriptCol = a.light ? "inherit" : "var(--moon)";
+  const hasArt = !!coverUrl;
+  // Over illustration art, force legible cream text + white star bubble
+  // regardless of the fallback accent, and darken with a scrim.
+  const textCol = hasArt ? "var(--cream)" : a.fg;
+  const spineCol = hasArt ? "rgba(255,255,255,0.35)" : a.light ? "rgba(28,21,64,0.2)" : "rgba(255,255,255,0.3)";
+  const starBg = hasArt ? "rgba(255,255,255,0.24)" : a.light ? "rgba(28,21,64,0.12)" : "rgba(255,255,255,0.18)";
+  const scriptCol = hasArt ? "var(--moon)" : a.light ? "inherit" : "var(--moon)";
   const bd = badge ? BADGE[badge.accent] : null;
 
   return (
@@ -107,17 +115,23 @@ export function BookCover({
       {overlay}
       <div
         className={[animated ? "dash-book-cover-anim" : "", coverClassName ?? ""].filter(Boolean).join(" ") || undefined}
-        style={{ aspectRatio: "5/6.4", borderRadius: "6px 12px 12px 6px", border: selected ? "3px solid var(--moon)" : "2.5px solid var(--ink)", boxShadow: selected ? "6px 6px 0 var(--ink)" : s.shadow, padding: s.pad, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "space-between", marginBottom: s.mb, background: a.bg, color: a.fg }}
+        style={{ aspectRatio: "5/6.4", borderRadius: "6px 12px 12px 6px", border: selected ? "3px solid var(--moon)" : "2.5px solid var(--ink)", boxShadow: selected ? "6px 6px 0 var(--ink)" : s.shadow, padding: s.pad, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "space-between", marginBottom: s.mb, background: a.bg, color: textCol }}
       >
-        <div style={{ position: "absolute", left: s.spine, top: s.spine * 2, bottom: s.spine * 2, width: 2, background: spineCol, pointerEvents: "none" }} />
-        <div>
+        {hasArt && (
+          <>
+            <Image src={coverUrl!} alt="" fill sizes="(max-width: 768px) 45vw, 240px" style={{ objectFit: "cover", zIndex: 0 }} />
+            <div style={{ position: "absolute", inset: 0, zIndex: 1, background: "linear-gradient(180deg, rgba(20,18,23,0.62) 0%, rgba(20,18,23,0.05) 30%, rgba(20,18,23,0.12) 52%, rgba(20,18,23,0.82) 100%)", pointerEvents: "none" }} />
+          </>
+        )}
+        <div style={{ position: "absolute", left: s.spine, top: s.spine * 2, bottom: s.spine * 2, width: 2, background: spineCol, pointerEvents: "none", zIndex: 2 }} />
+        <div style={{ position: "relative", zIndex: 2 }}>
           <div style={{ fontSize: s.label, fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.7 }}>{label}</div>
           <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: s.title, lineHeight: 1.05, marginTop: s.titleMt }}>
             {title}
             {script ? <span style={{ fontFamily: "var(--font-caprasimo), serif", display: "block", fontSize: s.script, color: scriptCol }}>{script}</span> : null}
           </div>
         </div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", fontSize: s.foot, fontWeight: 700, opacity: s.footOpacity }}>
+        <div style={{ position: "relative", zIndex: 2, display: "flex", justifyContent: "space-between", alignItems: "flex-end", fontSize: s.foot, fontWeight: 700, opacity: s.footOpacity }}>
           <span>{theme}</span>
           {star ? (
             <div

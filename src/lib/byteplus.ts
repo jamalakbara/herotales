@@ -21,12 +21,33 @@ type BytePlusImageResponse = {
 
 // Generate a single image from `prompt` and return raw PNG/JPEG bytes.
 // Throws on any failure so `generateImageBytes` can fall back to DALL-E.
+//
+// `referenceImages` turns this into image-to-image / reference-guided
+// generation (Seedream's `image` field — Base64 data URI or accessible URL).
+// Passing the locked hero portrait keeps the same character across every
+// chapter + cover. We force `sequential_image_generation: "disabled"` so a
+// single reference yields a single image (not a batch).
 export async function generateBytePlusImage(
   prompt: string,
   size: string,
+  referenceImages?: string[],
 ): Promise<Buffer> {
   const apiKey = process.env.BYTEPLUS_API_KEY;
   if (!apiKey) throw new Error("BYTEPLUS_API_KEY is not set");
+
+  const refs = (referenceImages ?? []).filter((r) => r.trim());
+  const body: Record<string, unknown> = {
+    model: BYTEPLUS_IMAGE_MODEL,
+    prompt,
+    size,
+    response_format: "url",
+    watermark: false,
+    n: 1,
+  };
+  if (refs.length) {
+    body.image = refs.length === 1 ? refs[0] : refs;
+    body.sequential_image_generation = "disabled";
+  }
 
   const res = await fetch(`${BYTEPLUS_BASE_URL}/images/generations`, {
     method: "POST",
@@ -34,14 +55,7 @@ export async function generateBytePlusImage(
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      model: BYTEPLUS_IMAGE_MODEL,
-      prompt,
-      size,
-      response_format: "url",
-      watermark: false,
-      n: 1,
-    }),
+    body: JSON.stringify(body),
   });
 
   if (!res.ok) {

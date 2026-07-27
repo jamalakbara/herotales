@@ -41,7 +41,7 @@ function BookRow({ b, index }: { b: BookView; index: number }) {
   const styleVars = { "--i": index } as CSSProperties;
   const cover = accentColors(b.accent);
   return (
-    <Link href={b.href} className="dash-book-card-anim dash-list-row" style={{ ...styleVars, textDecoration: "none", display: "flex", alignItems: "center", gap: 16, padding: "12px 16px", background: "#fff", borderRadius: 16, boxShadow: "var(--u-card-shadow)" }}>
+    <Link href={b.href} className="dash-book-card-anim dash-list-row" style={{ ...styleVars, textDecoration: "none", display: "flex", alignItems: "center", gap: 16, padding: "12px 16px", borderRadius: 16 }}>
       <div style={{ width: 44, height: 56, flexShrink: 0, borderRadius: "4px 8px 8px 4px", border: "2px solid var(--ink)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 18, ...cover }}>{b.star}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 16, color: "var(--twilight)", lineHeight: 1.15, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{b.infoTitle}</div>
@@ -67,7 +67,7 @@ function tabPalette(paletteIdx: number) {
 function HeroTabPill({ t, active, onSelect }: { t: KidTab; active: boolean; onSelect: () => void }) {
   const palette = tabPalette(t.paletteIdx);
   return (
-    <button onClick={onSelect} className={`dash-kid-tab${active ? " dash-kid-tab-active" : ""}`} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 18px 10px 10px", background: active ? "var(--u-orange)" : "#fff", borderRadius: 999, color: active ? "#fff" : "var(--ink)", boxShadow: active ? "none" : "var(--u-card-shadow)" }}>
+    <button onClick={onSelect} className={`dash-kid-tab${active ? " dash-kid-tab-active" : ""}`} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 18px 10px 10px", borderRadius: 999, color: active ? "#fff" : "var(--ink)" }}>
       <div style={{ width: 30, height: 30, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: t.id === "all" ? 12 : 14, background: palette.bg, color: palette.color }}>{t.label}</div>
       <span style={{ fontWeight: 800, fontSize: 14 }}>{t.nm}</span>
       <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 7px", background: active ? "rgba(255,255,255,0.22)" : "rgba(28,21,64,0.08)", borderRadius: 999 }}>{t.ct}</span>
@@ -121,7 +121,7 @@ function HeroPicker({ tabs, activeTab, onSelect }: { tabs: KidTab[]; activeTab: 
       {/* Overflow: searchable popover — kept outside the scroll strip so it isn't clipped */}
       {overflow.length > 0 && (
         <div ref={popRef} style={{ position: "relative", flexShrink: 0 }}>
-          <button className="dash-kid-tab" onClick={() => setOpen((o) => !o)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", background: "#fff", borderRadius: 999, color: "var(--ink)", boxShadow: "var(--u-card-shadow)", fontWeight: 800, fontSize: 14, whiteSpace: "nowrap" }}>
+          <button className="dash-kid-tab" onClick={() => setOpen((o) => !o)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", borderRadius: 999, color: "var(--ink)", fontWeight: 800, fontSize: 14, whiteSpace: "nowrap" }}>
             More heroes
             <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 7px", background: "rgba(28,21,64,0.08)", borderRadius: 999 }}>{overflow.length}</span>
             <span style={{ display: "inline-block", transition: "transform 0.15s ease", transform: open ? "rotate(180deg)" : "none" }}>▾</span>
@@ -321,7 +321,7 @@ export default function ShelfPage() {
         {loadError && <ErrorAlert style={{ marginBottom: 16 }}>{loadError}</ErrorAlert>}
 
         {/* Toolbar */}
-        <div className="shelf-toolbar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 14, padding: "14px 18px", background: "#fff", borderRadius: 18, boxShadow: "var(--u-card-shadow)", marginBottom: 28 }}>
+        <div className="shelf-toolbar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 14, padding: "14px 18px", borderRadius: 18, marginBottom: 28 }}>
           <div className="shelf-search" style={{ display: "flex", alignItems: "center", gap: 10, background: "var(--cream-deep)", borderRadius: 999, padding: "8px 16px", flex: 1, minWidth: 220, maxWidth: 420 }}>
             <span style={{ fontSize: 15, color: "var(--ink-soft)" }}>⌕</span>
             <input type="text" placeholder="Search by title, hero, or lesson…" value={search} onChange={(e) => setSearch(e.target.value)} style={{ border: "none", background: "transparent", outline: "none", fontFamily: "var(--font-nunito), sans-serif", fontWeight: 600, fontSize: 13, color: "var(--ink)", flex: 1 }} />

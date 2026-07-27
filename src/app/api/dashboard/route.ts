@@ -4,7 +4,9 @@ import { requireUser } from "@/lib/api";
 import { getErrorMessage } from "@/lib/errors";
 import { db } from "@/lib/db";
 import { children, profiles, stories } from "@/lib/db/schema";
+import { signedImageUrl } from "@/lib/cloudinary";
 import { getOrResetQuota } from "@/lib/quota";
+import { cached, keys, ttl } from "@/lib/redis";
 
 export async function GET() {
   try {
@@ -12,6 +14,9 @@ export async function GET() {
     if ("error" in auth) return auth.error;
     const { userId } = auth;
 
+    // Cache the whole aggregation — this endpoint is client-polled. Busted on
+    // story/child create/update (see stories + children routes + Inngest).
+    const payload = await cached(keys.dashboard(userId), ttl.dashboard, async () => {
     // getOrResetQuota lazily creates the profile row, so run it first.
     const quota = await getOrResetQuota(userId);
 
@@ -37,6 +42,7 @@ export async function GET() {
           pronouns: children.pronouns,
           detail_tags: children.detailTags,
           character_description: children.characterDescription,
+          portrait_storage_path: children.portraitStoragePath,
           created_at: children.createdAt,
         })
         .from(children)
@@ -52,6 +58,7 @@ export async function GET() {
           status: stories.status,
           progress: stories.progress,
           title: stories.title,
+          cover_storage_path: stories.coverStoragePath,
           favorite: stories.favorite,
           created_at: stories.createdAt,
           completed_at: stories.completedAt,
@@ -64,21 +71,30 @@ export async function GET() {
         .limit(8),
     ]);
 
-    const perKid = kids.map((k) => {
+    const recentSigned = recent.map(({ cover_storage_path, ...s }) => ({
+      ...s,
+      cover_url: cover_storage_path ? signedImageUrl(cover_storage_path) : null,
+    }));
+
+    const perKid = kids.map(({ portrait_storage_path, ...k }) => {
       const own = recent.filter((s) => s.child_id === k.id);
       return {
         ...k,
+        portrait_url: portrait_storage_path ? signedImageUrl(portrait_storage_path) : null,
         tales: own.length,
         favorites: own.filter((s) => s.favorite).length,
       };
     });
 
-    return NextResponse.json({
-      profile: profileRows[0] ?? null,
-      quota,
-      kids: perKid,
-      recent_stories: recent,
+      return {
+        profile: profileRows[0] ?? null,
+        quota,
+        kids: perKid,
+        recent_stories: recentSigned,
+      };
     });
+
+    return NextResponse.json(payload);
   } catch (err) {
     console.error("[/api/dashboard]", err);
     return NextResponse.json(

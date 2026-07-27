@@ -14,10 +14,27 @@ if (process.env.CLOUDINARY_URL) {
   });
 }
 
+// Cloudinary appends an SDK-analytics query param to signed URLs, reading its
+// own version from its package.json at call time. Under the Next.js/webpack
+// server bundle that lookup fails and `cloudinary.url(..., { sign_url: true })`
+// throws "Must supply sdk_semver". Disabling analytics skips that lookup.
+cloudinary.config({ analytics: false });
+
 // public_id layout mirrors the old bucket layout, under a top-level folder:
 //   telltales/users/{parentId}/stories/{storyId}/chapter-{i}
 export function storyImagePublicId(parentId: string, storyId: string, chapterIndex: number) {
   return `telltales/users/${parentId}/stories/${storyId}/chapter-${chapterIndex}`;
+}
+
+// Cover illustration for a story (one per story, brand-cover framed).
+export function storyCoverPublicId(parentId: string, storyId: string) {
+  return `telltales/users/${parentId}/stories/${storyId}/cover`;
+}
+
+// Locked hero portrait for a child — the visual anchor reused as the
+// image-to-image reference for every chapter + cover of that hero's stories.
+export function childPortraitPublicId(parentId: string, childId: string) {
+  return `telltales/users/${parentId}/children/${childId}/portrait`;
 }
 
 export async function uploadStoryImage(publicId: string, bytes: Uint8Array): Promise<string> {

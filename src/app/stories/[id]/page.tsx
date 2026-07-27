@@ -51,6 +51,7 @@ export default function StoryReaderPage() {
   const [story, setStory] = useState<StoryRow | null>(null);
   const [images, setImages] = useState<ImageRow[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const [playing, setPlaying] = useState(false);
   const [spIdx, setSpIdx] = useState(1);
@@ -92,6 +93,15 @@ export default function StoryReaderPage() {
       if (pollTimer.current) clearTimeout(pollTimer.current);
     };
   }, [fetchStory]);
+
+  const handleDelete = useCallback(async () => {
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/stories/${id}`, { method: "DELETE" });
+      if (res.ok) { router.push("/shelf"); return; }
+    } catch { /* fall through */ }
+    setDeleting(false);
+  }, [id, router]);
 
   const child = pickChild(story?.children ?? null);
   const heroName = child?.nickname ?? "Hero";
@@ -153,23 +163,47 @@ export default function StoryReaderPage() {
     );
   }
 
-  if (!story || !ready) {
-    const pct = story?.progress ?? 5;
-    const failed = story?.status === "failed";
+  // Initial fetch in-flight — neutral loader, NOT the "generating" progress card.
+  if (!story) {
     return (
       <>
         <FloatingNav variant="reader"
           crumbs={[
-            { label: "Dashboard", href: "/dashboard" },
-            { label: failed ? "Something went wrong" : "Conjuring your story…" },
+            { label: "Home", href: "/dashboard" },
+            { label: "Opening your story…" },
           ]}
         />
         <main className="page" style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div className="u-card wait-card">
             <div style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--berry)", fontSize: 14, marginBottom: 8 }}>
+              Tonight&apos;s tale
+            </div>
+            <h1 style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 30, color: "var(--twilight)", letterSpacing: "-0.02em" }}>
+              Opening your story…
+            </h1>
+          </div>
+        </main>
+      </>
+    );
+  }
+
+  if (!ready) {
+    const pct = story.progress ?? 5;
+    const failed = story.status === "failed";
+    return (
+      <>
+        <FloatingNav variant="reader"
+          crumbs={[
+            { label: "Home", href: "/dashboard" },
+            { label: failed ? "Something went wrong" : "Conjuring your story…" },
+          ]}
+        />
+        <main className="page" style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div className="u-card wait-card">
+            <div style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--berry)", fontSize: 13, marginBottom: 6 }}>
               {failed ? "We tripped on a stone" : "Tonight's tale"}
             </div>
-            <h1 style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 30, color: "var(--twilight)", marginBottom: 16, letterSpacing: "-0.02em" }}>
+            <h1 style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 26, lineHeight: 1.15, color: "var(--twilight)", marginBottom: 16, letterSpacing: "-0.02em" }}>
               {failed ? "Story generation failed" : `Spinning ${heroName}'s adventure…`}
             </h1>
             {!failed && (
@@ -178,23 +212,28 @@ export default function StoryReaderPage() {
                   <div className="wait-fill" style={{ width: `${pct}%` }} />
                 </div>
                 <div style={{ fontSize: 13.5, color: "var(--ink-soft)", fontWeight: 600 }}>
-                  {pct < 30
+                  {pct < 33
                     ? "Drafting the chapters…"
                     : pct < 95
-                      ? `Painting illustration ${Math.max(1, Math.min(5, Math.ceil((pct - 30) / 13)))} of 5…`
+                      ? `Painting illustration ${Math.max(1, Math.min(5, Math.ceil((pct - 33) / 12)))} of 5…`
                       : "Almost there…"}
                 </div>
               </>
             )}
             {failed && story?.error && (
-              <div style={{ fontSize: 13, color: "var(--berry)", fontWeight: 700, marginTop: 12 }}>{story.error}</div>
+              <div style={{ fontSize: 12.5, color: "var(--berry)", fontWeight: 700, marginTop: 12 }}>{story.error}</div>
             )}
-            <div style={{ marginTop: 20, display: "flex", gap: 10, justifyContent: "center" }}>
-              <Link href="/dashboard" className="btn btn-ghost">
+            <div style={{ marginTop: 20, display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center" }}>
+              <Link href="/dashboard" className="btn btn-ghost" style={{ whiteSpace: "nowrap", fontSize: 14.5 }}>
                 Wait on the dashboard
               </Link>
               {failed && (
-                <Link href="/stories/new" className="btn btn-berry">
+                <button type="button" onClick={handleDelete} disabled={deleting} className="btn btn-ghost" style={{ whiteSpace: "nowrap", fontSize: 14.5 }}>
+                  {deleting ? "Removing…" : "Delete this story"}
+                </button>
+              )}
+              {failed && (
+                <Link href="/stories/new" className="btn btn-berry" style={{ whiteSpace: "nowrap", fontSize: 14.5 }}>
                   Try a new tale →
                 </Link>
               )}
@@ -208,7 +247,7 @@ export default function StoryReaderPage() {
   const heroTitle = story.title ?? `${heroName} & the ${blueprint} Tale`;
 
   const crumbs = [
-    { label: "Dashboard", href: "/dashboard" },
+    { label: "Home", href: "/dashboard" },
     { label: "Shelf", href: "/shelf" },
     { label: heroTitle },
   ];
@@ -275,7 +314,7 @@ export default function StoryReaderPage() {
           chapters={chapters}
           imageByIndex={imageByIndex}
           reduce={!!reduce}
-          onEnd={() => router.push("/dashboard")}
+          onEnd={() => router.push("/shelf")}
         />
 
         {/* AUDIO BAR — narration TODO: ElevenLabs (Phase 2) */}

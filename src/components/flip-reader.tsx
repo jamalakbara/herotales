@@ -133,6 +133,9 @@ export function FlipReader({ chapters, imageByIndex, reduce, onEnd, onChapter }:
   const [mounted, setMounted] = useState(false);
   const [loadedImgs, setLoadedImgs] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(0);
+  // Spread mode reports the LEFT page index on flip, so the last page is visible
+  // one index early — track orientation to know when we've truly hit the end.
+  const [spread, setSpread] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const bookRef = useRef<any>(null);
 
@@ -196,7 +199,8 @@ export function FlipReader({ chapters, imageByIndex, reduce, onEnd, onChapter }:
 
   const total = chapters.length;
   const atStart = page <= 0;
-  const atEnd = page >= pages.length - 1;
+  // In a two-page spread the final page shows one index early (page = left index).
+  const atEnd = page >= pages.length - (spread ? 2 : 1);
 
   return (
     <div className="fb-wrap">
@@ -221,6 +225,10 @@ export function FlipReader({ chapters, imageByIndex, reduce, onEnd, onChapter }:
             mobileScrollSupport
             showCover={false}
             onFlip={(e: { data: number }) => setPage(e.data)}
+            onInit={() =>
+              setSpread(bookRef.current?.pageFlip?.()?.getOrientation?.() === "landscape")
+            }
+            onChangeOrientation={(e: { data: string }) => setSpread(e.data === "landscape")}
           >
             {pages.map((p, i) => (
               <div className="fb-page" key={i}>

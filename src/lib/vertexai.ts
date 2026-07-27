@@ -81,11 +81,23 @@ async function openaiGenerate(
 // --- Chapter images -------------------------------------------------------
 // Default provider is BytePlus; falls back to OpenAI dall-e-3 on any error.
 
-export async function generateImageBytes(prompt: string): Promise<Buffer> {
+// `referenceImageUrl` (optional) drives BytePlus image-to-image so the hero
+// stays visually identical across pages. DALL-E-3 is text-only, so the
+// reference is dropped on the fallback path (the text character description
+// still anchors it).
+export async function generateImageBytes(
+  prompt: string,
+  referenceImageUrl?: string,
+): Promise<Buffer> {
   try {
-    return await generateBytePlusImage(prompt, IMAGE_SIZE);
+    return await generateBytePlusImage(
+      prompt,
+      IMAGE_SIZE,
+      referenceImageUrl ? [referenceImageUrl] : undefined,
+    );
   } catch (e) {
     console.warn("[image] BytePlus failed, falling back to DALL-E:", e);
+    if (referenceImageUrl) console.warn("[image] reference image dropped on DALL-E fallback (text-only)");
     return await dalleImageBytes(prompt);
   }
 }

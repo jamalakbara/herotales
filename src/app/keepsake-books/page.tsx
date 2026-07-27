@@ -164,7 +164,7 @@ export default function KeepsakeBooksPage() {
             const titleCol = isDark ? "#fff" : isOrange ? "var(--ink-warm)" : "var(--twilight)";
             const subCol = isDark ? "rgba(251,243,227,0.8)" : isOrange ? "rgba(20,9,6,0.72)" : "var(--ink-soft)";
             return (
-              <div key={i} className="kp-feat kp-stagger" style={{ ...styleVars, background: featBg, borderRadius: 18, boxShadow: "var(--u-card-shadow)", padding: 22 }}>
+              <div key={i} className="kp-feat kp-feat-card kp-stagger" style={{ ...styleVars, background: featBg, borderRadius: 18, padding: 22 }}>
                 <div className="kp-feat-ic" style={{ width: 44, height: 44, borderRadius: 12, background: isDark || isOrange ? "rgba(255,255,255,0.16)" : "var(--cream-deep)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 20, color: isDark ? "var(--u-orange)" : isOrange ? "#fff" : "var(--u-orange)", marginBottom: 14 }}>{f.icon}</div>
                 <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 17, color: titleCol, lineHeight: 1.1, marginBottom: 4 }}>{f.title}</div>
                 <div style={{ fontSize: 13, color: subCol, fontWeight: 600, lineHeight: 1.4 }}>{f.sub}</div>
@@ -237,7 +237,7 @@ export default function KeepsakeBooksPage() {
           }
         />
 
-        <div style={{ background: "#fff", borderRadius: 20, boxShadow: "var(--u-card-shadow)", overflow: "hidden", marginBottom: 56 }}>
+        <div className="kp-orders" style={{ borderRadius: 20, overflow: "hidden", marginBottom: 56 }}>
           <div className="kp-order-cols kp-order-head" style={{ padding: "14px 22px", background: "var(--cream-deep)", fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ink-soft)" }}>
             <div /><div>Book</div><div>Status</div><div>Ordered</div><div />
           </div>
@@ -286,7 +286,7 @@ export default function KeepsakeBooksPage() {
           sub="Tap any question to read the answer."
         />
 
-        <div style={{ background: "#fff", borderRadius: 22, boxShadow: "var(--u-card-shadow)", padding: "28px 32px" }}>
+        <div className="kp-faq-card" style={{ borderRadius: 22, padding: "28px 32px" }}>
           {faqs.map((f, i) => (
             <div key={i} onClick={() => setOpenFaq(openFaq === i ? null : i)} className={`kp-faq-item${openFaq === i ? " kp-faq-open" : ""}`} style={{ padding: "16px 0", borderBottom: i < faqs.length - 1 ? "1.5px dashed var(--paper-line)" : "none", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 20 }}>
               <div style={{ flex: 1 }}>

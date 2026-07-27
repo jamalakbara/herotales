@@ -62,7 +62,7 @@ export function BookCard({
           theme={book.theme}
           footerRight={book.forKid}
           overlay={selected ? (
-            <div className="kp-pick-check" style={{ position: "absolute", top: -10, right: -10, width: 34, height: 34, borderRadius: "50%", background: "var(--u-orange)", boxShadow: "0 8px 24px rgba(255,105,46,0.35)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 16, color: "#fff", zIndex: 3 }}>✓</div>
+            <div className="kp-pick-check" style={{ position: "absolute", top: -10, right: -10, width: 34, height: 34, borderRadius: "50%", background: "var(--u-orange)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 16, color: "#fff", zIndex: 3 }}>✓</div>
           ) : undefined}
         />
         <Caption book={book} size={size} />
@@ -72,7 +72,7 @@ export function BookCard({
 
   return (
     <Link href={book.href} className="dash-book-card dash-book-card-anim" style={{ ...styleVars, textDecoration: "none", display: "block", position: "relative" }}>
-      <BookCover size={size} animated accent={book.accent} badge={book.badge} label={book.label} title={book.title} script={book.script} theme={book.theme} star={book.star} />
+      <BookCover size={size} animated accent={book.accent} coverUrl={book.coverUrl} badge={book.badge} label={book.label} title={book.title} script={book.script} theme={book.theme} star={book.star} />
       <Caption book={book} size={size} />
     </Link>
   );

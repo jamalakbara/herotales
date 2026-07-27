@@ -39,7 +39,8 @@ export function SkeletonKidCard() {
   return (
     <div
       aria-hidden
-      style={{ background: "#fff", borderRadius: 20, boxShadow: "var(--u-card-shadow)", padding: 22 }}
+      className="dash-kid-card"
+      style={{ borderRadius: 20, padding: 22 }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 16 }}>
         <Skeleton variant="avatar" />

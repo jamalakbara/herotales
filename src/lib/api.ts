@@ -1,15 +1,33 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { z } from "zod";
+import type { Ratelimit } from "@upstash/ratelimit";
 import { asc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { chapterImages } from "@/lib/db/schema";
 import { signedImageUrl } from "@/lib/cloudinary";
+import { cached, keys, ttl, redisEnabled } from "@/lib/redis";
 
 export async function requireUser() {
   const { userId } = await auth();
   if (!userId) return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
   return { userId };
+}
+
+// Per-user rate limit. Returns a 429 response to short-circuit the handler, or
+// `null` to proceed. Fails OPEN — if Upstash is off/unreachable, requests pass.
+export async function checkRateLimit(limiter: Ratelimit, userId: string): Promise<NextResponse | null> {
+  if (!redisEnabled()) return null;
+  try {
+    const { success } = await limiter.limit(userId);
+    if (!success) {
+      return NextResponse.json({ error: "Too many requests. Please slow down." }, { status: 429 });
+    }
+    return null;
+  } catch (err) {
+    console.error("[ratelimit] check failed, allowing request", err);
+    return null;
+  }
 }
 
 export function badRequest(msg: string, details?: unknown) {
@@ -44,8 +62,14 @@ export async function signImageUrlsForStory(parentId: string, storyId: string) {
     .where(eq(chapterImages.storyId, storyId))
     .orderBy(asc(chapterImages.chapterIndex));
 
-  return rows.map((row) => ({
-    chapter_index: row.chapterIndex,
-    url: signedImageUrl(row.storagePath),
-  }));
+  // The signed delivery URL is deterministic per publicId (no expiry on the
+  // signature), so cache it long-term keyed by the storage path.
+  return Promise.all(
+    rows.map(async (row) => ({
+      chapter_index: row.chapterIndex,
+      url: await cached(keys.signedUrl(row.storagePath), ttl.signedUrl, async () =>
+        signedImageUrl(row.storagePath),
+      ),
+    })),
+  );
 }

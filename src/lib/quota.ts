@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { profiles } from "@/lib/db/schema";
+import { cached, invalidate, keys, ttl } from "@/lib/redis";
 
 export type QuotaStatus = {
   quota: number;
@@ -48,6 +49,8 @@ export async function getOrResetQuota(userId: string): Promise<QuotaStatus> {
         quotaPeriodStart: profiles.quotaPeriodStart,
       });
     if (!reset) throw new Error("Quota reset failed");
+    // A month rolled over and we just reset the counter — drop any stale cache.
+    await invalidate(keys.quota(userId));
     return {
       quota: reset.storyQuotaMonthly,
       used: reset.storiesUsedThisMonth,
@@ -62,4 +65,15 @@ export async function getOrResetQuota(userId: string): Promise<QuotaStatus> {
     remaining: data.storyQuotaMonthly - data.storiesUsedThisMonth,
     periodStart: data.quotaPeriodStart,
   };
+}
+
+// Cached read for non-enforcement paths (dashboard / children lists). Slightly
+// stale (<=60s) is fine here. Enforcement paths (story POST) call the
+// authoritative getOrResetQuota directly so month-rollover + limits are exact.
+export function getQuotaCached(userId: string): Promise<QuotaStatus> {
+  return cached(keys.quota(userId), ttl.quota, () => getOrResetQuota(userId));
+}
+
+export function invalidateQuota(userId: string): Promise<void> {
+  return invalidate(keys.quota(userId));
 }

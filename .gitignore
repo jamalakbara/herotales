@@ -49,3 +49,5 @@ next-env.d.ts
 /.clerk/
 
 .mcp.json
+# Ember mascot raw renders (flat-bg intermediates, cut out locally)
+scripts/ember-out/

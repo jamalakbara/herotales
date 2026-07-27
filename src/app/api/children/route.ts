@@ -1,12 +1,22 @@
 import { NextResponse } from "next/server";
 import { asc, eq } from "drizzle-orm";
-import { requireUser, parseJsonBody } from "@/lib/api";
+import { requireUser, parseJsonBody, checkRateLimit } from "@/lib/api";
+import { mutationLimiter } from "@/lib/ratelimit";
+import { cached, invalidate, keys, ttl } from "@/lib/redis";
 import { getErrorMessage } from "@/lib/errors";
 import { db } from "@/lib/db";
 import { children } from "@/lib/db/schema";
 import { childSelect, toChildColumns } from "@/lib/db/children-fields";
-import { getOrResetQuota } from "@/lib/quota";
+import { signedImageUrl } from "@/lib/cloudinary";
+import { getQuotaCached } from "@/lib/quota";
 import { ChildFieldsSchema } from "@/lib/types";
+
+// Swap the raw portrait storage path for a signed delivery URL. Kept local to
+// the children API since it's the only consumer of the portrait field.
+type ChildRow = { portrait_storage_path: string | null } & Record<string, unknown>;
+function withPortrait({ portrait_storage_path, ...c }: ChildRow) {
+  return { ...c, portrait_url: portrait_storage_path ? signedImageUrl(portrait_storage_path) : null };
+}
 
 export async function GET() {
   const auth = await requireUser();
@@ -14,14 +24,16 @@ export async function GET() {
   const { userId } = auth;
   try {
     const [data, quota] = await Promise.all([
-      db
-        .select(childSelect)
-        .from(children)
-        .where(eq(children.parentId, userId))
-        .orderBy(asc(children.createdAt)),
-      getOrResetQuota(userId),
+      cached(keys.children(userId), ttl.children, async () =>
+        db
+          .select(childSelect)
+          .from(children)
+          .where(eq(children.parentId, userId))
+          .orderBy(asc(children.createdAt)),
+      ),
+      getQuotaCached(userId),
     ]);
-    return NextResponse.json({ children: data, quota });
+    return NextResponse.json({ children: data.map(withPortrait), quota });
   } catch (err) {
     return NextResponse.json({ error: getErrorMessage(err, "Query failed") }, { status: 500 });
   }
@@ -31,6 +43,9 @@ export async function POST(req: Request) {
   const auth = await requireUser();
   if ("error" in auth) return auth.error;
   const { userId } = auth;
+
+  const limited = await checkRateLimit(mutationLimiter(), userId);
+  if (limited) return limited;
 
   const parsed = await parseJsonBody(req, ChildFieldsSchema, "Invalid child");
   if ("error" in parsed) return parsed.error;
@@ -48,5 +63,6 @@ export async function POST(req: Request) {
     })
     .returning(childSelect);
   if (!data) return NextResponse.json({ error: "Child create failed" }, { status: 500 });
-  return NextResponse.json({ child: data }, { status: 201 });
+  await invalidate(keys.children(userId), keys.dashboard(userId));
+  return NextResponse.json({ child: withPortrait(data) }, { status: 201 });
 }

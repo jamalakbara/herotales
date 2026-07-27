@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
 import { AppFooter } from "@/components/app-footer";
@@ -18,6 +19,7 @@ type ExistingChild = {
   age: number;
   pronouns: string;
   narrator_voice: string;
+  portrait_url?: string | null;
 };
 
 type Quota = { quota: number; used: number; remaining: number; periodStart: string };
@@ -328,8 +330,15 @@ function CreateStoryPage() {
                         onClick={() => selectExistingKid(k)}
                         className={`kid-pick${selectedKidId === k.id ? " active" : ""}`}
                       >
-                        <div className="kid-pick-name">{k.nickname}</div>
-                        <div className="kid-pick-meta">{k.age} yrs · {k.pronouns}</div>
+                        <div className="kid-pick-av">
+                          {k.portrait_url
+                            ? <Image src={k.portrait_url} alt="" fill sizes="40px" style={{ objectFit: "cover" }} />
+                            : (k.nickname?.[0]?.toUpperCase() ?? "H")}
+                        </div>
+                        <div>
+                          <div className="kid-pick-name">{k.nickname}</div>
+                          <div className="kid-pick-meta">{k.age} yrs · {k.pronouns}</div>
+                        </div>
                       </div>
                     ))}
                   </div>

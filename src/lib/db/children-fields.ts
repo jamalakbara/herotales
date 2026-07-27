@@ -9,6 +9,7 @@ export const childSelect = {
   pronouns: children.pronouns,
   detail_tags: children.detailTags,
   character_description: children.characterDescription,
+  portrait_storage_path: children.portraitStoragePath,
   avatar_idx: children.avatarIdx,
   narrator_voice: children.narratorVoice,
   growth_traits: children.growthTraits,

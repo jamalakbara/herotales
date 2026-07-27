@@ -230,7 +230,7 @@ export default function AddHeroPage() {
               Tell us a little about your child and we&apos;ll start every story with them at the heart of it. You can change any of this later — promise.
             </p>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 18px", background: "#fff", borderRadius: 18, boxShadow: "var(--u-card-shadow)", fontSize: 13, fontWeight: 700, color: "var(--ink-soft)" }}>
+          <div className="hero-badge" style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 18px", borderRadius: 18, fontSize: 13, fontWeight: 700, color: "var(--ink-soft)" }}>
             <span>Lantern plan · Heroes</span>
             {kidsLoading && Array.from({ length: 3 }).map((_, i) => <Skeleton key={`s${i}`} variant="seat" />)}
             {!kidsLoading && seatLetters.map((l, i) => (
@@ -296,7 +296,8 @@ export default function AddHeroPage() {
                   const on = avatarIdx === i;
                   return (
                     <button type="button" key={i} onClick={() => setAvatarIdx(i)}
-                      style={{ aspectRatio: "1", border: "none", borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 22, cursor: "pointer", color: s.color, background: s.bg, transform: on ? "translateY(-2px)" : undefined, boxShadow: on ? "0 0 0 3px var(--u-orange), var(--u-card-shadow)" : "var(--u-card-shadow)", position: "relative" }}>
+                      className={`hero-av-sw${on ? " is-on" : ""}`}
+                      style={{ aspectRatio: "1", border: "none", borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 22, cursor: "pointer", color: s.color, background: s.bg, position: "relative" }}>
                       {previewLetter}
                       {on && <span style={{ position: "absolute", top: -8, right: -6, color: "var(--moon)", fontFamily: "var(--font-caprasimo), serif", fontSize: 14 }}>✦</span>}
                     </button>
@@ -358,7 +359,8 @@ export default function AddHeroPage() {
                   const on = voice === v.name;
                   return (
                     <button type="button" key={v.name} onClick={() => setVoice(v.name)}
-                      style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", border: "none", borderRadius: 14, background: on ? "var(--u-orange)" : "var(--cream-deep)", boxShadow: on ? "var(--u-card-shadow)" : "none", cursor: "pointer", textAlign: "left" }}>
+                      className={`hero-narr${on ? " is-on" : ""}`}
+                      style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", border: "none", borderRadius: 14, background: on ? "var(--u-orange)" : "var(--cream-deep)", cursor: "pointer", textAlign: "left" }}>
                       <span style={{ width: 36, height: 36, borderRadius: "50%", background: "var(--twilight)", color: "var(--u-orange)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, flexShrink: 0 }}>▶</span>
                       <span>
                         <span style={{ display: "block", fontFamily: "var(--font-young-serif), serif", fontSize: 16, color: on ? "#fff" : "var(--twilight)", lineHeight: 1.05 }}>{v.name}</span>
@@ -431,7 +433,7 @@ export default function AddHeroPage() {
               />
               <div style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--u-orange)", fontSize: 14, marginBottom: 8, position: "relative" }}>Live character sketch</div>
               <div style={{ display: "flex", alignItems: "center", gap: 18, position: "relative", marginBottom: 18 }}>
-                <div style={{ width: 76, height: 76, borderRadius: 22, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 36, color: av.color, background: av.bg, flexShrink: 0, boxShadow: "var(--u-card-shadow)" }}>{previewLetter}</div>
+                <div className="hero-prev-av" style={{ width: 76, height: 76, borderRadius: 22, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 36, color: av.color, background: av.bg, flexShrink: 0 }}>{previewLetter}</div>
                 <div>
                   <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 30, lineHeight: 1, letterSpacing: "-0.01em", marginBottom: 4 }}>{previewName}</div>
                   <div style={{ fontSize: 13, color: "rgba(251,243,227,0.75)", fontWeight: 600 }}>{previewMeta}</div>
@@ -473,7 +475,7 @@ export default function AddHeroPage() {
               </ul>
             </div>
 
-            <div style={{ background: "var(--u-orange)", borderRadius: 18, padding: "16px 18px", boxShadow: "var(--u-card-shadow)", fontSize: 13.5, color: "var(--ink-warm)", fontWeight: 600, lineHeight: 1.45, transform: "rotate(-1deg)" }}>
+            <div className="hero-tip" style={{ borderRadius: 18, padding: "16px 18px", fontSize: 13.5, color: "var(--ink-warm)", fontWeight: 600, lineHeight: 1.45, transform: "rotate(-1deg)" }}>
               <span style={{ fontFamily: "var(--font-caprasimo), serif", color: "#fff", marginRight: 6 }}>Tip ✦</span>
               Keep loves &amp; quirks small and specific — &ldquo;names the moon Pip&rdquo; makes a better story than &ldquo;loves space.&rdquo;
             </div>

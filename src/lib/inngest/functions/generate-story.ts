@@ -2,15 +2,24 @@ import { eq, sql } from "drizzle-orm";
 import { inngest } from "../client";
 import { db } from "../../db";
 import { stories, children, chapterImages, profiles } from "../../db/schema";
+import { invalidate, keys, releaseLock } from "../../redis";
 import { generateText, generateImageBytes } from "../../vertexai";
 import { StoryDocSchema } from "../../types";
-import { storyImagePublicId, uploadStoryImage } from "../../cloudinary";
+import {
+  storyImagePublicId,
+  storyCoverPublicId,
+  childPortraitPublicId,
+  uploadStoryImage,
+  signedImageUrl,
+} from "../../cloudinary";
 import {
   buildStorySystemPrompt,
   buildStoryUserPrompt,
 } from "../../prompts/story";
 import {
   buildCharacterDescriptionPrompt,
+  buildHeroPortraitPrompt,
+  buildCoverImagePrompt,
   buildChapterImagePrompt,
 } from "../../prompts/image";
 
@@ -19,9 +28,17 @@ export const generateStory = inngest.createFunction(
   async ({ event, step }) => {
     const { storyId } = (event as unknown as { data: { storyId: string } }).data;
 
+    // Populated once the story row loads, so failure cleanup can release the
+    // dedup lock (POST /api/stories) and bust the user-scoped caches.
+    let lockInfo: { userId: string; childId: string; blueprint: string } | null = null;
+
     const fail = async (err: unknown) => {
       const msg = err instanceof Error ? err.message : String(err);
       await db.update(stories).set({ status: "failed", error: msg.slice(0, 500) }).where(eq(stories.id, storyId));
+      if (lockInfo) {
+        await releaseLock(keys.storyLock(lockInfo.userId, lockInfo.childId, lockInfo.blueprint));
+        await invalidate(keys.story(lockInfo.userId, storyId), keys.dashboard(lockInfo.userId));
+      }
       throw err;
     };
 
@@ -44,6 +61,8 @@ export const generateStory = inngest.createFunction(
         return data;
       });
 
+      lockInfo = { userId: story.parent_id, childId: story.child_id, blueprint: story.blueprint };
+
       const child = await step.run("load-child", async () => {
         const [data] = await db
           .select({
@@ -53,6 +72,7 @@ export const generateStory = inngest.createFunction(
             pronouns: children.pronouns,
             detail_tags: children.detailTags,
             character_description: children.characterDescription,
+            portrait_storage_path: children.portraitStoragePath,
             growth_traits: children.growthTraits,
             quirk: children.quirk,
             skip_scary: children.skipScary,
@@ -85,6 +105,27 @@ export const generateStory = inngest.createFunction(
         return desc;
       });
 
+      // 1b. lock a hero portrait once per child — the visual anchor reused as
+      // the image-to-image reference for every chapter + cover so the child
+      // looks identical across pages. Skipped if this hero already has one.
+      const portraitPath = await step.run("hero-portrait", async () => {
+        if (child.portrait_storage_path && child.portrait_storage_path.trim()) return child.portrait_storage_path;
+        const prompt = buildHeroPortraitPrompt({
+          characterDescription,
+          age: child.age ?? 5,
+          detailTags: child.detail_tags ?? [],
+        });
+        const bytes = await generateImageBytes(prompt);
+        const publicId = childPortraitPublicId(story.parent_id, child.id);
+        const storagePath = await uploadStoryImage(publicId, bytes);
+        await db.update(children).set({ portraitStoragePath: storagePath }).where(eq(children.id, child.id));
+        await db.update(stories).set({ progress: 15 }).where(eq(stories.id, storyId));
+        return storagePath;
+      });
+      // Signed delivery URL for the portrait — publicly fetchable by BytePlus,
+      // fed as the i2i reference into the cover + every chapter render.
+      const portraitRef = signedImageUrl(portraitPath);
+
       // 2. generate story text JSON
       const doc = await step.run("generate-text", async () => {
         const sysPrompt = buildStorySystemPrompt({
@@ -107,12 +148,32 @@ export const generateStory = inngest.createFunction(
         const parsed = StoryDocSchema.parse(JSON.parse(raw));
         await db
           .update(stories)
-          .set({ title: parsed.title, fullText: parsed.chapters, progress: 30 })
+          .set({ title: parsed.title, fullText: parsed.chapters, progress: 25 })
           .where(eq(stories.id, storyId));
         return parsed;
       });
 
-      // 3. generate 5 chapter images independently (character consistency via prompt)
+      // 2b. dedicated cover illustration (brand-cover framed), generated against
+      // the portrait reference so the cover hero matches the pages.
+      await step.run("cover-image", async () => {
+        const prompt = buildCoverImagePrompt({
+          characterDescription,
+          title: doc.title,
+          blueprint: story.blueprint,
+          age: child.age ?? 5,
+          detailTags: child.detail_tags ?? [],
+        });
+        const bytes = await generateImageBytes(prompt, portraitRef);
+        const publicId = storyCoverPublicId(story.parent_id, storyId);
+        const storagePath = await uploadStoryImage(publicId, bytes);
+        await db
+          .update(stories)
+          .set({ coverStoragePath: storagePath, coverPrompt: prompt, progress: 33 })
+          .where(eq(stories.id, storyId));
+      });
+
+      // 3. generate 5 chapter images — each rendered image-to-image from the
+      // locked hero portrait, so the character stays identical across pages.
       for (let i = 0; i < 5; i++) {
         const chapter = doc.chapters[i];
         const stepName = `chapter-${i}-image`;
@@ -125,7 +186,7 @@ export const generateStory = inngest.createFunction(
             age: child.age ?? 5,
             detailTags: child.detail_tags ?? [],
           });
-          const bytes = await generateImageBytes(prompt);
+          const bytes = await generateImageBytes(prompt, portraitRef);
           const publicId = storyImagePublicId(story.parent_id, storyId, i);
           const storagePath = await uploadStoryImage(publicId, bytes);
           await db
@@ -137,7 +198,7 @@ export const generateStory = inngest.createFunction(
             });
           await db
             .update(stories)
-            .set({ progress: Math.min(95, 30 + (i + 1) * 13) })
+            .set({ progress: Math.min(95, 33 + (i + 1) * 12) })
             .where(eq(stories.id, storyId));
           return { publicId };
         });
@@ -161,6 +222,15 @@ export const generateStory = inngest.createFunction(
           })
           .where(eq(profiles.id, story.parent_id));
       });
+
+      // Story is done: release the dedup lock and bust the user's caches so the
+      // fresh quota/streak + ready state surface immediately (not after TTL).
+      await releaseLock(keys.storyLock(story.parent_id, story.child_id, story.blueprint));
+      await invalidate(
+        keys.quota(story.parent_id),
+        keys.dashboard(story.parent_id),
+        keys.story(story.parent_id, storyId),
+      );
 
       return { storyId, status: "ready" };
     } catch (err) {

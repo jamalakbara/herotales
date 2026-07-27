@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { and, desc, eq, sql } from "drizzle-orm";
-import { requireUser, parseJsonBody } from "@/lib/api";
+import { requireUser, parseJsonBody, checkRateLimit } from "@/lib/api";
+import { storyCreateLimiter } from "@/lib/ratelimit";
+import { acquireLock, invalidate, keys } from "@/lib/redis";
 import { getErrorMessage } from "@/lib/errors";
 import { db } from "@/lib/db";
 import { children, stories } from "@/lib/db/schema";
+import { signedImageUrl } from "@/lib/cloudinary";
 import { getOrResetQuota } from "@/lib/quota";
 import { inngest } from "@/lib/inngest/client";
 import { BLUEPRINTS, STORY_STATUSES, StoryRequestSchema } from "@/lib/types";
@@ -45,6 +48,7 @@ export async function GET(req: Request) {
           status: stories.status,
           progress: stories.progress,
           title: stories.title,
+          cover_storage_path: stories.coverStoragePath,
           favorite: stories.favorite,
           created_at: stories.createdAt,
           completed_at: stories.completedAt,
@@ -59,7 +63,13 @@ export async function GET(req: Request) {
       db.select({ total: sql<number>`count(*)::int` }).from(stories).where(where),
     ]);
 
-    return NextResponse.json({ stories: rows, total: total ?? 0, limit, offset });
+    // Replace the raw storage path with a signed delivery URL (cheap string build).
+    const signed = rows.map(({ cover_storage_path, ...r }) => ({
+      ...r,
+      cover_url: cover_storage_path ? signedImageUrl(cover_storage_path) : null,
+    }));
+
+    return NextResponse.json({ stories: signed, total: total ?? 0, limit, offset });
   } catch (err) {
     return NextResponse.json({ error: getErrorMessage(err, "Query failed") }, { status: 500 });
   }
@@ -70,6 +80,9 @@ export async function POST(req: Request) {
   if ("error" in auth) return auth.error;
   const { userId } = auth;
 
+  const limited = await checkRateLimit(storyCreateLimiter(), userId);
+  if (limited) return limited;
+
   const parsed = await parseJsonBody(req, StoryRequestSchema, "Invalid story request");
   if ("error" in parsed) return parsed.error;
 
@@ -79,6 +92,7 @@ export async function POST(req: Request) {
   }
 
   let childId = parsed.data.child_id;
+  let createdChild = false;
   if (!childId && parsed.data.child) {
     const [created] = await db
       .insert(children)
@@ -93,12 +107,25 @@ export async function POST(req: Request) {
       .returning({ id: children.id });
     if (!created) return NextResponse.json({ error: "Child create failed" }, { status: 500 });
     childId = created.id;
+    createdChild = true;
   } else if (childId) {
     const [owned] = await db
       .select({ id: children.id })
       .from(children)
       .where(and(eq(children.id, childId), eq(children.parentId, userId)));
     if (!owned) return NextResponse.json({ error: "Child not found" }, { status: 404 });
+  }
+
+  // Dedup lock: a rapid double-submit for the same child + blueprint must not
+  // create a second row or fire a duplicate Inngest event. Released when the
+  // pipeline finishes/fails (TTL is the safety net). Fails open if Redis is off.
+  const lockKey = keys.storyLock(userId, childId!, parsed.data.blueprint);
+  const locked = await acquireLock(lockKey, 300);
+  if (!locked) {
+    return NextResponse.json(
+      { error: "A story for this hero is already being generated." },
+      { status: 409 },
+    );
   }
 
   const [story] = await db
@@ -118,6 +145,13 @@ export async function POST(req: Request) {
 
   // fire async pipeline
   await inngest.send({ name: "story/requested", data: { storyId: story.id } });
+
+  // Refresh hot-path caches: the dashboard's recent list changes now; children
+  // list too if we just created a hero inline.
+  await invalidate(
+    keys.dashboard(userId),
+    ...(createdChild ? [keys.children(userId)] : []),
+  );
 
   return NextResponse.json({ story_id: story.id, status: "pending" }, { status: 202 });
 }

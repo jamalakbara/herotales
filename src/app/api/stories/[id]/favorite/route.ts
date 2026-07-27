@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
-import { requireUser, notFound } from "@/lib/api";
+import { requireUser, notFound, checkRateLimit } from "@/lib/api";
+import { mutationLimiter } from "@/lib/ratelimit";
+import { invalidate, keys } from "@/lib/redis";
 import { db } from "@/lib/db";
 import { stories } from "@/lib/db/schema";
 
@@ -12,6 +14,9 @@ export async function PATCH(
   if ("error" in auth) return auth.error;
   const { userId } = auth;
   const { id } = await ctx.params;
+
+  const limited = await checkRateLimit(mutationLimiter(), userId);
+  if (limited) return limited;
 
   let body: { favorite?: boolean } = {};
   try {
@@ -36,5 +41,6 @@ export async function PATCH(
     .where(and(eq(stories.id, id), eq(stories.parentId, userId)))
     .returning({ id: stories.id, favorite: stories.favorite });
   if (!data) return notFound("Story not found");
+  await invalidate(keys.story(userId, id), keys.dashboard(userId));
   return NextResponse.json({ story: data });
 }

@@ -25,6 +25,8 @@ Create `.env.local` at the repo root with the following keys.
 | `INNGEST_EVENT_KEY` | `src/lib/inngest/client.ts` | From Inngest Cloud → Event keys. Optional locally if running `inngest-cli dev`. |
 | `INNGEST_SIGNING_KEY` | `src/app/api/inngest/route.ts` (`serve`) | Required in production; `inngest-cli dev` works without it. |
 | `NEXT_PUBLIC_APP_URL` | Email links / future webhooks | e.g. `http://localhost:3000` in dev, full origin in prod. |
+| `UPSTASH_REDIS_REST_URL` | Upstash Redis (`src/lib/redis.ts`) | **Server-only.** REST endpoint for the Upstash Redis DB. Powers rate limiting, hot-path caching (quota/dashboard/children/story), signed-URL caching, and the story-gen dedup lock. **Optional** — if unset, every Redis path fails open (cache → Postgres, locks/limits → allow). |
+| `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis (`src/lib/redis.ts`) | **Server-only.** REST auth token paired with the URL above. Both must be present for Redis to activate. |
 
 Do **not** commit `.env.local`. Vercel/your host should hold the same set as project-level env vars.
 
@@ -47,6 +49,12 @@ Do **not** commit `.env.local`. Vercel/your host should hold the same set as pro
 ### Cloudinary (image storage)
 1. Create a Cloudinary account; copy cloud name + API key + API secret into env.
 2. No public folder/bucket config needed: story images upload as `type: authenticated` (private) and are served only through signed delivery URLs (`signedImageUrl`). The API secret must stay server/Inngest-only.
+
+### Upstash Redis (rate limiting + caching)
+1. Provision an Upstash Redis database — via the Vercel Marketplace (**Storage → Upstash**, which injects `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` into the project) or from the Upstash console.
+2. Copy both REST vars into env. HTTP-based (`@upstash/redis`) — no TCP pool to manage on serverless.
+3. **Entirely optional.** With the vars unset the app runs unchanged: `src/lib/redis.ts` helpers fail open — caches fall back to Postgres, and the rate limiter (`@upstash/ratelimit`) + dedup lock allow every request. Local dev needs no Upstash.
+4. What it backs: per-user rate limits on story create + mutations, cached quota/dashboard/children/story reads, long-lived signed-image-URL cache, and the story-generation dedup lock (prevents double-submit duplicate stories).
 
 ---
 

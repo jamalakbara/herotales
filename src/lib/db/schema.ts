@@ -81,6 +81,8 @@ export const stories = pgTable(
     progress: integer("progress").notNull().default(0),
     title: text("title"),
     fullText: jsonb("full_text").$type<Chapter[]>(),
+    coverStoragePath: text("cover_storage_path"),
+    coverPrompt: text("cover_prompt"),
     favorite: boolean("favorite").notNull().default(false),
     error: text("error"),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "string" }).notNull().defaultNow(),

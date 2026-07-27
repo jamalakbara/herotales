@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { useMemo, useState, type ReactNode } from "react";
 import { AppFooter } from "@/components/app-footer";
 import { BookCard, NewTaleCard } from "@/components/book-card";
@@ -12,8 +13,9 @@ import { HeadAccent, SectionHeader } from "@/components/section-header";
 import { SectionKicker } from "@/components/section-kicker";
 import { AmbientDecor } from "@/components/motion/AmbientDecor";
 import { Reveal } from "@/components/motion/Reveal";
-import { SkeletonBookItem, SkeletonKidCard } from "@/components/skeleton";
+import { Skeleton, SkeletonBookItem, SkeletonKidCard } from "@/components/skeleton";
 import { useFetchJson } from "@/components/use-fetch-json";
+import { getErrorMessage } from "@/lib/errors";
 import { KID_PALETTES } from "@/lib/hero-palette";
 import { BLUEPRINT_ICONS, pickName, storyToBook, timeAgo, type StoryListItem } from "@/lib/story-view";
 import { BLUEPRINTS } from "@/lib/types";
@@ -25,6 +27,7 @@ type APIChild = {
   pronouns: string;
   detail_tags: string[];
   character_description: string | null;
+  portrait_url: string | null;
   tales: number;
   favorites: number;
 };
@@ -56,12 +59,12 @@ function StatCard({ variant, label, value, unit, children }: {
   children?: ReactNode;
 }) {
   const s = {
-    orange: { cls: undefined, wrapStyle: { background: "var(--u-orange)", boxShadow: "var(--u-card-shadow-lg)" }, kicker: "rgba(20,9,6,0.72)", val: "var(--ink-warm)", unitCol: "rgba(20,9,6,0.7)" },
-    card: { cls: "u-card", wrapStyle: undefined, kicker: "var(--u-orange)", val: "var(--twilight)", unitCol: "var(--ink-soft)" },
-    dark: { cls: "u-panel-dark", wrapStyle: undefined, kicker: "var(--u-orange)", val: "#fff", unitCol: "rgba(255,255,255,0.7)" },
+    orange: { cls: "dash-stat-orange", kicker: "rgba(20,9,6,0.72)", val: "var(--ink-warm)", unitCol: "rgba(20,9,6,0.7)" },
+    card: { cls: "u-card", kicker: "var(--u-orange)", val: "var(--twilight)", unitCol: "var(--ink-soft)" },
+    dark: { cls: "u-panel-dark", kicker: "var(--u-orange)", val: "#fff", unitCol: "rgba(255,255,255,0.7)" },
   }[variant];
   return (
-    <div className={s.cls} style={{ borderRadius: 22, padding: "24px 26px", ...s.wrapStyle }}>
+    <div className={s.cls} style={{ borderRadius: 22, padding: "24px 26px" }}>
       <div style={{ fontFamily: "var(--font-caprasimo), serif", fontSize: 13, color: s.kicker, marginBottom: 6 }}>{label}</div>
       {variant !== "dark" ? (
         <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 46, color: s.val, lineHeight: 1, letterSpacing: "-0.02em", display: "flex", alignItems: "baseline", gap: 8 }}>
@@ -81,7 +84,36 @@ export default function DashboardPage() {
   const [activeKid, setActiveKid] = useState(0);
   const [showAllKids, setShowAllKids] = useState(false);
   const [activeFilter, setActiveFilter] = useState("All");
-  const kids = data?.kids ?? [];
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  // Client-side removal: useFetchJson is single-shot with no refetch, so a
+  // deleted hero is hidden by filtering the loaded list rather than re-hitting
+  // the API. Server invalidates its Redis caches on DELETE for the next load.
+  const kids = useMemo(
+    () => (data?.kids ?? []).filter((k) => !deletedIds.has(k.id)),
+    [data, deletedIds],
+  );
+
+  async function handleDeleteHero(id: string, name: string) {
+    if (deletingId) return;
+    const ok = window.confirm(
+      `Delete ${name}? This permanently removes their character sketch and every story and picture made for them. This cannot be undone.`,
+    );
+    if (!ok) return;
+    setDeletingId(id);
+    setDeleteError(null);
+    try {
+      const res = await fetch(`/api/children/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error(`Delete failed (${res.status})`);
+      setDeletedIds((prev) => new Set([...prev, id]));
+      setActiveKid(0);
+    } catch (err) {
+      setDeleteError(getErrorMessage(err, "Couldn't delete that hero. Please try again."));
+    } finally {
+      setDeletingId(null);
+    }
+  }
   const recent = data?.recent_stories ?? [];
   const profile = data?.profile;
   const quota = data?.quota;
@@ -111,6 +143,7 @@ export default function DashboardPage() {
     age: `${k.age} years · ${k.pronouns}`,
     avBg: KID_PALETTES[i % KID_PALETTES.length].bg,
     avCol: KID_PALETTES[i % KID_PALETTES.length].color,
+    portrait: k.portrait_url,
     tales: k.tales,
     favs: k.favorites,
     printed: 0,
@@ -136,6 +169,7 @@ export default function DashboardPage() {
       <main className="dash-page app-main" style={{ maxWidth: 1400, margin: "0 auto", padding: "10px 48px 80px", position: "relative", zIndex: 2 }}>
 
         {loadError && <ErrorAlert>{loadError}</ErrorAlert>}
+        {deleteError && <ErrorAlert>{deleteError}</ErrorAlert>}
 
         {/* GREETING — grid on desktop, swipe carousel on mobile */}
         <Reveal className="dash-sec-gap" style={{ marginBottom: 48 }}>
@@ -146,11 +180,18 @@ export default function DashboardPage() {
             <h1 style={{ fontFamily: "var(--font-young-serif), serif", fontSize: "clamp(36px, 3.6vw, 50px)", lineHeight: 1.02, letterSpacing: "-0.02em", color: "var(--twilight)", maxWidth: 560, marginBottom: 14 }}>
               Welcome back, <span style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--berry)" }}>{greetingFirstName}</span>. The woods are ready when you are.
             </h1>
-            <p style={{ fontSize: 17, color: "var(--ink-soft)", fontWeight: 500, maxWidth: 500, marginBottom: 28, lineHeight: 1.5 }}>
-              {recent.length === 0
-                ? "Ready to spin your first tale? Pick a hero, pick a value — the woods will do the rest."
-                : `You've ${recent.length === 1 ? "read 1 bedtime tale" : `read ${recent.length} bedtime tales`} together. Tonight feels like a good night for another chapter.`}
-            </p>
+            {loading ? (
+              <div style={{ maxWidth: 500, marginBottom: 28 }} aria-hidden>
+                <Skeleton variant="text" style={{ width: "100%", marginBottom: 9 }} />
+                <Skeleton variant="text" style={{ width: "68%" }} />
+              </div>
+            ) : (
+              <p style={{ fontSize: 17, color: "var(--ink-soft)", fontWeight: 500, maxWidth: 500, marginBottom: 28, lineHeight: 1.5 }}>
+                {recent.length === 0
+                  ? "Ready to spin your first tale? Pick a hero, pick a value — the woods will do the rest."
+                  : `You've ${recent.length === 1 ? "read 1 bedtime tale" : `read ${recent.length} bedtime tales`} together. Tonight feels like a good night for another chapter.`}
+              </p>
+            )}
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               <Link href={newStoryHref} className="dash-btn dash-btn-berry">Start tonight&apos;s story →</Link>
               {inProgress && (
@@ -173,20 +214,29 @@ export default function DashboardPage() {
                 { left: "14%", bottom: "30%", delay: "1.4s", dur: "7s" },
               ]}
             />
-            <div style={{ position: "relative", zIndex: 1 }}>
-              <div style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--moon)", fontSize: 15, marginBottom: 8 }}>
-                {inProgress ? "Pick up where you left off" : "Tonight's first chapter"}
+            {loading ? (
+              <div style={{ position: "relative", zIndex: 1 }} aria-hidden>
+                <Skeleton variant="text" style={{ width: 150, marginBottom: 12, background: "rgba(255,255,255,0.16)" }} />
+                <Skeleton variant="text" className="lg" style={{ width: "80%", marginBottom: 14, background: "rgba(255,255,255,0.16)" }} />
+                <Skeleton variant="text" style={{ width: "90%", marginBottom: 7, background: "rgba(255,255,255,0.12)" }} />
+                <Skeleton variant="text" style={{ width: "55%", background: "rgba(255,255,255,0.12)" }} />
               </div>
-              <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 28, lineHeight: 1.1, maxWidth: 320, marginBottom: 14 }}>
-                {inProgress?.title ?? "No story yet — let's spin one"}
+            ) : (
+              <div style={{ position: "relative", zIndex: 1 }}>
+                <div style={{ fontFamily: "var(--font-caprasimo), serif", color: "var(--moon)", fontSize: 15, marginBottom: 8 }}>
+                  {inProgress ? "Pick up where you left off" : "Tonight's first chapter"}
+                </div>
+                <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 28, lineHeight: 1.1, maxWidth: 320, marginBottom: 14 }}>
+                  {inProgress?.title ?? "No story yet — let's spin one"}
+                </div>
+                <div style={{ fontSize: 14, color: "rgba(251,243,227,0.75)", fontWeight: 500, lineHeight: 1.5, maxWidth: 360, marginBottom: 22 }}>
+                  {inProgress
+                    ? `${inProgress.blueprint} · for ${pickName(inProgress.children)} · ${timeAgo(inProgress.created_at)}`
+                    : "Pick a hero and a value — your library starts tonight."}
+                </div>
               </div>
-              <div style={{ fontSize: 14, color: "rgba(251,243,227,0.75)", fontWeight: 500, lineHeight: 1.5, maxWidth: 360, marginBottom: 22 }}>
-                {inProgress
-                  ? `${inProgress.blueprint} · for ${pickName(inProgress.children)} · ${timeAgo(inProgress.created_at)}`
-                  : "Pick a hero and a value — your library starts tonight."}
-              </div>
-            </div>
-            <div style={{ display: "flex", gap: 14, alignItems: "center", position: "relative", zIndex: 1 }}>
+            )}
+            <div style={{ display: "flex", gap: 14, alignItems: "center", position: "relative", zIndex: 1, visibility: loading ? "hidden" : "visible" }}>
               <div className="dash-play-icon" style={{ width: 56, height: 56, borderRadius: 14, background: "var(--u-orange)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontFamily: "var(--font-caprasimo), serif", fontSize: 22, flexShrink: 0 }}>▶</div>
               <div style={{ flex: 1, minWidth: 0, fontSize: 12, opacity: 0.7 }}>
                 <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 18, color: "var(--cream)", opacity: 1, marginBottom: 2 }}>
@@ -223,9 +273,22 @@ export default function DashboardPage() {
         <MobileCarousel className="dash-kids-row" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 56 }}>
           {loading && Array.from({ length: 3 }).map((_, i) => <SkeletonKidCard key={i} />)}
           {visibleKids.map((kid) => (
-            <div key={kid.id} className="dash-kid-card" onClick={() => setActiveKid(kid.idx)} style={{ background: activeKid === kid.idx ? "var(--u-orange)" : "#fff", borderRadius: 20, boxShadow: activeKid === kid.idx ? "var(--u-card-shadow-lg)" : "var(--u-card-shadow)", padding: 22 }}>
+            <div key={kid.id} className={`dash-kid-card${activeKid === kid.idx ? " is-active" : ""}`} onClick={() => setActiveKid(kid.idx)} style={{ position: "relative", borderRadius: 20, padding: 22 }}>
+              <button
+                type="button"
+                aria-label={`Delete ${kid.name}`}
+                aria-busy={deletingId === kid.id}
+                onClick={(e) => { e.stopPropagation(); handleDeleteHero(kid.id, kid.name); }}
+                className="dash-kid-del"
+                disabled={deletingId === kid.id}
+                style={{ position: "absolute", top: 12, right: 12 }}
+              >
+                {deletingId === kid.id ? "…" : "×"}
+              </button>
               <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 16 }}>
-                <div style={{ width: 54, height: 54, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 24, background: kid.avBg, color: kid.avCol, flexShrink: 0 }}>{kid.name[0]}</div>
+                <div style={{ position: "relative", overflow: "hidden", width: 54, height: 54, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-caprasimo), serif", fontSize: 24, background: kid.avBg, color: kid.avCol, flexShrink: 0 }}>
+                  {kid.portrait ? <Image src={kid.portrait} alt="" fill sizes="54px" style={{ objectFit: "cover" }} /> : kid.name[0]}
+                </div>
                 <div>
                   <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 20, color: "var(--twilight)", lineHeight: 1.05 }}>{kid.name}</div>
                   <div style={{ fontSize: 12, color: "var(--ink-soft)", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", marginTop: 2 }}>{kid.age}</div>
@@ -238,7 +301,7 @@ export default function DashboardPage() {
               </div>
             </div>
           ))}
-          <Link href="/heroes/new" className="dash-kid-add" style={{ background: "transparent", border: "2.5px dashed var(--paper-line)", borderRadius: 20, boxShadow: "none", padding: "22px 16px", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", textAlign: "center", color: "var(--ink-soft)", textDecoration: "none" }}>
+          <Link href="/heroes/new" className="dash-kid-add" style={{ background: "transparent", border: "2.5px dashed var(--paper-line)", borderRadius: 20, padding: "22px 16px", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", textAlign: "center", color: "var(--ink-soft)", textDecoration: "none" }}>
             <div style={{ width: 54, height: 54, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30, fontWeight: 400, background: "var(--cream-deep)", color: "var(--ink-soft)" }}>+</div>
             <div style={{ fontFamily: "var(--font-young-serif), serif", fontSize: 18, color: "var(--twilight)", marginTop: 12 }}>Add another hero</div>
             <div style={{ fontSize: 12, color: "var(--ink-soft)", marginTop: 4, fontWeight: 600 }}>Up to 3 on your Lantern plan</div>
@@ -312,7 +375,7 @@ export default function DashboardPage() {
         {/* BLUEPRINT NUDGE */}
         {activeKidObj && (
         <Reveal inView={false}>
-        <div style={{ background: "var(--u-orange)", color: "var(--ink-warm)", borderRadius: 28, boxShadow: "var(--u-card-shadow-lg)", padding: "36px 40px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 28, flexWrap: "wrap", position: "relative", overflow: "hidden", marginBottom: 40 }}>
+        <div className="dash-nudge" style={{ borderRadius: 28, padding: "36px 40px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 28, flexWrap: "wrap", position: "relative", overflow: "hidden", marginBottom: 40 }}>
           <AmbientDecor variant="orange" fireflies={[]} />
           <div style={{ position: "relative", maxWidth: 560 }}>
             <div style={{ fontFamily: "var(--font-caprasimo), serif", color: "rgba(20,9,6,0.72)", fontSize: 14, marginBottom: 6 }}>Gentle nudge</div>
@@ -339,7 +402,7 @@ export default function DashboardPage() {
           <div style={{ display: "flex", gap: 10, position: "relative" }}>
             {BLUEPRINTS.filter((b) => !usedBlueprints.has(b)).slice(0, 3).map((label) => {
               return (
-                <Link key={label} href={newStoryHref} className="dash-bpc" style={{ padding: "12px 14px", background: "#fff", color: "var(--twilight)", borderRadius: 14, boxShadow: "var(--u-card-shadow)", fontFamily: "var(--font-young-serif), serif", fontSize: 13, textAlign: "center", minWidth: 84 }}>
+                <Link key={label} href={newStoryHref} className="dash-bpc" style={{ padding: "12px 14px", borderRadius: 14, fontFamily: "var(--font-young-serif), serif", fontSize: 13, textAlign: "center", minWidth: 84 }}>
                   <span style={{ display: "block", fontFamily: "var(--font-caprasimo), serif", fontSize: 20, color: "var(--u-orange)", marginBottom: 4 }}>{BLUEPRINT_ICONS[label]}</span>
                   {label}
                 </Link>

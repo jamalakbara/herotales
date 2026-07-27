@@ -17,6 +17,7 @@ export type StoryListItem = {
   status: StoryStatus;
   progress: number;
   title: string | null;
+  cover_url?: string | null;
   favorite: boolean;
   created_at: string;
   completed_at?: string | null;
@@ -84,6 +85,7 @@ export type BookBadge = { text: string; accent: "berry" | "sage" | "moon" };
 export type BookView = {
   id: string;
   accent: CoverAccent;
+  coverUrl?: string | null;
   badge?: BookBadge;
   label: string;
   title: string;
@@ -102,16 +104,19 @@ export function storyToBook(s: StoryListItem, i: number, opts?: { badge?: BookBa
   const { line1, line2 } = splitTitle(t);
   const badge: BookBadge | undefined =
     opts?.badge ??
-    (s.status !== "ready"
-      ? { text: "In progress", accent: "berry" }
-      : s.favorite
-        ? { text: "Favorite ♡", accent: "moon" }
-        : undefined);
+    (s.status === "failed"
+      ? { text: "Failed", accent: "berry" }
+      : s.status !== "ready"
+        ? { text: "In progress", accent: "berry" }
+        : s.favorite
+          ? { text: "Favorite ♡", accent: "moon" }
+          : undefined);
   return {
     id: s.id,
     accent: coverAccent(i),
+    coverUrl: s.cover_url ?? null,
     badge,
-    label: s.status === "ready" ? "Complete · 5 chapters" : `Conjuring · ${s.progress}%`,
+    label: s.status === "ready" ? "Complete · 5 chapters" : s.status === "failed" ? "Didn't finish" : `Conjuring · ${s.progress}%`,
     title: line1,
     script: line2,
     theme: s.blueprint,
