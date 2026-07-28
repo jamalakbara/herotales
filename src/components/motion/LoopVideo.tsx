@@ -27,9 +27,16 @@ export function LoopVideo({
   const [loaded, setLoaded] = useState(!!poster);
   const markLoaded = useCallback(() => setLoaded(true), []);
   // Media can finish loading before hydration attaches event handlers —
-  // check readiness when the ref lands too.
+  // check readiness when the ref lands too. iOS Safari also gates autoplay on
+  // the `muted` *attribute* (React only sets the property) and needs an
+  // explicit play() nudge, so force both here.
   const videoRef = useCallback((el: HTMLVideoElement | null) => {
-    if (el && el.readyState >= 2) setLoaded(true);
+    if (!el) return;
+    el.muted = true;
+    el.setAttribute("muted", "");
+    if (el.readyState >= 2) setLoaded(true);
+    const p = el.play();
+    if (p) p.catch(() => {});
   }, []);
   const imgRef = useCallback((el: HTMLImageElement | null) => {
     if (el?.complete) setLoaded(true);
