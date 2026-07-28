@@ -15,6 +15,16 @@ const isAuthRoute = createRouteMatcher(["/sign-in(.*)", "/sign-up(.*)"]);
 export const proxy = clerkMiddleware(async (auth, req) => {
   const { userId, redirectToSignIn } = await auth();
 
+  // Pre-launch gate: when COMING_SOON=true (prod only), wall off the app —
+  // auth + all protected routes redirect to the /coming-soon splash. The
+  // marketing landing ("/"), /coming-soon, and /api/waitlist pass through.
+  if (process.env.COMING_SOON === "true" && (isProtected(req) || isAuthRoute(req))) {
+    const url = req.nextUrl.clone();
+    url.pathname = "/coming-soon";
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
+
   if (isProtected(req) && !userId) {
     const next = req.nextUrl.pathname;
     return redirectToSignIn({ returnBackUrl: next });

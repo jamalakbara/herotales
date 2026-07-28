@@ -25,10 +25,26 @@ Create `.env.local` at the repo root with the following keys.
 | `INNGEST_EVENT_KEY` | `src/lib/inngest/client.ts` | From Inngest Cloud → Event keys. Optional locally if running `inngest-cli dev`. |
 | `INNGEST_SIGNING_KEY` | `src/app/api/inngest/route.ts` (`serve`) | Required in production; `inngest-cli dev` works without it. |
 | `NEXT_PUBLIC_APP_URL` | Email links / future webhooks | e.g. `http://localhost:3000` in dev, full origin in prod. |
+| `COMING_SOON` | Middleware (`src/proxy.ts`) | **Server-only** pre-launch gate. When `="true"`, auth + all protected routes (`/dashboard`, `/stories`, `/shelf`, `/heroes`, `/keepsake-books`, `/sign-in`, `/sign-up`) redirect to the `/coming-soon` splash; the marketing landing, `/coming-soon`, and `POST /api/waitlist` stay open. Set only in the **Production** scope; leave unset in Preview + local. Unset it to launch — no code change. |
 | `UPSTASH_REDIS_REST_URL` | Upstash Redis (`src/lib/redis.ts`) | **Server-only.** REST endpoint for the Upstash Redis DB. Powers rate limiting, hot-path caching (quota/dashboard/children/story), signed-URL caching, and the story-gen dedup lock. **Optional** — if unset, every Redis path fails open (cache → Postgres, locks/limits → allow). |
 | `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis (`src/lib/redis.ts`) | **Server-only.** REST auth token paired with the URL above. Both must be present for Redis to activate. |
 
 Do **not** commit `.env.local`. Vercel/your host should hold the same set as project-level env vars.
+
+### Environments (Production / Preview / Local)
+
+One Vercel project (`herotales`): `main`→Production, `development` branch→Preview, local via `.env.local`. Production runs prod instances/keys **and the pre-launch gate**; Preview + local run dev instances/keys with the gate **off**, so e2e testing happens on preview URLs while the domain shows the coming-soon wall.
+
+| Var | Production (`main`) | Preview (`development`) | Local (`.env.local`) |
+| --- | --- | --- | --- |
+| `COMING_SOON` | `true` | *(unset)* | *(unset)* |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` / `CLERK_SECRET_KEY` | prod (`pk_live_`/`sk_live_`) | dev (`pk_test_`/`sk_test_`) | dev (`pk_test_`/`sk_test_`) |
+| `DATABASE_URL` | prod Neon | dev Neon branch | dev Neon branch |
+| `CLOUDINARY_*`, `ANTHROPIC_*`, `BYTEPLUS_*`, `OPENAI_API_KEY` | shared | shared | shared |
+| `UPSTASH_REDIS_*`, `INNGEST_*` | prod | reuse prod | optional locally |
+| `NEXT_PUBLIC_APP_URL` | prod domain | preview URL | `http://localhost:3000` |
+
+Only **Clerk** and **Neon** have a distinct dev instance; everything else is shared. Set scoped vars with `vercel env add <NAME> <production|preview>` (Preview can be pinned to the branch with `--git-branch development`).
 
 ---
 

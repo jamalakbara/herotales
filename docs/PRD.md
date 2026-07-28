@@ -82,6 +82,7 @@ HeroTales AI is a specialized Micro SaaS designed for parents to create personal
 - **Children Table:** ID, Parent_ID, Nickname, Character_Description, Age.
 - **Stories Table:** ID, Child_ID, Theme, Full_Text (JSON), Created_At.
 - **Images Table:** ID, Story_ID, Chapter_Index, Storage_Path (Cloudinary public id), Gen_ID.
+- **Waitlist Table:** ID, Email (unique), Created_At — pre-launch email capture from the `/coming-soon` splash.
 
 ---
 
@@ -100,6 +101,7 @@ HeroTales AI is a specialized Micro SaaS designed for parents to create personal
 ---
 
 ## 9. Roadmap
+- **Phase 0 (Pre-launch):** Coming-soon gate (`COMING_SOON` env flag) walls off the app on the prod domain while the marketing landing stays public; `/coming-soon` splash captures waitlist emails. Flip the flag off to launch.
 - **Phase 1 (MVP):** Text generation + Character-consistent images + Clerk / Neon / Cloudinary integration.
 - **Phase 2:** Audio narration and mobile-web optimization.
 - **Phase 3:** Stripe integration and "Print-on-Demand" book ordering.

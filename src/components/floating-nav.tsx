@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useScroll, useMotionValueEvent } from "framer-motion";
 import { useClerk, useUser } from "@clerk/nextjs";
+import { SiteLogo } from "@/components/site-logo";
 import { ArrowLeftIcon } from "@/components/ui/arrow-left";
 import { BookTextIcon } from "@/components/ui/book-text";
 import { HomeIcon } from "@/components/ui/home";
@@ -33,16 +34,6 @@ const APP_LINKS = [
   { href: "/shelf", label: "Shelf" },
   { href: "/keepsake-books", label: "Keepsake books" },
 ];
-
-/** Shared logo mark used across every nav variant (DRY). */
-function SiteLogo({ href }: { href: string }) {
-  return (
-    <Link href={href} className="logo fnav-logo">
-      <div className="logo-mark" />
-      TellTales
-    </Link>
-  );
-}
 
 /**
  * One floating pill nav for the whole app. Replaces the old Nav / DashboardNav /

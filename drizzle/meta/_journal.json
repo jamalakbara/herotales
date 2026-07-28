@@ -15,6 +15,13 @@
       "when": 1785119835832,
       "tag": "0001_tense_silver_sable",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785223655117,
+      "tag": "0002_true_vapor",
+      "breakpoints": true
     }
   ]
 }

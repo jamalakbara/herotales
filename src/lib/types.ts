@@ -15,6 +15,9 @@ export type StoryStatus = (typeof STORY_STATUSES)[number];
 export type StoryBlueprint = (typeof BLUEPRINTS)[number];
 export type StoryLength = (typeof LENGTHS)[number];
 
+export const WaitlistSchema = z.object({ email: z.email().max(200) });
+export type WaitlistInput = z.infer<typeof WaitlistSchema>;
+
 export const ChapterSchema = z.object({
   label: z.string(),
   title: z.string(),
