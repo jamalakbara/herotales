@@ -2721,6 +2721,18 @@ body { padding-top: 84px; }
   height: 260vh;              /* scroll room for the scrub timeline */
   margin-top: -84px;          /* tuck under the floating nav */
 }
+/* Both hero trees render on every viewport; CSS picks which is visible so the
+   choice happens at first paint (no JS-swap flash on mobile). Desktop shown by
+   default; static shown under the mobile breakpoint or reduced-motion. */
+.u-hero-static { display: none; }
+@media (max-width: 960px) {
+  .u-hero-pin { display: none; }
+  .u-hero-static { display: block; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .u-hero-pin { display: none; }
+  .u-hero-static { display: block; }
+}
 .u-hero-sticky {
   position: sticky;
   top: 0;
