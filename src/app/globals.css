@@ -2287,8 +2287,11 @@ body { padding-top: 84px; }
   margin: 0 auto;
   padding: 140px 48px;
 }
+@media (max-width: 720px) {
+  .u-statement { padding: 80px 24px; }
+}
 @media (max-width: 640px) {
-  .u-statement { padding: 90px 24px; }
+  .u-statement { padding: 80px 24px; }
 }
 .u-statement p {
   font-family: var(--font-young-serif), serif;
@@ -2391,80 +2394,30 @@ body { padding-top: 84px; }
 /* ---------- Mobile feature stage (FeatureZoomMobile, narrow only) ---------- */
 /* One full-width card at a time: the section pins and each card scales/slides
    into centre, holds readable, then out; the last card zooms to black. */
-.u-fzoom-m {
-  position: relative;
-  max-width: none;
-  margin: 0;
-  padding: 0;
-  width: 100%;
-}
-.u-fzoom-m-sticky {
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  overflow: hidden;
-  background: var(--cream);
+/* Mobile feature section — vertical Reveal stack, no scroll pin */
+.u-fzoom-stack { padding: 0 24px 80px; }
+.u-fzoom-stack .u-track-head { padding: 80px 0 40px; }
+.u-fzoom-stack-cards {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  gap: 40px;
+  max-width: 480px;
+  margin: 0 auto;
 }
-.u-fzoom-m-head {
+/* Cards fill the stack width; compress media height for mobile proportions */
+.u-fzoom-stack-cards .u-hcard {
   width: 100%;
-  padding: 78px 28px 0;
-  z-index: 4;
+  max-width: none;
 }
-.u-fzoom-m-head .section-title { font-size: clamp(28px, 7.6vw, 40px); }
-.u-fzoom-m-stage {
-  flex: 1;
-  width: 100%;
-  display: grid;
-  place-items: center;   /* every tile shares one grid cell, centred */
-  position: relative;
-  /* Tiles waiting/leaving in the side gutters are clipped by .u-fzoom-m-sticky
-     (overflow:hidden). The stage itself must NOT clip, or the last tile's
-     zoom-to-black would be trimmed to the stage rect instead of the viewport. */
+.u-fzoom-stack-cards .u-hcard-media {
+  height: 200px;
 }
-/* Ambient orange glow behind the active card — soft studio warmth. */
-.u-fzoom-m-stage::before {
-  content: "";
-  position: absolute;
-  width: 380px;
-  height: 380px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 105, 46, 0.16), transparent 70%);
-  filter: blur(18px);
-  pointer-events: none;
+.u-fzoom-stack-cards .u-hcard-title {
+  margin-top: 16px;
 }
-/* Media tiles stack in one grid cell; the carousel slide is driven per-tile in JS. */
-.u-fzoom-m-tile {
-  grid-area: 1 / 1;
-  width: min(330px, 86vw);
-  will-change: transform, opacity;
+.u-fzoom-stack-cards .u-hcard-desc {
+  max-width: none;
 }
-.u-fzoom-m-media {
-  height: 360px;
-  border-radius: 18px;
-  overflow: hidden;
-  box-shadow: var(--u-card-shadow-lg);
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transform-origin: center center;
-  will-change: transform;
-}
-/* Fixed caption slot below the deck — captions swap here (one at a time), so
-   they never collide with each other or ride the 3D tiles. */
-.u-fzoom-m-capslot {
-  position: relative;
-  width: min(340px, 88vw);
-  height: 138px;
-  margin: 6px auto 42px;
-  flex-shrink: 0;
-}
-.u-fzoom-m-cap { position: absolute; inset: 0; }
-.u-fzoom-m-cap .u-hcard-title { margin-top: 0; }
-.u-fzoom-m-cap .u-hcard-desc { max-width: none; margin-top: 8px; }
 
 /* ---------- UMANO SECTION: dark client stories (fanned) ---------- */
 /* Full-bleed dark so the zoom bridge fills the screen and the fan lands on the
@@ -2544,6 +2497,11 @@ body { padding-top: 84px; }
   color: rgba(251, 243, 227, 0.82);
   margin: 6px 0 0;
   line-height: 1.45;
+}
+@media (max-width: 720px) {
+  .u-stories-intro { text-align: left; padding: 80px 24px 0; margin-bottom: 40px; }
+  .u-stories-head { text-align: left; margin: 0 0 12px; }
+  .u-stories-sub { text-align: left; margin: 0; }
 }
 /* Mobile swap for the fan (rendered ≤720px by blueprints.tsx): a sticky stack —
    each card pins under the nav, the next scrolls up over it, previous card
@@ -2718,8 +2676,9 @@ body { padding-top: 84px; }
   .u-stories-fan { margin-top: 0; }
   /* FAQ renders PinnedPanel's static branch on phones (no 100vh pin). Keep it
      full-bleed black so it reads as one continuous dark run, like desktop. */
-  .u-faq { margin: 0; border-radius: 0; padding: 64px 0 72px; }
-  .u-faq .u-dark-inner { padding: 0 24px; }
+  .u-faq { margin: 16px 12px; width: auto; border-radius: 32px; overflow: hidden; background: var(--twilight-deep); padding: 64px 0 72px; }
+  .u-dark-inner { padding: 0 24px; }
+  .u-faq .u-dark-inner { padding: 0 28px; }
   .u-faq-head { margin-bottom: 20px; }
   .faq-q { font-size: 16.5px; padding: 18px 2px; gap: 12px; }
   .faq-a { padding: 0 2px 20px 42px; font-size: 14.5px; }
@@ -2741,6 +2700,50 @@ body { padding-top: 84px; }
   height: 100vh;
   background: #FAFAFA;        /* page bg revealed as the panel insets */
   overflow: hidden;
+}
+/* Static hero layout for mobile — no scroll pin, flex column flow */
+.u-hero-static {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  margin-top: -84px;
+}
+.u-hero-sticky-static {
+  position: relative;
+  min-height: 100vh;
+  background: #FAFAFA;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-bottom: 40px;
+}
+/* Orange panel: inset + rounded — matches desktop settled/scrolled state */
+.u-hero-sticky-static .u-hero-panel {
+  inset: 12px;
+  border-radius: 32px;
+}
+/* Override absolute-position defaults so children flow in the column */
+.u-hero-sticky-static .u-hero-head {
+  position: relative;
+  top: auto; left: auto; right: auto;
+  width: 100%;
+  padding: 100px 28px 0;
+  box-sizing: border-box;
+}
+.u-hero-sticky-static .u-hero-stage {
+  position: relative;
+  left: auto; bottom: auto;
+  margin: 64px auto 0;
+}
+/* Notify pill: keep absolute so it overlaps the card top-right. Override
+   top so it just clips the card edge without jumping into the CTAs above. */
+.u-hero-sticky-static .u-notify {
+  top: -20px;
+  max-width: none;
+  animation: none !important;
+}
+.u-hero-sticky-static .u-notify-title {
+  white-space: nowrap;
 }
 /* Orange panel: full-bleed + square at rest, insets + rounds on scroll */
 .u-hero-panel {

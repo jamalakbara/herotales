@@ -80,6 +80,7 @@ export function FannedCards({ children, className, minHeight = 620, spread = 1, 
           progress={scrollYProgress}
           reduce={!!reduce}
           staticSpread={staticSpread}
+          narrow={narrow}
           hovered={hovered === i}
           onHover={setHovered}
         >
@@ -98,6 +99,7 @@ function FannedCard({
   progress,
   reduce,
   staticSpread,
+  narrow,
   hovered,
   onHover,
 }: {
@@ -108,6 +110,7 @@ function FannedCard({
   progress: ReturnType<typeof useScroll>["scrollYProgress"];
   reduce: boolean;
   staticSpread: boolean;
+  narrow: boolean;
   hovered: boolean;
   onHover: (i: number | null) => void;
 }) {
@@ -119,7 +122,9 @@ function FannedCard({
 
   const base = i === Math.floor(count / 2) ? count : i;
 
-  const outer = reduce || staticSpread
+  // On narrow screens, skip scroll-driven values — static target positions
+  // only. useTransform outputs are created (hooks rule) but not applied to DOM.
+  const outer = reduce || staticSpread || narrow
     ? { rotate: target.rotate, x: target.x, y: target.y }
     : { rotate, x, y };
 
@@ -131,7 +136,7 @@ function FannedCard({
       <motion.div
         onHoverStart={() => onHover(i)}
         onHoverEnd={() => onHover(null)}
-        whileHover={reduce ? undefined : { rotate: -target.rotate, scale: 1.06, y: -36 }}
+        whileHover={reduce || narrow ? undefined : { rotate: -target.rotate, scale: 1.06, y: -36 }}
         transition={{ type: "spring", stiffness: 320, damping: 26 }}
         style={{ cursor: "pointer" }}
       >

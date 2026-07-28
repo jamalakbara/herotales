@@ -66,7 +66,8 @@
 }
 
 .modeToggle {
-  display: inline-flex;
+  display: flex;
+  width: 100%;
   background: var(--cream-deep);
   border: none;
   border-radius: 999px;
@@ -75,6 +76,7 @@
   position: relative;
 }
 .modeToggle button {
+  flex: 1;
   appearance: none;
   border: none;
   background: transparent;
@@ -88,6 +90,7 @@
   cursor: pointer;
   position: relative;
   z-index: 1;
+  white-space: nowrap;
   transition: color .25s ease;
 }
 .modeToggle button:global(.active) { color: #fff; }

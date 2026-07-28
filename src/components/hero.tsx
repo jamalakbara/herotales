@@ -68,13 +68,75 @@ export function Hero() {
   const panelScale = useTransform(scrollYProgress, [0, 0.55], [1, 0.955], { ease: easeOut });
   const panelRadius = useTransform(scrollYProgress, [0, 0.5], [0, 44]);
 
+  // Static layout on mobile and reduced-motion: headline + card in settled
+  // positions, no scroll pin, no Framer Motion transforms.
+  if (mobile || reduce) {
+    return (
+      <div className="u-hero-static">
+        <div className="u-hero-sticky-static">
+          <div className="u-hero-panel">
+            <AmbientDecor variant="orange" meadow stars={STARS} fireflies={[]} />
+          </div>
+          <div className="u-hero-head">
+            <span className="eyebrow">
+              <span className="dot" />
+              Bedtime, reinvented
+            </span>
+            <h1 className="hero-title u-hero-title">
+              Tonight, your little one is the{" "}
+              <span className="highlight">hero</span> of their own storybook.
+            </h1>
+            <p className="hero-sub u-hero-sub">
+              A fresh five-chapter adventure around your child — their name, their
+              face, their bravery — illustrated and narrated in a warm voice.
+            </p>
+            <div className="hero-ctas u-hero-ctas">
+              <Link href="/stories/new" className="btn btn-lg" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                Make tonight&apos;s story <ArrowRightIcon size={16} />
+              </Link>
+              <a href="#how" className="btn btn-lg u-hero-ghost">
+                See how it works
+              </a>
+            </div>
+          </div>
+          <div className="u-hero-stage">
+            <div className="u-notify">
+              <div className="u-notify-mark"><SparklesIcon size={16} /></div>
+              <div>
+                <div className="u-notify-kicker">Tuck-in time</div>
+                <div className="u-notify-title">Tonight&apos;s tale is ready</div>
+              </div>
+            </div>
+            <div className="u-hero-book">
+              <div className="u-hero-book-label">Chapter one</div>
+              <div className="u-hero-book-title">
+                Maya &amp; the <span className="script">Brave Lantern</span>
+              </div>
+              <div className="u-hero-book-scene">
+                <LoopVideo
+                  className="u-hero-scene-video"
+                  video="https://res.cloudinary.com/dh0spkwh3/video/upload/v1784378165/lantern-night_fcuv8q.mp4"
+                  poster="https://res.cloudinary.com/dh0spkwh3/image/upload/v1784378180/lantern-poster_oztu72.png"
+                />
+              </div>
+              <div className="u-hero-book-meta">
+                <span>Bravery · Ages 4–6</span>
+                <span className="u-hero-book-star"><AxeIcon size={18} /></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div ref={ref} className="u-hero-pin">
       <div className="u-hero-sticky">
         {/* Orange panel backdrop — insets + rounds on scroll; holds bedtime decor */}
         <motion.div
           className="u-hero-panel"
-          style={reduce ? undefined : { scale: panelScale, borderRadius: panelRadius }}
+          style={{ scale: panelScale, borderRadius: panelRadius }}
         >
           <AmbientDecor variant="orange" meadow stars={STARS} fireflies={FIREFLIES} />
         </motion.div>
@@ -82,7 +144,7 @@ export function Hero() {
         {/* Headline block */}
         <motion.div
           className="u-hero-head"
-          style={reduce ? undefined : { y: textY, opacity: textOpacity }}
+          style={{ y: textY, opacity: textOpacity }}
         >
           <span className="eyebrow">
             <span className="dot" />
@@ -109,7 +171,7 @@ export function Hero() {
         {/* Rising story card (our "device") */}
         <motion.div
           className="u-hero-stage"
-          style={reduce ? { y: settleY, scale: 1 } : { y: cardY, scale: cardScale }}
+          style={{ y: cardY, scale: cardScale }}
         >
           <div className="u-notify">
             <div className="u-notify-mark"><SparklesIcon size={16} /></div>

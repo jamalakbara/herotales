@@ -21,7 +21,10 @@ export function LoopVideo({
   className?: string;
 }) {
   const reduce = useReducedMotion();
-  const [loaded, setLoaded] = useState(false);
+  // When a poster is provided the <video poster> attribute handles the visual
+  // placeholder — no skeleton needed. Without a poster we need the skeleton
+  // until the first frame arrives.
+  const [loaded, setLoaded] = useState(!!poster);
   const markLoaded = useCallback(() => setLoaded(true), []);
   // Media can finish loading before hydration attaches event handlers —
   // check readiness when the ref lands too.

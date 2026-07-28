@@ -32,11 +32,15 @@ export function RevealMain({ children }: { children: React.ReactNode }) {
   const radius = useTransform(scrollYProgress, [0, 1], narrow ? [0, 28] : [0, 40]);
   const clipPath = useMotionTemplate`inset(0px ${inset}px 0px ${inset}px round 0px 0px ${radius}px ${radius}px)`;
 
+  // Always render motion.main so React never swaps element types — switching
+  // between <main> and <motion.main> causes Framer Motion cleanup to call
+  // removeChild on an already-detached node. Just skip the clipPath style
+  // on narrow/reduced-motion instead.
   return (
     <motion.main
       ref={ref}
       className="u-main"
-      style={reduce ? undefined : { clipPath }}
+      style={narrow || reduce ? undefined : { clipPath }}
     >
       {children}
     </motion.main>

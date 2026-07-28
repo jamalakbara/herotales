@@ -4,7 +4,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
 import { LoopVideo } from "./LoopVideo";
 import { useMediaQuery } from "../use-media-query";
-import { FeatureZoomMobile } from "./FeatureZoomMobile";
+import { Reveal } from "./Reveal";
 
 export type FeatureCard = {
   icon: React.ReactNode;
@@ -156,10 +156,21 @@ export function FeatureZoom({ cards, head }: FeatureZoomProps) {
     );
   }
 
-  // Phones can't hold the horizontal row (cards overflow, captions clip) — play
-  // one full-width card at a time instead. Desktop keeps the pan+zoom below.
+  // Phones get a simple vertical stack with Reveal entrance — no scroll pin,
+  // no 500vh carousel. Desktop keeps the pan+zoom below.
   if (narrow) {
-    return <FeatureZoomMobile cards={cards} head={head} />;
+    return (
+      <section id="how" className="u-fzoom-stack">
+        <div className="u-track-head">{head}</div>
+        <div className="u-fzoom-stack-cards">
+          {cards.map((c, i) => (
+            <Reveal key={c.title} delay={i * 0.1}>
+              <Card c={c} />
+            </Reveal>
+          ))}
+        </div>
+      </section>
+    );
   }
 
   return (

@@ -33,7 +33,7 @@ export function Faq() {
   // footer reveals beneath. This keeps the whole rounded card in view — no
   // square-topped clip from a tall section scrolling past.
   return (
-    <PinnedPanel id="faq" className="u-faq u-dark-section" pinnedClassName="u-faq-panel">
+    <PinnedPanel id="faq" className="u-faq u-dark-section" pinnedClassName="u-faq-panel" staticOnNarrow>
       <div className="u-dark-inner u-faq-inner">
         <Reveal>
           <h2 className="u-faq-head">Questions, before lights out.</h2>

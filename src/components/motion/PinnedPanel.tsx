@@ -16,6 +16,8 @@ type PinnedPanelProps = {
   /** Extra panel classes only when pinned (e.g. full-viewport sizing). */
   pinnedClassName?: string;
   stickyClassName?: string;
+  /** Render the static branch on narrow screens instead of the scroll-scrub. */
+  staticOnNarrow?: boolean;
   id?: string;
   children: React.ReactNode;
 };
@@ -33,6 +35,7 @@ export function PinnedPanel({
   className,
   pinnedClassName,
   stickyClassName,
+  staticOnNarrow = false,
   id,
   children,
 }: PinnedPanelProps) {
@@ -43,16 +46,15 @@ export function PinnedPanel({
   // instead, with a light exit scrub (shrink + round as the bottom edge passes
   // the fold) so it still hands off to what follows like the desktop pin.
   const narrow = useMediaQuery("(max-width: 720px)");
+  const isStatic = reduce || (narrow && staticOnNarrow);
   const { scrollYProgress } = useScroll({
-    target: ref,
-    // narrow: shrink late and fast — minimize the window where the rounded
-    // panel and the revealing footer share the screen
+    target: isStatic ? undefined : ref,
     offset: narrow ? ["end 0.9", "end 0.6"] : ["start start", "end end"],
   });
   const scale = useTransform(scrollYProgress, narrow ? [0, 1] : progressRange, narrow ? [1, 0.93] : scaleRange);
   const radius = useTransform(scrollYProgress, narrow ? [0, 1] : progressRange, narrow ? [0, 28] : radiusRange);
 
-  if (reduce) {
+  if (isStatic) {
     return (
       <section id={id} className={className}>
         {children}
