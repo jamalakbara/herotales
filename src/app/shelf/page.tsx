@@ -338,9 +338,9 @@ export default function ShelfPage() {
 
         {/* Toolbar */}
         <div className="shelf-toolbar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 14, padding: "14px 18px", borderRadius: 18, marginBottom: 28 }}>
-          <div className="shelf-search" style={{ display: "flex", alignItems: "center", gap: 10, background: "var(--cream-deep)", borderRadius: 999, padding: "8px 16px", flex: 1, minWidth: 220, maxWidth: 420 }}>
+          <div className="shelf-search" style={{ display: "flex", alignItems: "center", gap: 10, background: "var(--cream-deep)", borderRadius: 999, padding: "8px 16px", flex: 1, minWidth: 0, maxWidth: 420, overflow: "hidden" }}>
             <SearchIcon size={15} style={{ color: "var(--ink-soft)", flexShrink: 0 }} />
-            <input type="text" placeholder="Search by title, hero, or lesson…" value={search} onChange={(e) => setSearch(e.target.value)} style={{ border: "none", background: "transparent", outline: "none", fontFamily: "var(--font-nunito), sans-serif", fontWeight: 600, fontSize: 13, color: "var(--ink)", flex: 1 }} />
+            <input type="text" placeholder="Search stories" value={search} onChange={(e) => setSearch(e.target.value)} style={{ border: "none", background: "transparent", outline: "none", fontFamily: "var(--font-nunito), sans-serif", fontWeight: 600, fontSize: 13, color: "var(--ink)", flex: 1, minWidth: 0, width: 0 }} />
           </div>
           <FilterChips options={filters} active={activeFilter} onSelect={setActiveFilter} size="sm" className="fade-strip shelf-fc-strip" />
           <div className="shelf-viewtoggle" style={{ display: "flex", borderRadius: 999, overflow: "hidden", background: "var(--cream-deep)" }}>

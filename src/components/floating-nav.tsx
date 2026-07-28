@@ -1,12 +1,17 @@
 "use client";
 
 import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useScroll, useMotionValueEvent } from "framer-motion";
 import { useClerk, useUser } from "@clerk/nextjs";
 import { ArrowLeftIcon } from "@/components/ui/arrow-left";
+import { BookTextIcon } from "@/components/ui/book-text";
+import { HomeIcon } from "@/components/ui/home";
+import { MenuIcon } from "@/components/ui/menu";
 import { PlusIcon } from "@/components/ui/plus";
+import { SquareStackIcon } from "@/components/ui/square-stack";
 
 export type Crumb = { label: string; href?: string };
 
@@ -189,6 +194,8 @@ function UserMenu() {
   const { user } = useUser();
   const { signOut } = useClerk();
   const email = user?.primaryEmailAddress?.emailAddress ?? null;
+  const name = user?.fullName ?? user?.firstName ?? null;
+  const imageUrl = user?.imageUrl ?? null;
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -218,21 +225,38 @@ function UserMenu() {
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
+        aria-label="Open menu"
         className="fnav-avatar"
       >
-        {initial}
+        <MenuIcon size={18} />
       </button>
       {open && (
         <div role="menu" className="fnav-menu">
-          <div className="fnav-menu-label">Signed in as</div>
-          <div className="fnav-menu-email">{email ?? "—"}</div>
+          {/* Profile header */}
+          <div className="fnav-menu-profile">
+            <div className="fnav-menu-avatar-lg">
+              {imageUrl ? (
+                <Image src={imageUrl} alt={name ?? email ?? "Profile"} width={44} height={44} style={{ objectFit: "cover", width: "100%", height: "100%" }} />
+              ) : (
+                initial
+              )}
+            </div>
+            <div className="fnav-menu-identity">
+              {name && <div className="fnav-menu-name">{name}</div>}
+              <div className="fnav-menu-email">{email ?? "—"}</div>
+            </div>
+          </div>
           {/* Pill links hide ≤720px — the menu carries navigation on mobile. */}
           <div className="fnav-menu-links">
-            {APP_LINKS.map(({ href, label }) => (
-              <Link key={href} href={href} className="fnav-link" onClick={() => setOpen(false)}>
-                {label}
-              </Link>
-            ))}
+            <Link href="/dashboard" className="fnav-menu-nav-link" onClick={() => setOpen(false)}>
+              <HomeIcon size={15} /> Home
+            </Link>
+            <Link href="/shelf" className="fnav-menu-nav-link" onClick={() => setOpen(false)}>
+              <BookTextIcon size={15} /> Shelf
+            </Link>
+            <Link href="/keepsake-books" className="fnav-menu-nav-link" onClick={() => setOpen(false)}>
+              <SquareStackIcon size={15} /> Keepsake books
+            </Link>
           </div>
           <button
             type="button"

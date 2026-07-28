@@ -18,7 +18,7 @@ export function MobileCarousel({ id, className, style, children }: {
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [slide, setSlide] = useState(0);
-  const count = Children.count(children);
+  const count = Children.toArray(children).length;
 
   const slideWidth = () => {
     const el = ref.current;
