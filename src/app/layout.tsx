@@ -1,81 +1,59 @@
-import type { Metadata, Viewport } from "next";
-import { Lexend, Quicksand } from "next/font/google";
-import { Toaster } from "@/components/ui/sonner";
+import type { Metadata } from "next";
+import { ClerkProvider } from "@clerk/nextjs";
+import { Inter, Playfair_Display } from "next/font/google";
+import { SmoothScroll } from "@/components/motion/SmoothScroll";
 import "./globals.css";
 
-const lexend = Lexend({
-  variable: "--font-heading",
+// umano type system: Playfair Display = display headings (proprietary "AM Le
+// Cygne" substitute — umano's own declared fallback); Inter = body/UI + accents.
+// The CSS variable names are kept so existing class references pick up the swap.
+const playfair = Playfair_Display({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["400", "700", "900"],
+  variable: "--font-young-serif",
+  display: "swap",
 });
 
-const quicksand = Quicksand({
-  variable: "--font-body",
+const inter = Inter({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-nunito",
+  display: "swap",
+});
+
+const playfairAccent = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["600", "700"],
+  style: ["italic"],
+  variable: "--font-caprasimo",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: {
-    default: "HeroTales AI - Personalized Stories for Your Child",
-    template: "%s | HeroTales AI",
-  },
+  title: "TellTales — Bedtime stories where your child is the hero",
   description:
-    "Create magical bedtime stories where your child is the hero. AI-powered personalized storytelling that teaches values like bravery, kindness, and honesty.",
-  keywords: [
-    "children stories",
-    "personalized stories",
-    "AI stories",
-    "bedtime stories",
-    "kids stories",
-    "educational stories",
-  ],
-  authors: [{ name: "HeroTales AI" }],
-  creator: "HeroTales AI",
-  openGraph: {
-    type: "website",
-    locale: "en_US",
-    url: "https://herotales.ai",
-    siteName: "HeroTales AI",
-    title: "HeroTales AI - Personalized Stories for Your Child",
-    description:
-      "Create magical bedtime stories where your child is the hero. AI-powered personalized storytelling that teaches values.",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "HeroTales AI - Personalized Stories for Your Child",
-    description:
-      "Create magical bedtime stories where your child is the hero.",
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
-};
-
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 1,
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#FFFBF5" },
-    { media: "(prefers-color-scheme: dark)", color: "#1A1D29" },
-  ],
+    "TellTales spins a fresh 5-chapter adventure around your child — their name, their face, their bravery — and narrates it in a warm voice that makes bedtime feel like magic.",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${lexend.variable} ${quicksand.variable} antialiased min-h-screen`}
+    <ClerkProvider>
+      <html
+        lang="en"
+        className={`${playfair.variable} ${playfairAccent.variable} ${inter.variable}`}
+        // Browser extensions (e.g. Google Tag Assistant) inject data-* attrs on
+        // <html> before hydration; suppress the resulting top-level attribute
+        // mismatch. Only silences <html>'s own attrs, not the tree below.
+        suppressHydrationWarning
       >
-        {children}
-        <Toaster position="top-center" richColors />
-      </body>
-    </html>
+        <body>
+          <SmoothScroll>{children}</SmoothScroll>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

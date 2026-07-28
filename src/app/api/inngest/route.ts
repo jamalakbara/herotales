@@ -1,12 +1,9 @@
 import { serve } from "inngest/next";
-import { inngest } from "@/inngest/client";
-import { generateStory } from "@/inngest/functions/generate-story";
+import { inngest } from "@/lib/inngest/client";
+import { generateStory } from "@/lib/inngest/functions/generate-story";
+import { reapStaleStories } from "@/lib/inngest/functions/reap-stale";
 
-// Register all Inngest functions
 export const { GET, POST, PUT } = serve({
   client: inngest,
-  functions: [
-    generateStory, // Story generation background job
-  ],
-  signingKey: process.env.INNGEST_SIGNING_KEY,
+  functions: [generateStory, reapStaleStories],
 });
