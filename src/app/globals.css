@@ -2832,6 +2832,19 @@ h1.u-hero-title .highlight::after { display: none; }
 .u-hero-ghost { background: transparent; color: var(--ink-warm); border: 1.5px solid rgba(20,9,6,0.4) !important; box-shadow: none; }
 .u-hero-ghost:hover { background: rgba(20,9,6,0.06); }
 
+/* Coming-soon splash — full-bleed orange hero panel with centred, static
+   content. Reuses the on-orange type rules scoped under .u-hero-head; only
+   layout is defined here. -84px cancels the fixed-nav body padding (no nav here). */
+.cs-shell { position: relative; display: flex; min-height: 100dvh; margin-top: -84px; overflow: hidden; }
+.cs-center { position: relative; z-index: 3; margin: auto; width: min(680px, 92vw); padding: 96px 0 56px; text-align: center; }
+.cs-logo { display: flex; justify-content: center; margin-bottom: 34px; }
+.cs-head { position: static; inset: auto; width: 100%; }
+.cs-form { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 28px; }
+.cs-input { width: min(320px, 100%); }
+.cs-submit { flex: 0 0 auto; }
+.cs-note { margin-top: 22px; font-weight: 700; color: var(--ink-warm); }
+.cs-note-error { margin-top: 12px; color: var(--ink-warm); opacity: 0.85; font-weight: 600; }
+
 /* Rising story card ("device") */
 .u-hero-stage {
   position: absolute;

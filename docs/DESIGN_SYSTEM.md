@@ -170,6 +170,12 @@ Because the nav is fixed, `body` carries `padding-top: 84px`; the landing hero t
 
 At `≤720px` the pill stays **floating** (not docked): inset `12px` from the top and sides, full `999px` radius, and the signature hard offset shadow (`4px 4px 0 --ink`, `3px 3px` when condensed past `60px` scroll) — matching the desktop nav language rather than flattening to a full-width bar. The reader progress hairline (`.read-progress`) sits at `top: 74px` to clear it.
 
+### Logo — `<SiteLogo>` (`src/components/site-logo.tsx`)
+The logo mark (`.logo` + `.logo-mark` + "TellTales") is a shared component. `<FloatingNav>` (all variants) and the coming-soon splash import it — never re-inline the markup.
+
+### Coming-soon splash — `/coming-soon` (`src/app/coming-soon/page.tsx`)
+Pre-launch waitlist wall (gated by `COMING_SOON`, see `docs/ENV.md`). Reuses the full-bleed orange `.u-hero-panel` + `<AmbientDecor variant="orange" meadow>`; headline/eyebrow/sub reuse the on-orange type rules scoped under `.u-hero-head` (so `.cs-head` carries `.u-hero-head`). Only layout classes are new (`.cs-shell`/`.cs-center`/`.cs-head`/`.cs-form`/`.cs-input`/`.cs-note` in globals.css) — no new tokens, no new nav; `.cs-shell` reuses the `margin-top: -84px` full-bleed pattern to cancel the fixed-nav body padding. Email capture is `<WaitlistForm>` (`src/components/waitlist-form.tsx`): a `.txt-input` + `.btn-berry` `POST /api/waitlist`, with idle/loading/done/error states.
+
 ### Big panels
 The big colored landing panels (dark story run, footer brand card, keepsake hero) share the pattern: rounded `24–32px`, colored surface (twilight/berry), **borderless soft `var(--u-card-shadow-lg)`**, dotted-starfield `::before` / `<AmbientDecor>`, decorative circles. *(The v1 `.blueprints` / `.quote-section` / `.cta-strip` panels were deleted — replaced by the umano `.u-*` sections in §7.)*
 

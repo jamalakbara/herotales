@@ -95,6 +95,14 @@ export const stories = pgTable(
   ],
 );
 
+// waitlist — pre-launch email capture from the /coming-soon splash. Public
+// insert (no auth); dedup on the unique email.
+export const waitlist = pgTable("waitlist", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  email: text("email").notNull().unique(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "string" }).notNull().defaultNow(),
+});
+
 export const chapterImages = pgTable(
   "chapter_images",
   {
