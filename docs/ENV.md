@@ -44,7 +44,7 @@ One Vercel project (`herotales`): `main`→Production, `development` branch→Pr
 | `UPSTASH_REDIS_*`, `INNGEST_*` | prod | reuse prod | optional locally |
 | `NEXT_PUBLIC_APP_URL` | prod domain | preview URL | `http://localhost:3000` |
 
-Only **Clerk** and **Neon** have a distinct dev instance; everything else is shared. Set scoped vars with `vercel env add <NAME> <production|preview>` (Preview can be pinned to the branch with `--git-branch development`).
+Only **Clerk** and **Neon** have a distinct dev instance; everything else is shared. The Neon dev instance is the **`dev` branch** (`br-young-morning-az7hkg6i`) of the `telltales` project (`tiny-heart-47898698`), branched from `production` — Preview + Development + local all use its pooled connection string; Production stays on the `production` branch. Set scoped vars with `vercel env add <NAME> <production|preview>` (Preview can be pinned to the branch with `--git-branch development`).
 
 ---
 
